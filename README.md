@@ -22,14 +22,7 @@ the content and storyline of a Video Ad, **automatically** splitting it into
 variants for different Ad formats (landscape, vertical and square assets).
 
 The generated variants may follow the original Ad's storyline - and thus serve
-as *mid-funnel reminder campaigns* of the original Ad for
-**Awareness and/or Consideration** - or introduce whole new storylines
-altogether, all while following Google's best practices for creatives (both the
-[ABCD framework](http://go/ABCDs) and the expertise of
-[Creative Works](http://go/creativeworks)).
+as *mid-funnel reminder campaigns* of the original Ad for **Awareness and/or
+Consideration** - or introduce whole new storylines altogether, all while
+following Google's best practices for creatives.
 
-## Links
-
--   Deck: go/vigenair-deck
--   Detailed technical design: go/vigenair-design
--   Join the user group @ g/vigenair-users to stay informed!
