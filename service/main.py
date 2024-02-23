@@ -342,7 +342,7 @@ def _transcribe_audio(output_dir: str, audio_file_path: str) -> str:
 
   writer = whisper.utils.get_writer('vtt', f'{output_dir}/')
   writer({'segments': results_dict}, audio_file_path, {'highlight_words': True})
-  logging.info('WebVTT written successfully!')
+  logging.info('TRANSCRIPTION - WebVTT written successfully!')
 
   transcription_data = []
   for index, segment in enumerate(results):
@@ -486,14 +486,6 @@ def _create_optimised_segments(
       annotation_results,
       optimised_av_segments,
   )
-  # faces_dataframe = _get_faces_detection_data(
-  #     annotation_results,
-  #     optimised_av_segments,
-  # )
-  # people_dataframe = _get_people_detection_data(
-  #     annotation_results,
-  #     optimised_av_segments,
-  # )
   logos_dataframe = _get_logo_detection_data(
       annotation_results,
       optimised_av_segments,
@@ -748,123 +740,6 @@ def _get_object_tracking_data(
   return object_tracking_dataframe
 
 
-# def _get_faces_detection_data(
-#     annotation_results,
-#     optimised_av_segments: pd.DataFrame,
-# ) -> pd.DataFrame:
-#   face_detection_data = []
-#   for index, annotation in enumerate(
-#       annotation_results.face_detection_annotations
-#   ):
-#     face_id = index + 1
-#     for track in annotation.tracks:
-#       start_time = (
-#           track.segment.start_time_offset.seconds
-#           + track.segment.start_time_offset.microseconds / 1e6
-#       )
-#       end_time = (
-#           track.segment.end_time_offset.seconds
-#           + track.segment.end_time_offset.microseconds / 1e6
-#       )
-#       av_segment_ids = _identify_segments(
-#           start_time, end_time, optimised_av_segments, 'av_segment_id'
-#       )
-#       for timestamped_object in track.timestamped_objects:
-#         box = timestamped_object.normalized_bounding_box
-#         attributes = [
-#             f'{attribute.name} {attribute.value}'
-#             for attribute in timestamped_object.attributes
-#             if attribute.confidence >= CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD
-#         ]
-#         face_detection_data.append((
-#             face_id,
-#             av_segment_ids,
-#             start_time,
-#             end_time,
-#             end_time - start_time,
-#             (box.left, box.top, box.right, box.bottom),
-#             attributes,
-#         ))
-#   face_detection_dataframe = pd.DataFrame(
-#       face_detection_data,
-#       columns=[
-#           'face_id',
-#           'av_segment_ids',
-#           'start_s',
-#           'end_s',
-#           'duration_s',
-#           'box_ltrb',
-#           'attributes',
-#       ],
-#   )
-#   face_detection_dataframe = face_detection_dataframe.sort_values(
-#       by=['start_s', 'end_s']
-#   )
-#   return face_detection_dataframe
-
-
-# def _get_people_detection_data(
-#     annotation_results,
-#     optimised_av_segments: pd.DataFrame,
-# ) -> pd.DataFrame:
-#   people_detection_data = []
-#   for index, annotation in enumerate(
-#       annotation_results.person_detection_annotations
-#   ):
-#     person_id = index + 1
-#     for track in annotation.tracks:
-#       start_time = (
-#           track.segment.start_time_offset.seconds
-#           + track.segment.start_time_offset.microseconds / 1e6
-#       )
-#       end_time = (
-#           track.segment.end_time_offset.seconds
-#           + track.segment.end_time_offset.microseconds / 1e6
-#       )
-#       av_segment_ids = _identify_segments(
-#           start_time, end_time, optimised_av_segments, 'av_segment_id'
-#       )
-#       for timestamped_object in track.timestamped_objects:
-#         box = timestamped_object.normalized_bounding_box
-#         attributes = [
-#             f'{attribute.name} {attribute.value}'
-#             for attribute in timestamped_object.attributes
-#             if attribute.confidence >= CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD
-#         ]
-#         landmarks = [
-#             (landmark.name, (landmark.point.x, landmark.point.y))
-#             for landmark in timestamped_object.landmarks
-#             if landmark.confidence >= CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD
-#         ]
-#         people_detection_data.append((
-#             person_id,
-#             av_segment_ids,
-#             start_time,
-#             end_time,
-#             end_time - start_time,
-#             (box.left, box.top, box.right, box.bottom),
-#             attributes,
-#             landmarks,
-#         ))
-#   people_detection_dataframe = pd.DataFrame(
-#       people_detection_data,
-#       columns=[
-#           'person_id',
-#           'av_segment_ids',
-#           'start_s',
-#           'end_s',
-#           'duration_s',
-#           'box_ltrb',
-#           'attributes',
-#           'landmarks',
-#       ],
-#   )
-#   people_detection_dataframe = people_detection_dataframe.sort_values(
-#       by=['start_s', 'end_s']
-#   )
-#   return people_detection_dataframe
-
-
 def _get_logo_detection_data(
     annotation_results,
     optimised_av_segments: pd.DataFrame,
@@ -1080,25 +955,36 @@ def _cut_and_annotate_av_segment(
       bucket_name=bucket_name,
       destination_file_name=gcs_cut_path.replace(f'gs://{bucket_name}/', ''),
   )
-  response = vision_model.generate_content(
-      [
-          Part.from_uri(gcs_cut_path, mime_type='video/mp4'),
-          SEGMENT_ANNOTATIONS_PROMPT,
-      ],
-      generation_config=video_description_config,
-      safety_settings=safety_config,
-  )
-  if (
-      response.candidates
-      and response.candidates[0].content.parts
-      and response.candidates[0].content.parts[0].text
-  ):
-    text = response.candidates[0].content.parts[0].text
-    result = re.search(SEGMENT_ANNOTATIONS_PATTERN, text)
-    logging.info('ANNOTATION - annotating segment %s: %s', index, text)
-    return result[2], result[3]
-  logging.warning('ANNOTATION - could not annotate segment %s!', index)
-  return '', ''
+  description = ''
+  keywords = ''
+  try:
+    response = vision_model.generate_content(
+        [
+            Part.from_uri(gcs_cut_path, mime_type='video/mp4'),
+            SEGMENT_ANNOTATIONS_PROMPT,
+        ],
+        generation_config=video_description_config,
+        safety_settings=safety_config,
+    )
+    if (
+        response.candidates
+        and response.candidates[0].content.parts
+        and response.candidates[0].content.parts[0].text
+    ):
+      text = response.candidates[0].content.parts[0].text
+      result = re.search(SEGMENT_ANNOTATIONS_PATTERN, text)
+      logging.info('ANNOTATION - annotating segment %s: %s', index, text)
+      description = result.group(2)
+      keywords = result.group(3)
+    else:
+      logging.warning('ANNOTATION - could not annotate segment %s!', index)
+  # Execution should continue regardless of the underlying exception
+  except Exception:
+    logging.exception(
+        'Encountered error during segment %s annotation! Continuing...',
+        index,
+    )
+  return description, keywords
 
 
 @functions_framework.cloud_event
