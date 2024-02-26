@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-GCP_PROJECT_ID: my-gcp-project
-GCP_LOCATION: us-central1
-CONFIG_TEXT_MODEL: gemini-pro
-CONFIG_VISION_MODEL: gemini-pro-vision
-CONFIG_WHISPER_MODEL: small
-CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD: '0.7'
+"""ViGenAiR storage module."""
+
+from .storage import *
