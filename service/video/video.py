@@ -30,7 +30,7 @@ import utils as Utils
 def analyse_video(
     video_file: Utils.TriggerFile,
     bucket_name: str,
-) -> videointelligence.types.AnnotateVideoResponse:
+) -> videointelligence.AnnotateVideoResponse:
   """Runs video analysis via the Video AI API and returns the results.
 
   Args:
@@ -83,7 +83,7 @@ def analyse_video(
 
 
 def get_visual_shots_data(
-    annotation_results: videointelligence.types.AnnotateVideoResponse,
+    annotation_results: videointelligence.AnnotateVideoResponse,
     transcription_dataframe: pd.DataFrame,
     audio_segment_id_key: str = 'audio_segment_id',
 ) -> pd.DataFrame:
@@ -134,7 +134,7 @@ def get_visual_shots_data(
 
 
 def get_shot_labels_data(
-    annotation_results: videointelligence.types.AnnotateVideoResponse,
+    annotation_results: videointelligence.AnnotateVideoResponse,
     optimised_av_segments: pd.DataFrame,
     av_segment_id_key: str = 'av_segment_id',
 ) -> pd.DataFrame:
@@ -189,7 +189,7 @@ def get_shot_labels_data(
 
 
 def get_object_tracking_data(
-    annotation_results: videointelligence.types.AnnotateVideoResponse,
+    annotation_results: videointelligence.AnnotateVideoResponse,
     optimised_av_segments: pd.DataFrame,
     av_segment_id_key: str = 'av_segment_id',
 ) -> pd.DataFrame:
@@ -253,7 +253,7 @@ def get_object_tracking_data(
 
 
 def get_logo_detection_data(
-    annotation_results: videointelligence.types.AnnotateVideoResponse,
+    annotation_results: videointelligence.AnnotateVideoResponse,
     optimised_av_segments: pd.DataFrame,
     av_segment_id_key: str = 'av_segment_id',
 ) -> pd.DataFrame:
@@ -356,7 +356,7 @@ def get_logo_detection_data(
 
 
 def get_text_detection_data(
-    annotation_results: videointelligence.types.AnnotateVideoResponse,
+    annotation_results: videointelligence.AnnotateVideoResponse,
     optimised_av_segments: pd.DataFrame,
     av_segment_id_key: str = 'av_segment_id',
 ) -> pd.DataFrame:

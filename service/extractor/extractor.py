@@ -438,7 +438,7 @@ def _annotate_segments(
     objects_dataframe,
     logos_dataframe,
     text_dataframe,
-    av_segment_id_key: str = 'av_segment_ids',
+    av_segment_id_key: str = 'av_segment_id',
 ) -> pd.DataFrame:
   """Annotates the A/V segments with data from the Video AI API.
 
