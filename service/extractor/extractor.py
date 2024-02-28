@@ -46,7 +46,8 @@ class Extractor:
 
     Args:
       gcs_bucket_name: The GCS bucket to read from and store files in.
-      video_file: Path to the input video file.
+      video_file: Path to the input video file, which is in a
+        `<timestamp>-<user_session_id>` folder on GCS.
     """
     self.gcs_bucket_name = gcs_bucket_name
     self.video_file = video_file
@@ -58,6 +59,7 @@ class Extractor:
 
   def extract(self):
     """Extracts all the available data from the input video."""
+    logging.info('EXTRACTOR - Starting extraction...')
     tmp_dir = tempfile.mkdtemp()
     video_file_path = StorageService.download_gcs_file(
         file_path=self.video_file,
@@ -114,7 +116,7 @@ class Extractor:
         annotation_results,
         transcription_dataframe,
     )
-    logging.info('SEGMENTS - optimised segments: %r', optimised_av_segments)
+    logging.info('SEGMENTS - Optimised segments: %r', optimised_av_segments)
 
     optimised_av_segments = self.cut_and_annotate_av_segments(
         tmp_dir,
@@ -122,7 +124,7 @@ class Extractor:
         optimised_av_segments,
     )
     logging.info(
-        'SEGMENTS - final optimised segments: %r',
+        'SEGMENTS - Final optimised segments: %r',
         optimised_av_segments,
     )
 
@@ -134,6 +136,7 @@ class Extractor:
         bucket_name=self.gcs_bucket_name,
         target_dir=self.video_file.gcs_folder,
     )
+    logging.info('EXTRACTOR - Extraction completed successfully!')
 
   def cut_and_annotate_av_segments(
       self,
@@ -198,7 +201,7 @@ def _cut_and_annotate_av_segment(
     row: pd.Series,
     video_file_path: str,
     cuts_path: str,
-    vision_model,
+    vision_model: GenerativeModel,
     gcs_cut_path: str,
     bucket_name: str,
     video_description_config: Dict[str, Union[int, float]],
@@ -262,11 +265,11 @@ def _cut_and_annotate_av_segment(
     ):
       text = response.candidates[0].content.parts[0].text
       result = re.search(ConfigService.SEGMENT_ANNOTATIONS_PATTERN, text)
-      logging.info('ANNOTATION - annotating segment %s: %s', index, text)
+      logging.info('ANNOTATION - Annotating segment %s: %s', index, text)
       description = result.group(2)
       keywords = result.group(3)
     else:
-      logging.warning('ANNOTATION - could not annotate segment %s!', index)
+      logging.warning('ANNOTATION - Could not annotate segment %s!', index)
   # Execution should continue regardless of the underlying exception
   except Exception:
     logging.exception(

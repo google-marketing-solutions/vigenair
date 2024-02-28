@@ -18,7 +18,9 @@ This module provides methods for interacting with Google Cloud Storage.
 """
 
 import logging
+import os
 import pathlib
+from typing import Optional, Sequence, Union
 
 from google.cloud import storage
 from google.cloud.storage import transfer_manager
@@ -28,41 +30,51 @@ import utils as Utils
 
 def download_gcs_file(
     file_path: Utils.TriggerFile,
-    output_dir: str,
     bucket_name: str,
-) -> str:
+    output_dir: Optional[str] = None,
+    fetch_contents: bool = False,
+) -> Union[Optional[str], Optional[bytes]]:
   """Downloads a file from the given GCS bucket and returns its path.
 
   Args:
     file_path: The path of the file to download.
-    output_dir: Directory path to store the downloaded file in.
     bucket_name: The name of the bucket to retrieve the file from.
+    output_dir: Directory path to store the downloaded file in.
+    fetch_contents: Whether to fetch the file contents instead of writing to a
+      file.
 
   Returns:
-    The retrieved file path, or None if the file was not found.
+    The retrieved file path or contents based on `fetch_contents`, or None if
+    the file was not found.
   """
   storage_client = storage.Client()
   bucket = storage_client.bucket(bucket_name)
 
   blob = bucket.blob(file_path.full_gcs_path)
+  result = None
 
-  if blob.exists():
-    destination_file_name = str(
-        pathlib.Path(output_dir, file_path.file_name_ext)
-    )
-    blob.download_to_filename(destination_file_name)
-    logging.info(
-        'Fetched file "%s" from bucket "%s".',
+  if not blob.exists():
+    logging.warning(
+        'DOWNLOAD - Could not find file "%s" in bucket "%s".',
         file_path.full_gcs_path,
         bucket_name,
     )
-    return destination_file_name
-  logging.warning(
-      'Could not find file "%s" in bucket "%s".',
-      file_path.full_gcs_path,
-      bucket_name,
-  )
-  return None
+  else:
+    if fetch_contents:
+      result = blob.download_as_bytes()
+    else:
+      destination_file_name = str(
+          pathlib.Path(output_dir, file_path.file_name_ext)
+      )
+      blob.download_to_filename(destination_file_name)
+      result = destination_file_name
+
+    logging.info(
+        'DOWNLOAD - Fetched file "%s" from bucket "%s".',
+        file_path.full_gcs_path,
+        bucket_name,
+    )
+  return result
 
 
 def upload_gcs_file(
@@ -75,7 +87,7 @@ def upload_gcs_file(
   Args:
     file_path: The path of the file to upload.
     destination_file_name: The name of the file to upload as.
-    bucket_name: The name of the bucket to retrieve the file from.
+    bucket_name: The name of the bucket to upload the file to.
   """
   storage_client = storage.Client()
   bucket = storage_client.bucket(bucket_name)
@@ -124,3 +136,35 @@ def upload_gcs_dir(
       )
     elif result is None:
       logging.info('UPLOAD - Uploaded path "%s".', file_path)
+
+
+def filter_video_files(
+    prefix: str,
+    bucket_name: str,
+    first_only: bool = False,
+) -> Optional[Sequence[str]]:
+  """Filters video files in a GCS bucket based on a prefix.
+
+  Args:
+    prefix: The prefix to filter files by.
+    bucket_name: The name of the bucket to list files from.
+    first_only: Whether to only return the first matching file.
+
+  Returns:
+    A list of video files matching the given prefix, or None if no files match.
+  """
+  storage_client = storage.Client()
+  blobs = storage_client.list_blobs(bucket_name, prefix=prefix)
+  result = []
+
+  for blob in blobs:
+    logging.info('FILTER - Found blob with name "%s".', blob.name)
+    _, file_ext = os.path.splitext(blob.name)
+    file_ext = file_ext[1:]
+
+    if file_ext and Utils.VideoExtension.has_value(file_ext):
+      logging.info('FILTER - Found video file "%s".', blob.name)
+      result.append(blob.name)
+      if first_only:
+        break
+  return result or None

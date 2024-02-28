@@ -22,7 +22,7 @@ import logging
 import os
 import pathlib
 import subprocess
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Union
 
 import config as ConfigService
 
@@ -59,6 +59,13 @@ class TriggerFile:
     self.full_gcs_path = filepath
     self.file_name_ext = f'{self.file_name}.{self.file_ext}'
 
+  def __str__(self):
+    return (
+        f'TriggerFile(file_name_ext={self.file_name_ext}, '
+        f'full_gcs_path={self.full_gcs_path}, '
+        f'gcs_folder={self.gcs_folder})'
+    )
+
   def is_extractor_trigger(self) -> bool:
     return (
         self.file_ext
@@ -71,17 +78,21 @@ class TriggerFile:
 
 
 def execute_subprocess_commands(
-    cmds: Sequence[str], description: str, cwd: Optional[str] = None
+    cmds: Union[str, Sequence[str]],
+    description: str,
+    cwd: Optional[str] = None,
+    shell: bool = False,
 ) -> str:
   """Executes the given commands and returns results.
 
   Args:
-    cmds: Commands to execute, which are expected to be in the $PATH value of
+    cmds: Command(s) to execute, which are expected to be in the $PATH value of
       the executing process.
     description: Description to output in logging messages.
     cwd: Optional working directory to execute the commands in. Defaults to
       None, indicating that the commands are to be executed in the current
       working directory of the executing process.
+    shell: Whether to execute the commands in a shell. Defaults to False.
 
   Returns:
     The output of executing the given commands.
@@ -89,7 +100,7 @@ def execute_subprocess_commands(
   Raises:
     `subprocess.CalledProcessError` if a failure happens.
   """
-  logging.info('Executing commands [%r]...', cmds)
+  logging.info('SUBPROCESS - Executing commands [%r]...', cmds)
 
   try:
     output = subprocess.run(
@@ -97,11 +108,14 @@ def execute_subprocess_commands(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=cwd,
+        shell=shell,
         check=True,
         text=True,
     ).stdout
 
-    logging.info('Output of [%s]:\noutput=[%r]', description, output)
+    logging.info(
+        'SUBPROCESS - Output of [%s]:\noutput=[%r]', description, output
+    )
     return output
   except subprocess.CalledProcessError as e:
     logging.exception(

@@ -84,12 +84,16 @@ def split_audio(
       description='split voice-over and background music with spleeter',
   )
   base_path = audio_file_path.split('.')[0]
-  shutil.move(f'{base_path}/vocals.wav', output_dir)
-  shutil.move(f'{base_path}/accompaniment.wav', output_dir)
+  shutil.move(f'{base_path}/{ConfigService.OUTPUT_SPEECH_FILE}', output_dir)
+  shutil.move(f'{base_path}/{ConfigService.OUTPUT_MUSIC_FILE}', output_dir)
   os.rmdir(base_path)
 
-  vocals_file_path = str(pathlib.Path(output_dir, 'vocals.wav'))
-  music_file_path = str(pathlib.Path(output_dir, 'accompaniment.wav'))
+  vocals_file_path = str(
+      pathlib.Path(output_dir, ConfigService.OUTPUT_SPEECH_FILE)
+  )
+  music_file_path = str(
+      pathlib.Path(output_dir, ConfigService.OUTPUT_MUSIC_FILE)
+  )
 
   return vocals_file_path, music_file_path
 
@@ -134,9 +138,15 @@ def transcribe_audio(output_dir: str, audio_file_path: str) -> pd.DataFrame:
     result_dict['words'] = words_dict
     results_dict.append(result_dict)
 
-  writer = whisper.utils.get_writer('vtt', f'{output_dir}/')
+  writer = whisper.utils.get_writer(
+      ConfigService.OUTPUT_SUBTITLES_TYPE,
+      f'{output_dir}/',
+  )
   writer({'segments': results_dict}, audio_file_path, {'highlight_words': True})
-  logging.info('TRANSCRIPTION - WebVTT written successfully!')
+  logging.info(
+      'TRANSCRIPTION - %s written successfully!',
+      ConfigService.OUTPUT_SUBTITLES_FILE,
+  )
 
   transcription_data = []
   for index, segment in enumerate(results):

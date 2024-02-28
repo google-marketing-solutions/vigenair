@@ -49,6 +49,10 @@ CONFIG_DEFAULT_SAFETY_CONFIG = {
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 INPUT_FILENAME = 'input'
 INPUT_RENDERING_FILE = 'render.json'
+OUTPUT_SUBTITLES_TYPE = 'vtt'  # 'vtt' or 'srt'
+OUTPUT_SUBTITLES_FILE = f'{INPUT_FILENAME}.{OUTPUT_SUBTITLES_TYPE}'
+OUTPUT_SPEECH_FILE = 'vocals.wav'
+OUTPUT_MUSIC_FILE = 'accompaniment.wav'
 OUTPUT_ANALYSIS_FILE = 'analysis.json'
 OUTPUT_DATA_FILE = 'data.json'
 OUTPUT_COMBINATIONS_FILE = 'combos.json'
@@ -64,3 +68,6 @@ Keywords: the keywords, comma-separated.
 
 """
 )
+
+FFMPEG_VERTICAL_BLUR_FILTER = '"split[original][copy];[original]scale=iw*0.316:-1[scaled];[copy]gblur=sigma=20[blurred];[blurred][scaled]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[overlay];[overlay]crop=iw*0.316:ih"'
+FFMPEG_SQUARE_BLUR_FILTER = '"split[original][copy];[original]scale=ih:-1[scaled];[copy]gblur=sigma=20[blurred];[blurred][scaled]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[overlay];[overlay]crop=ih:ih"'
