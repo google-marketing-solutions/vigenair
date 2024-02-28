@@ -1,0 +1,37 @@
+{
+  "ignore": [
+    ".claspignore",
+    ".editorconfig",
+    "src/ui/.editorconfig",
+    ".eslintignore",
+    ".gitignore",
+    "src/ui/.gitignore",
+    "src/ui/src/assets/.gitkeep",
+    ".prettierignore",
+    "*.txt",
+    ".github",
+    "CONTRIBUTING",
+    "build",
+    "dist"
+  ],
+  "license": "license-header.txt",
+  "licenseFormats": {
+    "js|ts|mjs": {
+      "prepend": "/**",
+      "append": " */",
+      "eachLine": {
+        "prepend": " * "
+      }
+    },
+    "html|md": {
+      "prepend": "<!--",
+      "append": "-->"
+    },
+    "sh|^pre-commit": {
+      "eachLine": {
+        "prepend": "# "
+      }
+    }
+  },
+  "trailingWhitespace": "TRIM"
+}

@@ -1,0 +1,96 @@
+<!--
+Copyright 2024 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<mat-toolbar color="primary">
+  <span style="font-size: 1.5em">ViGenAiR</span></mat-toolbar
+>
+<div [hidden]="!loading">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>
+<mat-expansion-panel #videoUploadPanel expanded>
+  <mat-expansion-panel-header>
+    <mat-panel-title>Video upload</mat-panel-title>
+  </mat-expansion-panel-header>
+  <file-chooser
+    class="file-chooser"
+    (file)="onFileSelected($event)"
+  ></file-chooser>
+  <button
+    type="button"
+    mat-raised-button
+    color="primary"
+    style="margin: 24px auto 4px; display: block"
+    [disabled]="!selectedFile || loading"
+    (click)="processVideo()"
+  >
+    Upload video
+  </button>
+</mat-expansion-panel>
+
+<mat-expansion-panel #videoMagicPanel>
+  <mat-expansion-panel-header>
+    <mat-panel-title>✨ Video magic ✨</mat-panel-title>
+  </mat-expansion-panel-header>
+  <div class="row">
+    <div class="video-container">
+      <video
+        class="mat-elevation-z8"
+        #previewVideoElem
+        autoplay
+        loop
+        muted
+        controls
+      >
+        <source src="" />
+        <track
+          label="Voice-over"
+          kind="subtitles"
+          srclang="en"
+          #previewTrackElem
+          default
+        />
+      </video>
+      <canvas #magicCanvas></canvas>
+    </div>
+  </div>
+  <div class="row">
+    <mat-chip-set>
+      <mat-chip disableRipple [ngClass]="transcriptStatus">
+        <mat-icon matChipAvatar fontIcon="{{ transcriptStatus }}"></mat-icon>
+        Transcribing voice-over
+      </mat-chip>
+      <mat-chip disableRipple [ngClass]="analysisStatus">
+        <mat-icon matChipAvatar fontIcon="{{ analysisStatus }}"></mat-icon>
+        Analysing video elements
+      </mat-chip>
+      <mat-chip disableRipple [ngClass]="combinationStatus">
+        <mat-icon matChipAvatar fontIcon="{{ combinationStatus }}"></mat-icon>
+        Generating video variants
+      </mat-chip>
+    </mat-chip-set>
+  </div>
+</mat-expansion-panel>
+
+<mat-expansion-panel #videoCombosPanel [disabled]="!combosJson">
+  <mat-expansion-panel-header>
+    <mat-panel-title>Magic combos</mat-panel-title>
+  </mat-expansion-panel-header>
+  <mat-tab-group>
+    <mat-tab *ngFor="let combo of combos" label="{{ combo.title }}">
+      <video-combo [combo]="combo"></video-combo>
+    </mat-tab>
+  </mat-tab-group>
+</mat-expansion-panel>

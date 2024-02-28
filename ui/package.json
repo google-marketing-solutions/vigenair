@@ -1,0 +1,47 @@
+{
+  "name": "vigenair",
+  "version": "0.0.1",
+  "description": "",
+  "main": "build/index.js",
+  "license": "Apache-2.0",
+  "keywords": [],
+  "scripts": {
+    "clean": "rimraf build dist",
+    "lint": "npm run license",
+    "bundle": "rollup --no-treeshake -c rollup.config.mjs",
+    "build": "npm run clean && npm run bundle",
+    "build-ui": "npm run build --prefix src/ui",
+    "license": "license-check-and-add add -f license-config.json",
+    "test": "jest test/ --passWithNoTests --detectOpenHandles",
+    "test-ui": "npm run test --prefix src/ui",
+    "deploy": "npm run lint && npm run test && npm run build && ncp appsscript.json dist/appsscript.json && ncp .clasp-dev.json .clasp.json && npm run build-ui && npm run deploy-ui && clasp push -f",
+    "deploy-ui": "node deploy-ui.mjs",
+    "deploy:prod": "npm run lint && npm run test && npm run build && ncp appsscript.json dist/appsscript.json && ncp .clasp-prod.json .clasp.json && npm run build-ui && npm run deploy-ui && clasp push",
+    "serve-ui": "(cd src/ui && ng serve)",
+    "postinstall": "(cd src/ui && npm install)"
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "dependencies": {
+    "@google/clasp": "^2.4.2",
+    "@types/google-apps-script": "^1.0.79",
+    "@types/jest": "^29.5.11",
+    "@typescript-eslint/eslint-plugin": "^6.20.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "gts": "^5.2.0",
+    "jest": "^29.7.0",
+    "license-check-and-add": "^4.0.5",
+    "ncp": "^2.0.0",
+    "prettier": "^3.2.4",
+    "rimraf": "^5.0.5",
+    "rollup": "^4.9.6",
+    "rollup-plugin-cleanup": "^3.2.1",
+    "rollup-plugin-license": "^3.2.0",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,6 @@
+node_modules
+dist/
+build/
+.DS_Store
+.clasp*.json
+*.tgz
