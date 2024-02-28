@@ -69,7 +69,7 @@ class VideoVariantRenderSettings:
 
 @dataclasses.dataclass(frozen=True)
 class VideoVariantSegment:
-  """Represents the segments for a video variant.
+  """Represents a segment of a video variant.
 
   Attributes:
     av_segment_id: The id of the A/V segment.
@@ -133,7 +133,7 @@ class Combiner:
       gcs_bucket_name: The GCS bucket to read from and store files in.
       render_file: Path to the input rendering file, which is in a
         `<timestamp>-combos` subdirectory of the root video folder (see
-        `extractor.Extractor` for more information).
+        `extractor.Extractor` for more information on root folder naming).
     """
     self.gcs_bucket_name = gcs_bucket_name
     self.render_file = render_file
@@ -393,7 +393,7 @@ def _render_format(
     input_video_path: The path to the input video to render.
     output_path: The path to output to.
     variant_id: The id of the variant to render.
-    format_type: The type of the output.
+    format_type: The type of the output format (horizontal, vertical, square).
     video_filter: The ffmpeg video filter to use.
 
   Returns:
