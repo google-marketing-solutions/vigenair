@@ -1,0 +1,57 @@
+<!--
+Copyright 2024 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<div [hidden]="!loading">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</div>
+<div class="row">
+  <mat-button-toggle-group
+    #variantGroup="matButtonToggleGroup"
+    [disabled]="loading"
+    (change)="onChangeVideo($event)"
+    value="landscape"
+  >
+    <mat-button-toggle
+      value="landscape"
+      [disabled]="!combo?.variants?.landscape"
+    >
+      <mat-icon>computer</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle value="vertical" [disabled]="!combo?.variants?.vertical">
+      <mat-icon>smartphone</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle value="square" [disabled]="!combo?.variants?.square">
+      <mat-icon>slideshow</mat-icon>
+    </mat-button-toggle>
+    <!-- <mat-button-toggle value="overlay" [disabled]="!combo?.variants?.overlay">
+      <mat-icon>layers</mat-icon>
+    </mat-button-toggle> -->
+  </mat-button-toggle-group>
+</div>
+<div class="row">
+  <video class="mat-elevation-z8" #videoElem controls muted>
+    <source src="" />
+  </video>
+</div>
+<div class="row">
+  {{ combo.description }}
+</div>
+<div style="font-size: 3em" [ngClass]="'score-' + combo.score" class="row">
+  Score: {{ combo.score }}
+</div>
+<div class="row" style="white-space: pre-line">
+  {{ combo.reasoning }}
+</div>
