@@ -30,6 +30,7 @@ function _getFromGcs(filePath: string) {
   return response.getContent();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getFromGcs(filePath: string, mimeType: string) {
   const result = _getFromGcs(filePath);
   if (!result) {
@@ -39,6 +40,7 @@ function getFromGcs(filePath: string, mimeType: string) {
   return dataUrl;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function uploadVideo(dataUrl: string) {
   const folder = '' + Date.now();
   const filename = 'input.mp4';
@@ -69,12 +71,14 @@ function uploadVideo(dataUrl: string) {
   return folder;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function doGet() {
   return HtmlService.createTemplateFromFile('ui')
     .evaluate()
     .setTitle('ViGenAiR');
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function include(filename: string) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
