@@ -68,3 +68,23 @@ limitations under the License.
 .check_circle {
   background-color: #81c784 !important;
 }
+
+.current-segment-thumbnail {
+  margin: 0 24px;
+}
+
+.current-segment-thumbnail > img {
+  max-width: 100%;
+  max-height: 128px;
+}
+
+.current-segment-info {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+}
+
+.keywords > mat-chip-set {
+  display: inline-flex;
+  font-size: 12px;
+}
