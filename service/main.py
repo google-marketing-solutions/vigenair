@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""ViGenAiR module.
+"""Vigenair module.
 
-This module is the main module for ViGenAiR's server-side components.
+This module is the main module for Vigenair's server-side components.
 
 This file is the target of a "Cloud Storage" Trigger (Finalize/Create) Cloud
 Function, with `gcs_file_uploaded` as the main entry point.

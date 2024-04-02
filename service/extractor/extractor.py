@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""ViGenAiR Extractor service.
+"""Vigenair Extractor service.
 
 This module provides functionality to extract all available information from an
 input video file and create coherent audio/video segments.

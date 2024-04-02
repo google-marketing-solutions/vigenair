@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""ViGenAiR config.
+"""Vigenair config.
 
 This module contains all configuration constants and runtime variables used by
-ViGenAiR.
+Vigenair.
 """
 
 import os

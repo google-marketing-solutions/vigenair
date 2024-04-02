@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Deploy the ViGenAiR cloud function to the target GCP project.
+# Deploy the vigenair cloud function to the target GCP project.
 gcloud functions deploy vigenair \
 --env-vars-file .env.yaml \
 --gen2 \
