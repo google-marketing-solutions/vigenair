@@ -222,9 +222,10 @@ def _cut_and_annotate_av_segment(
   Returns:
     A tuple of the A/V segment description and keywords.
   """
-  cut_path = f"{index}.{video_file_path.split('.')[-1]}"
-  full_cut_path = str(pathlib.Path(cuts_path, cut_path))
-
+  image_ext = '.jpg'
+  _, video_ext = os.path.splitext(video_file_path)
+  full_cut_path = str(pathlib.Path(cuts_path, f'{index}{video_ext}'))
+  full_screenshot_path = str(pathlib.Path(cuts_path, f'{index}{image_ext}'))
   Utils.execute_subprocess_commands(
       cmds=[
           'ffmpeg',
@@ -242,10 +243,33 @@ def _cut_and_annotate_av_segment(
       description=f'cut segment {index} with ffmpeg',
   )
   os.chmod(full_cut_path, 777)
+  gcs_cut_dest_file = gcs_cut_path.replace(f'gs://{bucket_name}/', '')
   StorageService.upload_gcs_file(
       file_path=full_cut_path,
       bucket_name=bucket_name,
-      destination_file_name=gcs_cut_path.replace(f'gs://{bucket_name}/', ''),
+      destination_file_name=gcs_cut_dest_file,
+  )
+  Utils.execute_subprocess_commands(
+      cmds=[
+          'ffmpeg',
+          '-ss',
+          str(row['start_s'] + row['duration_s'] / 2),
+          '-i',
+          video_file_path,
+          '-frames:v',
+          '1',
+          '-q:v',
+          '2',
+          full_screenshot_path,
+      ],
+      description=f'screenshot mid-segment {index} with ffmpeg',
+  )
+  os.chmod(full_screenshot_path, 777)
+  gcs_cut_dest_file_prefix, _ = os.path.splitext(gcs_cut_dest_file)
+  StorageService.upload_gcs_file(
+      file_path=full_screenshot_path,
+      bucket_name=bucket_name,
+      destination_file_name=f'{gcs_cut_dest_file_prefix}{image_ext}',
   )
   description = ''
   keywords = ''
