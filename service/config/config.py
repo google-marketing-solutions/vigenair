@@ -58,7 +58,7 @@ OUTPUT_DATA_FILE = 'data.json'
 OUTPUT_COMBINATIONS_FILE = 'combos.json'
 OUTPUT_AV_SEGMENTS_DIR = 'av_segments_cuts'
 
-SEGMENT_ANNOTATIONS_PATTERN = '(.*Description:\n)?(.*)\n*Keywords:\n?(.*)'
+SEGMENT_ANNOTATIONS_PATTERN = '(.*Description:\n?)?(.*)\n*Keywords:\n?(.*)'
 SEGMENT_ANNOTATIONS_PROMPT = (
     """Describe this video in one sentence. Include 5 keywords.
 
