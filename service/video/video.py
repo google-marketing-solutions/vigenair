@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-"""ViGenAiR video service.
+"""Vigenair video service.
 
 This module contains functions to interact with the Video AI API.
 """

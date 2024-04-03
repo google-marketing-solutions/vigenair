@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""ViGenAiR audio service.
+"""Vigenair audio service.
 
 This module contains functions to extract, split and transcribe audio files.
 """

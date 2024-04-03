@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""ViGenAiR utils.
+"""Vigenair utils.
 
-This module contains various utility functions used by ViGenAiR.
+This module contains various utility functions used by Vigenair.
 """
 
 import enum

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""ViGenAiR Combiner service.
+"""Vigenair Combiner service.
 
 This module provides functionality to combine individual cuts of the input video
 based on user-specific rendering settings.

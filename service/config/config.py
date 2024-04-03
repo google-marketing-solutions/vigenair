@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""ViGenAiR config.
+"""Vigenair config.
 
 This module contains all configuration constants and runtime variables used by
-ViGenAiR.
+Vigenair.
 """
 
 import os
@@ -58,7 +58,7 @@ OUTPUT_DATA_FILE = 'data.json'
 OUTPUT_COMBINATIONS_FILE = 'combos.json'
 OUTPUT_AV_SEGMENTS_DIR = 'av_segments_cuts'
 
-SEGMENT_ANNOTATIONS_PATTERN = '(.*Description:\n)?(.*)\n*Keywords:\n?(.*)'
+SEGMENT_ANNOTATIONS_PATTERN = '(.*Description:\n?)?(.*)\n*Keywords:\n?(.*)'
 SEGMENT_ANNOTATIONS_PROMPT = (
     """Describe this video in one sentence. Include 5 keywords.
 
