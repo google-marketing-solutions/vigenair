@@ -16,7 +16,7 @@
 
 import { Injectable, NgZone } from '@angular/core';
 import { Observable, retry } from 'rxjs';
-import { ApiCalls } from './api-calls.service.interface';
+import { ApiCalls, GenerationSettings } from './api-calls.service.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -73,5 +73,20 @@ export class ApiCallsService implements ApiCalls {
         })
         .getFromGcs(url, mimeType);
     }).pipe(retry({ count: maxRetries, delay: retryDelay }));
+  }
+
+  generateVariants(settings: GenerationSettings): Observable<void> {
+    return new Observable<void>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler(() => {
+          this.ngZone.run(() => {
+            subscriber.next();
+            subscriber.complete();
+          });
+        })
+        .generateVariants(settings);
+    });
   }
 }

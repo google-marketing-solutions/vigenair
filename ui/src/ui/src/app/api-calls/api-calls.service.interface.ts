@@ -15,6 +15,11 @@
  */
 
 import { Observable } from 'rxjs';
+export interface GenerationSettings {
+  prompt: string;
+  duration: string;
+  demandGenAssets: boolean;
+}
 export interface ApiCalls {
   uploadVideo(file: Blob): Observable<string>;
   getFromGcs(
@@ -23,4 +28,5 @@ export interface ApiCalls {
     retryDelay?: number,
     maxRetries?: number
   ): Observable<string>;
+  generateVariants(settings: GenerationSettings): Observable<void>;
 }
