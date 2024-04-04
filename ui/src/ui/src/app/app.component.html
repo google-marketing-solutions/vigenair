@@ -42,7 +42,7 @@ limitations under the License.
 
 <mat-expansion-panel #videoMagicPanel>
   <mat-expansion-panel-header>
-    <mat-panel-title>✨ Video magic ✨</mat-panel-title>
+    <mat-panel-title>✨ Magic editing ✨</mat-panel-title>
   </mat-expansion-panel-header>
   <div class="row">
     <div class="video-container">
@@ -76,12 +76,48 @@ limitations under the License.
         <mat-icon matChipAvatar fontIcon="{{ analysisStatus }}"></mat-icon>
         Analysing video elements
       </mat-chip>
-      <mat-chip disableRipple [ngClass]="combinationStatus">
-        <mat-icon matChipAvatar fontIcon="{{ combinationStatus }}"></mat-icon>
-        Generating video variants
+      <mat-chip disableRipple [ngClass]="segmentsStatus">
+        <mat-icon matChipAvatar fontIcon="{{ segmentsStatus }}"></mat-icon>
+        Analysing video segments
       </mat-chip>
     </mat-chip-set>
   </div>
+  <span *ngIf="currentSegmentId !== undefined">
+    <div class="row">Current video segment</div>
+    <div class="row">
+      <div class="current-segment-thumbnail">
+        <img
+          src="https://storage.mtls.cloud.google.com/vigenair_testing/uploads/1706795595972/av_segments_cuts/screenshots/{{
+            currentSegmentId + 1
+          }}.jpg"
+        />
+      </div>
+      <div class="current-segment-info">
+        <span class="description">
+          <strong>Description:</strong>
+          {{ dataJson[currentSegmentId].description }}
+        </span>
+        <span class="duration"
+          ><strong>Duration: </strong
+          >{{ dataJson[currentSegmentId].duration_s }} seconds</span
+        >
+        <span class="keywords">
+          <strong>Keywords: </strong>
+          <mat-chip-set>
+            <mat-chip
+              *ngFor="
+                let keyword of dataJson[currentSegmentId].keywords
+                  .trim()
+                  .split(', ')
+              "
+              >{{ keyword }}</mat-chip
+            >
+          </mat-chip-set>
+        </span>
+      </div>
+    </div>
+  </span>
+  <div class="row"></div>
 </mat-expansion-panel>
 
 <mat-expansion-panel #videoCombosPanel [disabled]="!combosJson">

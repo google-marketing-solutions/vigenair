@@ -60,11 +60,14 @@ export class AppComponent {
   analysisJson?: any;
   videoObjects?: any[];
   combosJson?: any;
+  dataJson?: any;
   transcriptStatus: ProcessStatus = 'hourglass_top';
   analysisStatus: ProcessStatus = 'hourglass_top';
   combinationStatus: ProcessStatus = 'hourglass_top';
+  segmentsStatus: ProcessStatus = 'hourglass_top';
   canvas?: CanvasRenderingContext2D;
   frameInterval?: number;
+  currentSegmentId?: number;
 
   get combos(): any[] {
     return this.combosJson ? Object.values(this.combosJson) : [];
@@ -135,6 +138,27 @@ export class AppComponent {
     });
   }
 
+  setCurrentSegmentId() {
+    if (!this.dataJson) {
+      this.currentSegmentId = undefined;
+      return;
+    }
+    const timestamp = this.previewVideoElem.nativeElement.currentTime;
+    const currentSegment = this.dataJson.find(
+      (e: { start_s: number; end_s: number }) => {
+        return e.start_s <= timestamp && e.end_s >= timestamp;
+      }
+    );
+    if (
+      !currentSegment ||
+      currentSegment.av_segment_id === this.currentSegmentId
+    ) {
+      return;
+    }
+    this.currentSegmentId = currentSegment.av_segment_id;
+    console.log(this.currentSegmentId);
+  }
+
   drawEntity(
     text: string,
     x: number,
@@ -193,7 +217,22 @@ export class AppComponent {
             }),
           };
         });
-    console.log(this.videoObjects);
+    // console.log(this.videoObjects);
+  }
+
+  getAvSegments(folder: string) {
+    this.segmentsStatus = 'pending';
+    this.apiCallsService
+      .getFromGcs(`uploads/${folder}/data.json`, 'application/json', 10000, 180)
+      .subscribe({
+        next: dataUrl => {
+          this.dataJson = JSON.parse(atob(dataUrl.split(',')[1]));
+          console.log(this.dataJson);
+          this.segmentsStatus = 'check_circle';
+          this.loading = false;
+        },
+        error: () => this.failHandler(),
+      });
   }
 
   getMagicCombos(folder: string) {
@@ -230,9 +269,10 @@ export class AppComponent {
         next: dataUrl => {
           this.analysisJson = JSON.parse(atob(dataUrl.split(',')[1]));
           this.analysisStatus = 'check_circle';
-          console.log(this.analysisJson);
+          // console.log(this.analysisJson);
           this.parseAnalysis();
-          this.getMagicCombos(folder);
+          this.getAvSegments(folder);
+          //this.getMagicCombos(folder);
         },
         error: () => this.failHandler(),
       });
@@ -273,6 +313,7 @@ export class AppComponent {
     this.previewVideoElem.nativeElement.onplaying = () => {
       this.frameInterval = window.setInterval(() => {
         this.drawFrame(this.videoObjects);
+        this.setCurrentSegmentId();
       }, 50);
     };
     this.previewVideoElem.nativeElement.onpause = () => {
