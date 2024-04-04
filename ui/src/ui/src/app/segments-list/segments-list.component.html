@@ -1,0 +1,52 @@
+<div
+  *ngIf="segmentList !== undefined"
+  [ngClass]="segmentMode === 'preview' ? 'filmstrip' : 'content'"
+>
+  <div
+    [ngClass]="segmentMode === 'preview' ? 'filmstrip-row' : 'row'"
+    *ngFor="let segment of segmentList; index as i"
+  >
+    <img
+      attr.id="segment-{{ i }}"
+      [class.filmstrip-img]="segmentMode === 'preview'"
+      [class.current-segment]="
+        segmentMode === 'preview' && currentSegmentId === i
+      "
+      src="https://storage.mtls.cloud.google.com/vigenair_testing/uploads/1706795595972/av_segments_cuts/screenshots/{{
+        segment.av_segment_id + 1
+      }}.jpg"
+    />
+    <div class="current-segment-info" *ngIf="segmentMode === 'segments'">
+      <span class="description">
+        <strong>Description:</strong>
+        {{ segment.description }}
+      </span>
+      <span class="duration"
+        ><strong>Duration: </strong>{{ segment.duration_s }} seconds</span
+      >
+      <span class="keywords">
+        <strong>Keywords: </strong>
+        <mat-chip-set>
+          <mat-chip
+            *ngFor="let keyword of segment.keywords.trim().split(', ')"
+            >{{ keyword }}</mat-chip
+          >
+        </mat-chip-set>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div
+  *ngIf="segmentList === undefined"
+  style="
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 320px;
+  "
+>
+  <mat-spinner style="margin-bottom: 16px"></mat-spinner>
+  Loading video segments
+</div>

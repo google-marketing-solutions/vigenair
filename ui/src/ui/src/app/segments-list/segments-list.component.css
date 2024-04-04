@@ -1,0 +1,61 @@
+:host {
+  --filmstrip-size: 6px;
+}
+
+.content {
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 650px;
+}
+
+.filmstrip {
+  --background: rgba(0, 0, 0);
+  background: conic-gradient(
+      at var(--filmstrip-size),
+      var(--background) 75%,
+      #0000 0
+    )
+    0 0 / calc(100% - var(--filmstrip-size)) calc(2 * var(--filmstrip-size))
+    padding-box;
+  border-left: var(--filmstrip-size) solid var(--background);
+  border-right: var(--filmstrip-size) solid var(--background);
+  padding-left: calc(var(--filmstrip-size) + 6px);
+  padding-right: calc(var(--filmstrip-size) + 6px);
+  scrollbar-width: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex: 1 1 0;
+}
+
+.row {
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.filmstrip-row {
+  display: flex;
+  justify-content: center;
+  background-color: black;
+  border-bottom: solid 16px black;
+}
+
+.current-segment-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 32px;
+  gap: 12px;
+}
+
+img {
+  width: 512px;
+}
+
+.filmstrip-img {
+  display: flex;
+  width: 256px;
+}
+
+.current-segment {
+  width: 320px;
+}

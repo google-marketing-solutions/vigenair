@@ -28,8 +28,18 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import {
+  MatButtonToggleGroup,
+  MatButtonToggleModule,
+} from '@angular/material/button-toggle';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { ApiCallsService } from './api-calls/api-calls.service';
 import { FileChooserComponent } from './file-chooser/file-chooser.component';
+import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
@@ -48,7 +58,14 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
     MatToolbarModule,
     MatChipsModule,
     MatIconModule,
+    MatButtonToggleModule,
+    SegmentsListComponent,
     VideoComboComponent,
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatCheckboxModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -68,6 +85,9 @@ export class AppComponent {
   canvas?: CanvasRenderingContext2D;
   frameInterval?: number;
   currentSegmentId?: number;
+  prompt = '';
+  duration = 'auto';
+  demandGenAssets = true;
 
   get combos(): any[] {
     return this.combosJson ? Object.values(this.combosJson) : [];
@@ -77,14 +97,11 @@ export class AppComponent {
   previewVideoElem!: ElementRef<HTMLVideoElement>;
   @ViewChild('previewTrackElem')
   previewTrackElem!: ElementRef<HTMLTrackElement>;
-  @ViewChild('videoUploadPanel', { static: true })
-  videoUploadPanel!: MatExpansionPanel;
-  @ViewChild('videoMagicPanel', { static: true })
-  videoMagicPanel!: MatExpansionPanel;
-  @ViewChild('magicCanvas', { static: true })
-  magicCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('videoCombosPanel', { static: true })
-  videoCombosPanel!: MatExpansionPanel;
+  @ViewChild('videoUploadPanel') videoUploadPanel!: MatExpansionPanel;
+  @ViewChild('videoMagicPanel') videoMagicPanel!: MatExpansionPanel;
+  @ViewChild('magicCanvas') magicCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('videoCombosPanel') videoCombosPanel!: MatExpansionPanel;
+  @ViewChild('segmentModeToggle') segmentModeToggle!: MatButtonToggleGroup;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -229,6 +246,7 @@ export class AppComponent {
           this.dataJson = JSON.parse(atob(dataUrl.split(',')[1]));
           console.log(this.dataJson);
           this.segmentsStatus = 'check_circle';
+          this.segmentModeToggle.value = 'segments';
           this.loading = false;
         },
         error: () => this.failHandler(),
@@ -326,5 +344,18 @@ export class AppComponent {
     this.videoMagicPanel.open();
     this.getMagicVoiceOver(demoFolder);
     // });
+  }
+
+  generateVariants() {
+    this.loading = true;
+    this.apiCallsService
+      .generateVariants({
+        prompt: this.prompt,
+        duration: this.duration,
+        demandGenAssets: this.demandGenAssets,
+      })
+      .subscribe(() => {
+        this.loading = false;
+      });
   }
 }

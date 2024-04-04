@@ -45,15 +45,30 @@ limitations under the License.
     <mat-panel-title>✨ Magic editing ✨</mat-panel-title>
   </mat-expansion-panel-header>
   <div class="row">
-    <div class="video-container">
-      <video
-        class="mat-elevation-z8"
-        #previewVideoElem
-        autoplay
-        loop
-        muted
-        controls
-      >
+    <mat-button-toggle-group
+      #segmentModeToggle="matButtonToggleGroup"
+      value="preview"
+      [disabled]="loading"
+    >
+      <mat-button-toggle value="preview">
+        <mat-icon>play_arrow</mat-icon>
+      </mat-button-toggle>
+      <mat-button-toggle value="segments">
+        <mat-icon>theaters</mat-icon>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+  <div class="preview-video-row">
+    <segments-list
+      [segmentList]="dataJson"
+      [segmentMode]="segmentModeToggle.value"
+      [currentSegmentId]="currentSegmentId || 0"
+    ></segments-list>
+    <div
+      [hidden]="segmentModeToggle.value !== 'preview'"
+      class="video-container"
+    >
+      <video class="mat-elevation-z8" #previewVideoElem loop controls>
         <source src="" />
         <track
           label="Voice-over"
@@ -82,42 +97,40 @@ limitations under the License.
       </mat-chip>
     </mat-chip-set>
   </div>
-  <span *ngIf="currentSegmentId !== undefined">
-    <div class="row">Current video segment</div>
-    <div class="row">
-      <div class="current-segment-thumbnail">
-        <img
-          src="https://storage.mtls.cloud.google.com/vigenair_testing/uploads/1706795595972/av_segments_cuts/screenshots/{{
-            currentSegmentId + 1
-          }}.jpg"
-        />
-      </div>
-      <div class="current-segment-info">
-        <span class="description">
-          <strong>Description:</strong>
-          {{ dataJson[currentSegmentId].description }}
-        </span>
-        <span class="duration"
-          ><strong>Duration: </strong
-          >{{ dataJson[currentSegmentId].duration_s }} seconds</span
-        >
-        <span class="keywords">
-          <strong>Keywords: </strong>
-          <mat-chip-set>
-            <mat-chip
-              *ngFor="
-                let keyword of dataJson[currentSegmentId].keywords
-                  .trim()
-                  .split(', ')
-              "
-              >{{ keyword }}</mat-chip
-            >
-          </mat-chip-set>
-        </span>
-      </div>
+  <ng-container *ngIf="dataJson">
+    <div class="row" style="gap: 16px">
+      <mat-form-field style="flex: 1" subscriptSizing="dynamic">
+        <mat-label>What should your video variants be about?</mat-label>
+        <textarea
+          matInput
+          [(ngModel)]="prompt"
+          placeholder="e.g. 'Discovering new experiences'"
+        ></textarea>
+      </mat-form-field>
+      <button
+        type="button"
+        mat-raised-button
+        color="primary"
+        (click)="generateVariants()"
+        [disabled]="loading"
+      >
+        Generate variants
+      </button>
     </div>
-  </span>
-  <div class="row"></div>
+    <div class="row" style="justify-content: start; margin-top: 16px">
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Duration:</mat-label>
+        <mat-select [value]="duration">
+          <mat-option value="auto">Auto</mat-option>
+          <mat-option value="15">15s</mat-option>
+          <mat-option value="30">30s</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-checkbox color="primary" [checked]="demandGenAssets">
+        Generate Demand Gen assets
+      </mat-checkbox>
+    </div>
+  </ng-container>
 </mat-expansion-panel>
 
 <mat-expansion-panel #videoCombosPanel [disabled]="!combosJson">
