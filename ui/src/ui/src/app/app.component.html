@@ -34,10 +34,24 @@ limitations under the License.
     color="primary"
     style="margin: 24px auto 4px; display: block"
     [disabled]="!selectedFile || loading"
-    (click)="processVideo()"
+    (click)="uploadVideo()"
   >
     Upload video
   </button>
+  <mat-form-field
+    subscriptSizing="dynamic"
+    *ngIf="previousRuns && previousRuns.length > 0"
+  >
+    <mat-label>Load existing video</mat-label>
+    <mat-select
+      (selectionChange)="loadPreviousRun($event.value)"
+      [disabled]="loading"
+    >
+      @for (run of previousRuns; track run) {
+        <mat-option [value]="run">{{ run.split('--')[0] }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
 </mat-expansion-panel>
 
 <mat-expansion-panel #videoMagicPanel>

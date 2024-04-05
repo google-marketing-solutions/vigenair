@@ -89,4 +89,19 @@ export class ApiCallsService implements ApiCalls {
         .generateVariants(settings);
     });
   }
+
+  getRunsFromGcs(): Observable<string[]> {
+    return new Observable<string[]>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((runs: string[]) => {
+          this.ngZone.run(() => {
+            subscriber.next(runs);
+            subscriber.complete();
+          });
+        })
+        .getRunsFromGcs();
+    });
+  }
 }

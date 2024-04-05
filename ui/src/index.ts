@@ -16,6 +16,30 @@
 
 import { CONFIG } from './config';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getRunsFromGcs() {
+  const url = `https://storage.googleapis.com/storage/v1/b/${
+    CONFIG.GCS_BUCKET
+  }/o?delimiter=${encodeURIComponent('/')}`;
+  const accessToken = ScriptApp.getOAuthToken();
+
+  const response = UrlFetchApp.fetch(url, {
+    method: 'get',
+    muteHttpExceptions: true,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const result: GoogleCloud.Storage.ListResponse = JSON.parse(
+    response.getContentText()
+  );
+  if (!result.prefixes) {
+    return [];
+  }
+  return result.prefixes.map(e => e.split('/')[0]);
+}
+
 function _getFromGcs(filePath: string) {
   const url = `https://storage.googleapis.com/storage/v1/b/${CONFIG.GCS_BUCKET}/o/${encodeURIComponent(filePath)}?alt=media`;
   const accessToken = ScriptApp.getOAuthToken();

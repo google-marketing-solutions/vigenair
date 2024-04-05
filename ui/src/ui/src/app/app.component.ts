@@ -90,6 +90,8 @@ export class AppComponent {
   prompt = '';
   duration = 'auto';
   demandGenAssets = true;
+  previousRuns: string[] | undefined;
+  folder = '';
 
   get combos(): any[] {
     return this.combosJson ? Object.values(this.combosJson) : [];
@@ -108,7 +110,11 @@ export class AppComponent {
   constructor(
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar
-  ) {}
+  ) {
+    apiCallsService.getRunsFromGcs().subscribe(runs => {
+      this.previousRuns = runs;
+    });
+  }
 
   onFileSelected(file: File) {
     this.selectedFile = file;
@@ -302,14 +308,35 @@ export class AppComponent {
       });
   }
 
-  processVideo() {
+  loadPreviousRun(folder: string) {
     this.loading = true;
-    // this.apiCallsService.uploadVideo(this.selectedFile!).subscribe(folder => {
-    // const demoFolder = localStorage.getItem('lastOperationId') || folder;
-    const demoFolder =
-      localStorage.getItem('lastOperationId') || '1706795595972';
-    localStorage.setItem('lastOperationId', demoFolder);
-    this.gcsVideoPath = `https://storage.mtls.cloud.google.com/${CONFIG.GCS_BUCKET}/${demoFolder}/input.mp4`;
+    this.processVideo(folder);
+  }
+
+  uploadVideo() {
+    this.loading = true;
+    this.apiCallsService.uploadVideo(this.selectedFile!).subscribe(folder => {
+      this.processVideo(folder);
+    });
+  }
+
+  resetState() {
+    this.analysisJson = undefined;
+    this.dataJson = undefined;
+    this.combosJson = undefined;
+    this.videoObjects = undefined;
+    this.transcriptStatus = 'hourglass_top';
+    this.analysisStatus = 'hourglass_top';
+    this.combinationStatus = 'hourglass_top';
+    this.segmentsStatus = 'hourglass_top';
+    // TODO: Fix old subtitles still showing when loading another video
+    this.previewTrackElem.nativeElement.src = '';
+  }
+
+  processVideo(folder: string) {
+    this.resetState();
+    this.folder = folder;
+    this.gcsVideoPath = `https://storage.mtls.cloud.google.com/${CONFIG.GCS_BUCKET}/${folder}/input.mp4`;
     this.previewVideoElem.nativeElement.src = this.gcsVideoPath;
     this.previewVideoElem.nativeElement.onloadeddata = () => {
       this.magicCanvas.nativeElement.width =
@@ -334,8 +361,7 @@ export class AppComponent {
     };
     this.videoUploadPanel.close();
     this.videoMagicPanel.open();
-    this.getMagicVoiceOver(demoFolder);
-    // });
+    this.getMagicVoiceOver(folder);
   }
 
   generateVariants() {

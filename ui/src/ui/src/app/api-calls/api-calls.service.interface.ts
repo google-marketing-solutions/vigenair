@@ -29,4 +29,5 @@ export interface ApiCalls {
     maxRetries?: number
   ): Observable<string>;
   generateVariants(settings: GenerationSettings): Observable<void>;
+  getRunsFromGcs(): Observable<string[]>;
 }
