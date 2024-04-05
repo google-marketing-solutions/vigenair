@@ -22,11 +22,11 @@ limitations under the License.
     #variantGroup="matButtonToggleGroup"
     [disabled]="loading"
     (change)="onChangeVideo($event)"
-    value="landscape"
+    value="horizontal"
   >
     <mat-button-toggle
-      value="landscape"
-      [disabled]="!combo?.variants?.landscape"
+      value="horizontal"
+      [disabled]="!combo?.variants?.horizontal"
     >
       <mat-icon>computer</mat-icon>
     </mat-button-toggle>
@@ -53,5 +53,5 @@ limitations under the License.
   Score: {{ combo.score }}
 </div>
 <div class="row" style="white-space: pre-line">
-  {{ combo.reasoning }}
+  {{ combo.score_reasoning }}
 </div>

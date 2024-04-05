@@ -44,14 +44,16 @@ function getFromGcs(filePath: string, mimeType: string) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function uploadVideo(dataUrl: string) {
-  const folder = '' + Date.now();
+  const userId =
+    Session.getActiveUser().getEmail() || Session.getTemporaryActiveUserKey();
+  const folder = `${Date.now()}-${Utilities.base64Encode(userId)}`;
   const filename = 'input.mp4';
   const videoBlob = Utilities.newBlob(
     Utilities.base64Decode(dataUrl.split(',')[1]),
     'video/mp4',
     filename
   );
-  const fullName = encodeURIComponent(`uploads/${folder}/${filename}`);
+  const fullName = encodeURIComponent(`${folder}/${filename}`);
   const url = `https://storage.googleapis.com/upload/storage/v1/b/${CONFIG.GCS_BUCKET}/o?uploadType=media&name=${fullName}`;
   const bytes = videoBlob.getBytes();
   const accessToken = ScriptApp.getOAuthToken();

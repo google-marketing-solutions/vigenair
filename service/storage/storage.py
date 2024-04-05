@@ -81,6 +81,7 @@ def upload_gcs_file(
     file_path: str,
     destination_file_name: str,
     bucket_name: str,
+    overwrite: bool = False,
 ) -> None:
   """Uploads a file to the given GCS bucket.
 
@@ -93,7 +94,8 @@ def upload_gcs_file(
   bucket = storage_client.bucket(bucket_name)
 
   blob = bucket.blob(destination_file_name)
-  blob.upload_from_filename(file_path, if_generation_match=0)
+  blob.upload_from_filename(file_path,
+                            if_generation_match=None if overwrite else 0)
 
   logging.info('UPLOAD - Uploaded path "%s".', destination_file_name)
 

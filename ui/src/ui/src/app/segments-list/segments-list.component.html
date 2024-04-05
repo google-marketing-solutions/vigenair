@@ -28,11 +28,7 @@ limitations under the License.
       [class.current-segment]="
         segmentMode === 'preview' && currentSegmentId === i
       "
-      src="https://storage.mtls.cloud.google.com/{{
-        CONFIG.GCS_BUCKET
-      }}/uploads/1706795595972/av_segments_cuts/screenshots/{{
-        segment.av_segment_id + 1
-      }}.jpg"
+      src="{{ segment.segment_screenshot_uri }}"
     />
     <div class="current-segment-info" *ngIf="segmentMode === 'segments'">
       <span class="description">

@@ -242,7 +242,7 @@ export class AppComponent {
   getAvSegments(folder: string) {
     this.segmentsStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`uploads/${folder}/data.json`, 'application/json', 10000, 180)
+      .getFromGcs(`${folder}/data.json`, 'application/json', 10000, 180)
       .subscribe({
         next: dataUrl => {
           this.dataJson = JSON.parse(atob(dataUrl.split(',')[1]));
@@ -258,12 +258,7 @@ export class AppComponent {
   getMagicCombos(folder: string) {
     this.combinationStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(
-        `uploads/${folder}/combos.json`,
-        'application/json',
-        10000,
-        180
-      )
+      .getFromGcs(`${folder}/combos.json`, 'application/json', 10000, 180)
       .subscribe({
         next: dataUrl => {
           this.combosJson = JSON.parse(atob(dataUrl.split(',')[1]));
@@ -279,12 +274,7 @@ export class AppComponent {
   getMagicAnalysis(folder: string) {
     this.analysisStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(
-        `uploads/${folder}/analysis.json`,
-        'application/json',
-        5000,
-        20
-      )
+      .getFromGcs(`${folder}/analysis.json`, 'application/json', 5000, 20)
       .subscribe({
         next: dataUrl => {
           this.analysisJson = JSON.parse(atob(dataUrl.split(',')[1]));
@@ -301,7 +291,7 @@ export class AppComponent {
   getMagicVoiceOver(folder: string) {
     this.transcriptStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`uploads/${folder}/vocals.vtt`, 'text/vtt', 5000, 20)
+      .getFromGcs(`${folder}/input.vtt`, 'text/vtt', 5000, 20)
       .subscribe({
         next: dataUrl => {
           this.previewTrackElem.nativeElement.src = dataUrl;
@@ -319,7 +309,7 @@ export class AppComponent {
     const demoFolder =
       localStorage.getItem('lastOperationId') || '1706795595972';
     localStorage.setItem('lastOperationId', demoFolder);
-    this.gcsVideoPath = `https://storage.mtls.cloud.google.com/${CONFIG.GCS_BUCKET}/uploads/${demoFolder}/input.mp4`;
+    this.gcsVideoPath = `https://storage.mtls.cloud.google.com/${CONFIG.GCS_BUCKET}/${demoFolder}/input.mp4`;
     this.previewVideoElem.nativeElement.src = this.gcsVideoPath;
     this.previewVideoElem.nativeElement.onloadeddata = () => {
       this.magicCanvas.nativeElement.width =

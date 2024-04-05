@@ -165,6 +165,8 @@ class Extractor:
     gcs_cuts_folder_path = f'gs://{self.gcs_bucket_name}/{self.video_file.gcs_folder}/{ConfigService.OUTPUT_AV_SEGMENTS_DIR}'
     descriptions = []
     keywords = []
+    cut_paths = []
+    screenshot_paths = []
 
     with concurrent.futures.ThreadPoolExecutor() as thread_executor:
       futures_dict = {
@@ -189,10 +191,22 @@ class Extractor:
         description, keyword = response.result()
         descriptions.insert(index, description)
         keywords.insert(index, keyword)
+        resources_base_path = (
+            f'{ConfigService.GCS_BASE_URL}/{self.gcs_bucket_name}/{self.video_file.gcs_folder}/{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/{index+1}'
+        )
+        cut_paths.insert(index,
+                         f'{resources_base_path}.{self.video_file.file_ext}')
+        screenshot_paths.insert(
+            index,
+            f'{resources_base_path}{ConfigService.SEGMENT_SCREENSHOT_EXT}')
 
     optimised_av_segments = optimised_av_segments.assign(
-        **{'description': descriptions, 'keywords': keywords}
-    )
+        **{
+            'description': descriptions,
+            'keywords': keywords,
+            'segment_uri': cut_paths,
+            'segment_screenshot_uri': screenshot_paths,
+        })
     return optimised_av_segments
 
 
@@ -222,10 +236,10 @@ def _cut_and_annotate_av_segment(
   Returns:
     A tuple of the A/V segment description and keywords.
   """
-  image_ext = '.jpg'
   _, video_ext = os.path.splitext(video_file_path)
   full_cut_path = str(pathlib.Path(cuts_path, f'{index}{video_ext}'))
-  full_screenshot_path = str(pathlib.Path(cuts_path, f'{index}{image_ext}'))
+  full_screenshot_path = str(
+      pathlib.Path(cuts_path, f'{index}{ConfigService.SEGMENT_SCREENSHOT_EXT}'))
   Utils.execute_subprocess_commands(
       cmds=[
           'ffmpeg',
@@ -269,7 +283,8 @@ def _cut_and_annotate_av_segment(
   StorageService.upload_gcs_file(
       file_path=full_screenshot_path,
       bucket_name=bucket_name,
-      destination_file_name=f'{gcs_cut_dest_file_prefix}{image_ext}',
+      destination_file_name=(
+          f'{gcs_cut_dest_file_prefix}{ConfigService.SEGMENT_SCREENSHOT_EXT}'),
   )
   description = ''
   keywords = ''
