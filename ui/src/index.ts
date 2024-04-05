@@ -75,7 +75,7 @@ function uploadVideo(dataUrl: string) {
 function doGet() {
   return HtmlService.createTemplateFromFile('ui')
     .evaluate()
-    .setTitle('ViGenAiR');
+    .setTitle('Vigenair');
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
