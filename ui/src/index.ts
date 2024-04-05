@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+import { CONFIG } from './config';
+
 function _getFromGcs(filePath: string) {
-  const url = `https://storage.googleapis.com/storage/v1/b/vigenair_testing/o/${encodeURIComponent(filePath)}?alt=media`;
+  const url = `https://storage.googleapis.com/storage/v1/b/${CONFIG.GCS_BUCKET}/o/${encodeURIComponent(filePath)}?alt=media`;
   const accessToken = ScriptApp.getOAuthToken();
   const response = UrlFetchApp.fetch(url, {
     method: 'get',
@@ -50,7 +52,7 @@ function uploadVideo(dataUrl: string) {
     filename
   );
   const fullName = encodeURIComponent(`uploads/${folder}/${filename}`);
-  const url = `https://storage.googleapis.com/upload/storage/v1/b/vigenair_testing/o?uploadType=media&name=${fullName}`;
+  const url = `https://storage.googleapis.com/upload/storage/v1/b/${CONFIG.GCS_BUCKET}/o?uploadType=media&name=${fullName}`;
   const bytes = videoBlob.getBytes();
   const accessToken = ScriptApp.getOAuthToken();
 

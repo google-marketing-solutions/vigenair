@@ -20,6 +20,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
+import { CONFIG } from '../../../../config';
+
 @Component({
   selector: 'segments-list',
   standalone: true,
@@ -35,6 +37,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 export class SegmentsListComponent {
   @Input({ required: true }) segmentList?: any[];
   @Input({ required: true }) segmentMode!: 'preview' | 'segments';
+
+  CONFIG = CONFIG;
 
   private _currentSegmentId: number = 0;
   @Input({ required: true })

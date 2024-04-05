@@ -30,6 +30,7 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
+import { CONFIG } from '../../../../config';
 import { ApiCallsService } from '../api-calls/api-calls.service';
 
 @Component({
@@ -57,7 +58,7 @@ export class VideoComboComponent implements AfterViewInit {
   loadVideo(file: string) {
     const gsUrl = this.combo.variants[file] as string;
     const path = gsUrl.replace(/gs:\/\/[^\/]+\//, '');
-    this.videoElem.nativeElement.src = `https://storage.mtls.cloud.google.com/vigenair_testing/${path}`;
+    this.videoElem.nativeElement.src = `https://storage.mtls.cloud.google.com/${CONFIG.GCS_BUCKET}/${path}`;
   }
 
   onChangeVideo(e: MatButtonToggleChange) {

@@ -42,6 +42,8 @@ import { FileChooserComponent } from './file-chooser/file-chooser.component';
 import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
+import { CONFIG } from '../../../config';
+
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
 
 @Component({
@@ -317,7 +319,7 @@ export class AppComponent {
     const demoFolder =
       localStorage.getItem('lastOperationId') || '1706795595972';
     localStorage.setItem('lastOperationId', demoFolder);
-    this.gcsVideoPath = `https://storage.mtls.cloud.google.com/vigenair_testing/uploads/${demoFolder}/input.mp4`;
+    this.gcsVideoPath = `https://storage.mtls.cloud.google.com/${CONFIG.GCS_BUCKET}/uploads/${demoFolder}/input.mp4`;
     this.previewVideoElem.nativeElement.src = this.gcsVideoPath;
     this.previewVideoElem.nativeElement.onloadeddata = () => {
       this.magicCanvas.nativeElement.width =

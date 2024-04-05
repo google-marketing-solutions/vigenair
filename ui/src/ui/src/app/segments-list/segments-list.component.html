@@ -28,7 +28,9 @@ limitations under the License.
       [class.current-segment]="
         segmentMode === 'preview' && currentSegmentId === i
       "
-      src="https://storage.mtls.cloud.google.com/vigenair_testing/uploads/1706795595972/av_segments_cuts/screenshots/{{
+      src="https://storage.mtls.cloud.google.com/{{
+        CONFIG.GCS_BUCKET
+      }}/uploads/1706795595972/av_segments_cuts/screenshots/{{
         segment.av_segment_id + 1
       }}.jpg"
     />
