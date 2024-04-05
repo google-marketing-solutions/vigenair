@@ -43,10 +43,10 @@ function getFromGcs(filePath: string, mimeType: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function uploadVideo(dataUrl: string) {
+function uploadVideo(dataUrl: string, uploadedFileName: string) {
   const userId =
     Session.getActiveUser().getEmail() || Session.getTemporaryActiveUserKey();
-  const folder = `${Date.now()}-${Utilities.base64Encode(userId)}`;
+  const folder = `${uploadedFileName}--${Date.now()}--${Utilities.base64Encode(userId)}`;
   const filename = 'input.mp4';
   const videoBlob = Utilities.newBlob(
     Utilities.base64Decode(dataUrl.split(',')[1]),

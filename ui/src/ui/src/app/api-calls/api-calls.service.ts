@@ -25,8 +25,8 @@ export class ApiCallsService implements ApiCalls {
   constructor(private ngZone: NgZone) {}
 
   blobToDataURL(blob: Blob) {
-    return new Promise((resolve, reject) => {
-      var a = new FileReader();
+    return new Promise(resolve => {
+      const a = new FileReader();
       a.onload = function (e) {
         resolve(e.target!.result);
       };
@@ -34,7 +34,7 @@ export class ApiCallsService implements ApiCalls {
     });
   }
 
-  uploadVideo(file: Blob): Observable<string> {
+  uploadVideo(file: File): Observable<string> {
     return new Observable(subscriber => {
       this.blobToDataURL(file).then(dataUrl => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -46,7 +46,7 @@ export class ApiCallsService implements ApiCalls {
               subscriber.complete();
             });
           })
-          .uploadVideo(dataUrl);
+          .uploadVideo(dataUrl, file.name);
       });
     });
   }
