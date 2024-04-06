@@ -104,7 +104,10 @@ function uploadVideo(dataUrl: string, uploadedFileName: string) {
 function doGet() {
   return HtmlService.createTemplateFromFile('ui')
     .evaluate()
-    .setTitle('Vigenair');
+    .setTitle('ViGenAiR - Recrafting Video Ads with Generative AI')
+    .setFaviconUrl(
+      'https://services.google.com/fh/files/misc/vigenair_logo.png'
+    );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
