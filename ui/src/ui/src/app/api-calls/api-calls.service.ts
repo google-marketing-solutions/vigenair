@@ -16,7 +16,11 @@
 
 import { Injectable, NgZone } from '@angular/core';
 import { Observable, retry } from 'rxjs';
-import { ApiCalls, GenerationSettings } from './api-calls.service.interface';
+import {
+  ApiCalls,
+  GenerateVariantsResponse,
+  GenerationSettings,
+} from './api-calls.service.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -75,14 +79,24 @@ export class ApiCallsService implements ApiCalls {
     }).pipe(retry({ count: maxRetries, delay: retryDelay }));
   }
 
-  generateVariants(settings: GenerationSettings): Observable<void> {
-    return new Observable<void>(subscriber => {
+  generateVariants(
+    settings: GenerationSettings
+  ): Observable<GenerateVariantsResponse[]> {
+    return new Observable<GenerateVariantsResponse[]>(subscriber => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       google.script.run
         .withSuccessHandler(() => {
           this.ngZone.run(() => {
-            subscriber.next();
+            // TODO: Return actual data
+            subscriber.next([
+              {
+                combo_id: 1,
+                title: 'Title',
+                description: 'Description',
+                scenes: [1],
+              },
+            ]);
             subscriber.complete();
           });
         })

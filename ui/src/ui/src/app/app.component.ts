@@ -17,6 +17,7 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDividerModule } from '@angular/material/divider';
 import {
   MatExpansionModule,
   MatExpansionPanel,
@@ -43,6 +44,7 @@ import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
 import { CONFIG } from '../../../config';
+import { GenerateVariantsResponse } from './api-calls/api-calls.service.interface';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
 
@@ -53,6 +55,7 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
     CommonModule,
     FileChooserComponent,
     MatButtonModule,
+    MatDividerModule,
     MatExpansionModule,
     MatProgressBarModule,
     MatSnackBarModule,
@@ -80,6 +83,7 @@ export class AppComponent {
   videoObjects?: any[];
   combosJson?: any;
   dataJson?: any;
+  variants?: GenerateVariantsResponse[];
   transcriptStatus: ProcessStatus = 'hourglass_top';
   analysisStatus: ProcessStatus = 'hourglass_top';
   combinationStatus: ProcessStatus = 'hourglass_top';
@@ -325,6 +329,7 @@ export class AppComponent {
     this.dataJson = undefined;
     this.combosJson = undefined;
     this.videoObjects = undefined;
+    this.variants = undefined;
     this.transcriptStatus = 'hourglass_top';
     this.analysisStatus = 'hourglass_top';
     this.combinationStatus = 'hourglass_top';
@@ -372,8 +377,9 @@ export class AppComponent {
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,
       })
-      .subscribe(() => {
+      .subscribe(variants => {
         this.loading = false;
+        this.variants = variants;
       });
   }
 }

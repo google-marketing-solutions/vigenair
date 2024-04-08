@@ -118,6 +118,10 @@ segments-list {
   z-index: 1;
 }
 
+mat-divider {
+  margin-top: 32px;
+}
+
 [hidden] {
   display: none;
 }

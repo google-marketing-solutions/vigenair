@@ -49,7 +49,7 @@ limitations under the License.
       (selectionChange)="loadPreviousRun($event.value)"
       [disabled]="loading"
     >
-      @for (run of previousRuns; track run) {
+      @for (run of previousRuns; track $index) {
         <mat-option [value]="run">{{ run.split('--')[0] }}</mat-option>
       }
     </mat-select>
@@ -114,6 +114,7 @@ limitations under the License.
     </mat-chip-set>
   </div>
   <ng-container *ngIf="dataJson">
+    <mat-divider></mat-divider>
     <div class="row" style="gap: 16px">
       <mat-form-field style="flex: 1" subscriptSizing="dynamic">
         <mat-label>What should your video variants be about?</mat-label>
@@ -146,6 +147,18 @@ limitations under the License.
         Generate Demand Gen assets
       </mat-checkbox>
     </div>
+  </ng-container>
+  <ng-container *ngIf="variants">
+    <mat-divider></mat-divider>
+    <mat-tab-group>
+      @for (variant of variants; track variant.combo_id) {
+        <mat-tab label="{{ variant.title }}">
+          <div class="row">
+            {{ variant.description }}
+          </div>
+        </mat-tab>
+      }
+    </mat-tab-group>
   </ng-container>
 </mat-expansion-panel>
 

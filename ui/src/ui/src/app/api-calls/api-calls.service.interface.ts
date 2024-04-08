@@ -20,6 +20,13 @@ export interface GenerationSettings {
   duration: string;
   demandGenAssets: boolean;
 }
+export interface GenerateVariantsResponse {
+  combo_id: number;
+  title: string;
+  scenes: number[];
+  description: string;
+}
+
 export interface ApiCalls {
   uploadVideo(file: Blob): Observable<string>;
   getFromGcs(
@@ -28,6 +35,8 @@ export interface ApiCalls {
     retryDelay?: number,
     maxRetries?: number
   ): Observable<string>;
-  generateVariants(settings: GenerationSettings): Observable<void>;
+  generateVariants(
+    settings: GenerationSettings
+  ): Observable<GenerateVariantsResponse[]>;
   getRunsFromGcs(): Observable<string[]>;
 }
