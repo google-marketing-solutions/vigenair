@@ -75,3 +75,11 @@ img {
 .current-segment {
   width: 320px;
 }
+
+mat-icon {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  color: #3f51b5;
+  /* filter: drop-shadow(2px 2px 3px black); */
+}

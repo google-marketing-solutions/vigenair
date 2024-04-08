@@ -82,8 +82,9 @@ export class AppComponent {
   analysisJson?: any;
   videoObjects?: any[];
   combosJson?: any;
-  dataJson?: any;
+  avSegments?: any;
   variants?: GenerateVariantsResponse[];
+  selectedVariant = 0;
   transcriptStatus: ProcessStatus = 'hourglass_top';
   analysisStatus: ProcessStatus = 'hourglass_top';
   combinationStatus: ProcessStatus = 'hourglass_top';
@@ -168,12 +169,12 @@ export class AppComponent {
   }
 
   setCurrentSegmentId() {
-    if (!this.dataJson) {
+    if (!this.avSegments) {
       this.currentSegmentId = undefined;
       return;
     }
     const timestamp = this.previewVideoElem.nativeElement.currentTime;
-    const currentSegment = this.dataJson.find(
+    const currentSegment = this.avSegments.find(
       (e: { start_s: number; end_s: number }) => {
         return e.start_s <= timestamp && e.end_s >= timestamp;
       }
@@ -255,8 +256,12 @@ export class AppComponent {
       .getFromGcs(`${folder}/data.json`, 'application/json', 10000, 180)
       .subscribe({
         next: dataUrl => {
-          this.dataJson = JSON.parse(atob(dataUrl.split(',')[1]));
-          console.log(this.dataJson);
+          const dataJson = JSON.parse(atob(dataUrl.split(',')[1]));
+          this.avSegments = dataJson.map((e: any) => {
+            e.selected = false;
+            return e;
+          });
+          console.log(this.avSegments);
           this.segmentsStatus = 'check_circle';
           this.segmentModeToggle.value = 'segments';
           this.loading = false;
@@ -326,7 +331,7 @@ export class AppComponent {
 
   resetState() {
     this.analysisJson = undefined;
-    this.dataJson = undefined;
+    this.avSegments = undefined;
     this.combosJson = undefined;
     this.videoObjects = undefined;
     this.variants = undefined;
@@ -379,7 +384,22 @@ export class AppComponent {
       })
       .subscribe(variants => {
         this.loading = false;
+        this.selectedVariant = 0;
         this.variants = variants;
+        this.setSelectedSegments();
       });
+  }
+
+  setSelectedSegments() {
+    for (const segment of this.avSegments) {
+      segment.selected = false;
+    }
+    for (const segment of this.variants![this.selectedVariant].scenes) {
+      this.avSegments[segment - 1].selected = true;
+    }
+  }
+
+  variantChanged() {
+    this.setSelectedSegments();
   }
 }

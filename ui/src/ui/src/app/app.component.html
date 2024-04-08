@@ -76,8 +76,9 @@ limitations under the License.
   </div>
   <div class="preview-video-row">
     <segments-list
-      [segmentList]="dataJson"
+      [segmentList]="avSegments"
       [segmentMode]="segmentModeToggle.value"
+      [allowSelection]="variants !== undefined"
       [currentSegmentId]="currentSegmentId || 0"
     ></segments-list>
     <div
@@ -113,7 +114,7 @@ limitations under the License.
       </mat-chip>
     </mat-chip-set>
   </div>
-  <ng-container *ngIf="dataJson">
+  <ng-container *ngIf="avSegments">
     <mat-divider></mat-divider>
     <div class="row" style="gap: 16px">
       <mat-form-field style="flex: 1" subscriptSizing="dynamic">
@@ -150,10 +151,13 @@ limitations under the License.
   </ng-container>
   <ng-container *ngIf="variants">
     <mat-divider></mat-divider>
-    <mat-tab-group>
+    <mat-tab-group
+      [(selectedIndex)]="selectedVariant"
+      (selectedTabChange)="variantChanged()"
+    >
       @for (variant of variants; track variant.combo_id) {
         <mat-tab label="{{ variant.title }}">
-          <div class="row">
+          <div class="row" style="justify-content: start">
             {{ variant.description }}
           </div>
         </mat-tab>

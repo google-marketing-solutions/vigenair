@@ -18,6 +18,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { CONFIG } from '../../../../config';
@@ -29,6 +30,7 @@ import { CONFIG } from '../../../../config';
     CommonModule,
     MatButtonToggleModule,
     MatChipsModule,
+    MatIconModule,
     MatProgressSpinnerModule,
   ],
   templateUrl: './segments-list.component.html',
@@ -37,6 +39,7 @@ import { CONFIG } from '../../../../config';
 export class SegmentsListComponent {
   @Input({ required: true }) segmentList?: any[];
   @Input({ required: true }) segmentMode!: 'preview' | 'segments';
+  @Input({ required: true }) allowSelection!: boolean;
 
   CONFIG = CONFIG;
 
@@ -52,5 +55,9 @@ export class SegmentsListComponent {
   }
   get currentSegmentId() {
     return this._currentSegmentId;
+  }
+
+  toggleVariant(i: number) {
+    this.segmentList![i].selected = !this.segmentList![i].selected;
   }
 }

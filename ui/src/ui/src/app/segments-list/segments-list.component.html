@@ -22,14 +22,19 @@ limitations under the License.
     [ngClass]="segmentMode === 'preview' ? 'filmstrip-row' : 'row'"
     *ngFor="let segment of segmentList; index as i"
   >
-    <img
-      attr.id="segment-{{ i }}"
-      [class.filmstrip-img]="segmentMode === 'preview'"
-      [class.current-segment]="
-        segmentMode === 'preview' && currentSegmentId === i
-      "
-      src="{{ segment.segment_screenshot_uri }}"
-    />
+    <div style="display: flex; position: relative" (click)="toggleVariant(i)">
+      <img
+        attr.id="segment-{{ i }}"
+        [class.filmstrip-img]="segmentMode === 'preview'"
+        [class.current-segment]="
+          segmentMode === 'preview' && currentSegmentId === i
+        "
+        src="{{ segment.segment_screenshot_uri }}"
+      />
+      <mat-icon *ngIf="allowSelection">
+        {{ segment.selected ? 'check_box' : 'check_box_outline_blank' }}
+      </mat-icon>
+    </div>
     <div class="current-segment-info" *ngIf="segmentMode === 'segments'">
       <span class="description">
         <strong>Description:</strong>
