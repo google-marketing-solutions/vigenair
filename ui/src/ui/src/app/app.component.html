@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<mat-toolbar color="primary">
-  <span style="font-size: 1.5em">ViGenAiR - Recrafting Video Ads with Generative AI</span></mat-toolbar
->
-<div [hidden]="!loading">
+<mat-toolbar color="primary" class="sticky">
+  <span style="font-size: 1.5em">
+    ViGenAiR - Recrafting Video Ads with Generative AI
+  </span>
+</mat-toolbar>
+<div [hidden]="!loading" class="sticky" style="top: 64px">
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </div>
 <mat-expansion-panel #videoUploadPanel expanded>
