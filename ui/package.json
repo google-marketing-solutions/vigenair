@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "",
   "main": "build/index.js",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "keywords": [],
   "scripts": {
     "clean": "rimraf build dist",
