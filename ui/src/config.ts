@@ -15,5 +15,5 @@
  */
 
 export const CONFIG = {
-  GCS_BUCKET: 'gps-generative-ai-vigenair',
+  GCS_BUCKET: '<gcs-bucket>',
 };

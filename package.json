@@ -1,0 +1,41 @@
+{
+  "name": "vigenair",
+  "version": "0.0.1",
+  "description": "ViGenAiR - Recrafting Video Ads with Generative AI",
+  "keywords": [
+    "machine-learning",
+    "ai",
+    "generative-ai",
+    "vision",
+    "v2v",
+    "video-generation",
+    "video-editing",
+    "google-cloud",
+    "vertex-ai",
+    "large-language-models",
+    "llm",
+    "video",
+    "ads"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "npm install && npm run build && node dist/index.js",
+    "deploy-ui": "cd ui && npm run deploy",
+    "deploy-service": "cd service && ./deploy.sh"
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.3",
+    "fs-extra": "^11.2.0",
+    "prompts": "^2.4.2",
+    "replace": "^1.2.2",
+    "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.12.7"
+  }
+}

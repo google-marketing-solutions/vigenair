@@ -13,11 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Deploy the vigenair cloud function to the target GCP project.
+gcloud config set project <gcp-project-id>
+printf "\nINFO - GCP project set to '<gcp-project-id>' succesfully!\n"
+
+BUCKET_EXISTS=$(gcloud storage ls gs://<gcs-bucket> > /dev/null 2>&1 && echo "true" || echo "false")
+if "${BUCKET_EXISTS}"; then
+  printf "\nWARN - Bucket '<gcs-bucket>' already exists. Skipping bucket creation...\n"
+else
+  gcloud storage buckets create gs://<gcs-bucket> --project=<gcp-project-id> --location=<gcs-location>
+  printf "\nINFO - Bucket '<gcs-bucket>' created successfully in location '<gcs-location>'!\n"
+fi
+
+printf "\nINFO - Deploying the 'vigenair' Cloud Function...\n"
 gcloud functions deploy vigenair \
 --env-vars-file .env.yaml \
 --gen2 \
---region=us-central1 \
+--region=<gcp-region> \
 --runtime=python310 \
 --source=. \
 --entry-point=gcs_file_uploaded \
@@ -26,5 +37,5 @@ gcloud functions deploy vigenair \
 --min-instances=1 \
 --cpu=8 \
 --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
---trigger-event-filters="bucket=gps-generative-ai-vigenair" \
---trigger-location="us"
+--trigger-event-filters="bucket=<gcs-bucket>" \
+--trigger-location="<gcs-location>"

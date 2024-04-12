@@ -4,8 +4,8 @@
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
   "webapp": {
-    "executeAs": "USER_DEPLOYING",
-    "access": "DOMAIN"
+    "executeAs": "USER_ACCESSING",
+    "access": "MYSELF"
   },
   "oauthScopes": [
     "https://www.googleapis.com/auth/cloud-platform",
