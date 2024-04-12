@@ -3,8 +3,7 @@
   "version": "0.0.1",
   "description": "",
   "main": "build/index.js",
-  "license": "MIT",
-  "keywords": [],
+  "license": "Apache-2.0",
   "scripts": {
     "clean": "rimraf build dist",
     "lint": "npm run license",
