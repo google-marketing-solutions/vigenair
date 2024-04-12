@@ -74,6 +74,7 @@ img {
 
 .current-segment {
   width: 320px;
+  border: solid #81c784;
 }
 
 mat-icon {

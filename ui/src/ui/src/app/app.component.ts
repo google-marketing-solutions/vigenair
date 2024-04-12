@@ -263,7 +263,6 @@ export class AppComponent {
           });
           console.log(this.avSegments);
           this.segmentsStatus = 'check_circle';
-          this.segmentModeToggle.value = 'segments';
           this.loading = false;
         },
         error: () => this.failHandler(),
@@ -353,7 +352,6 @@ export class AppComponent {
         this.previewVideoElem.nativeElement.videoWidth;
       this.magicCanvas.nativeElement.height =
         this.previewVideoElem.nativeElement.videoHeight;
-      this.previewVideoElem.nativeElement.muted = true;
       this.previewVideoElem.nativeElement.onloadeddata = null;
       this.canvas = this.magicCanvas.nativeElement.getContext('2d')!;
     };
