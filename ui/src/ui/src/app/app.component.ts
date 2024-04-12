@@ -116,7 +116,11 @@ export class AppComponent {
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar
   ) {
-    apiCallsService.getRunsFromGcs().subscribe(runs => {
+    this.getPreviousRuns();
+  }
+
+  getPreviousRuns() {
+    this.apiCallsService.getRunsFromGcs().subscribe(runs => {
       this.previousRuns = runs;
     });
   }

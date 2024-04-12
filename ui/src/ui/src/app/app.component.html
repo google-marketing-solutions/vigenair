@@ -48,6 +48,7 @@ limitations under the License.
     <mat-select
       (selectionChange)="loadPreviousRun($event.value)"
       [disabled]="loading"
+      (click)="getPreviousRuns()"
     >
       @for (run of previousRuns; track $index) {
         <mat-option [value]="run">{{ run.split('--')[0] }}</mat-option>
