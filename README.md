@@ -30,13 +30,15 @@ limitations under the License.
 
 ## Updates
 
-* [May 2024]: Launch! 🚀
+* [April/May 2024]: Launch! 🚀
 
 ## Overview
 
 **ViGenAiR** *(pronounced vision-air)* uses state-of-the-art multimodal Generative AI on Google Cloud Platform (GCP) to automatically repurpose long-form Video Ads and generate several shorter variants and storylines at scale. It generates horizontal, vertical and square assets to power [Demand Gen](https://support.google.com/google-ads/answer/13695777?hl=en) and [YouTube video campaigns](https://support.google.com/youtube/answer/2375497?hl=en), and leverages Google Ads' built-in A/B testing to automatically identify the best variants tailored to your target audiences. ViGenAiR is an acronym for <u>Vi</u>deo <u>Gen</u>eration via <u>A</u>ds <u>R</u>ecrafting, and is more colloquially referred to as vigenair.
 
 ## Get Started
+
+Please make sure you have fulfilled all prerequisites mentioned under [Requirements](#requirements) first.
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
 1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install).
@@ -45,7 +47,7 @@ limitations under the License.
 1. Run `npm start`
 
 You will be asked to enter a GCP Project ID, an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
-The `npm start` command will then ask you to authenticate to both Google Workspace (via [clasp](https://github.com/google/clasp)) and Google Cloud, followed by creating a bucket named <code><gcp_project_id>-vigenair</code> (if it doesn't already exist), deploying the vigenair Cloud Function to your Cloud project, and finally deploying the Angular UI web app to a new Apps Script project. The URL of the web app will be output at the end of the deployment process, which you can use to run the app and start generating videos.
+The `npm start` command will then ask you to authenticate to both Google Workspace (via [clasp](https://github.com/google/clasp)) and Google Cloud, followed by creating a bucket named <code><gcp_project_id>-vigenair</code> (if it doesn't already exist), deploying the `vigenair` Cloud Function to your Cloud project, and finally deploying the Angular UI web app to a new Apps Script project. The URL of the web app will be output at the end of the deployment process, which you can use to run the app and start generating videos.
 
 See [Solution Overview](#solution-overview) for more details on the different components of the solution.
 
@@ -60,6 +62,14 @@ Current Video Ads creative solutions, both within YouTube / Google Ads as well a
 <center><img src='./img/creative.png' width='640px' alt='The importance of Creatives for effective adverising' /></center>
 
 Vigenair focuses on the *Creative* pillar to help potentially **unlock ~50% ROI** while solving a huge pain point for advertisers; the generation, trafficking and A/B testing of different Video Ad formats, at **scale**, powered by Google's multimodal Generative AI - Gemini.
+
+## Benefits
+
+* **Inventory**: Horizontal, vertical and square Video assets in different durations allow advertisers to tap into virtually ALL Google-owned sources of inventory
+* **Campaigns**: Shorter more compelling Video Ads that still capture the meaning and storyline of their original ads - ideal for *Social* and *Awareness/Consideration* campaigns
+* **Creative Excellence**: Coherent Videos (e.g. dialogue doesn't get cut mid-scene, videos don't end abruptly, etc.) that follow Google's best practices for creatives, including creative direction rules for camera angles and scene cutting
+* **User Control**: Users can steer the model towards generating their desired videos (via prompts and user scene selection)
+* **Performance**: Built-in A/B testing provides a basis for automatically identifying the best variants tailored to the advertiser's target audiences
 
 ## Solution Overview
 
@@ -96,7 +106,7 @@ You need the following to use and deploy vigenair:
   * The [Vertex AI API](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/api-quickstart) enabled: required to access Gemini in Vertex AI.
     * All users running Vigenair must be granted the [Vertex AI User](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user) role on the associated GCP project.
   * The [Video AI API](https://cloud.google.com/video-intelligence) enabled: required for analysing input videos.
-* The Vigenair setup and deployment script will create the following components
+* The Vigenair [setup and deployment script](#get-started) will create the following components
   * A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
   * A Cloud Function named `vigenair` that fulfills both the Extractor and Combiner Services. Refer to [deploy.sh](./service/deploy.sh) for specs.
   * An Apps Script deployment for the frontend web app.
