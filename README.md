@@ -44,16 +44,16 @@ Please make sure you have fulfilled all prerequisites mentioned under [Requireme
 1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install).
 1. Make sure your system has an up-to-date installation of `git` and use it to clone this repository.
 1. Navigate to the directory where the source code lives.
-1. Run `npm start`
+1. Run `npm start`.
 
-You will be asked to enter a GCP Project ID, an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
+You will be asked to enter a GCP Project ID, and whether you would like to deploy GCP components, the UI, or both. If you opt to deploy GCP components, you will be asked to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
 The `npm start` command will then ask you to authenticate to both Google Workspace (via [clasp](https://github.com/google/clasp)) and Google Cloud, followed by creating a bucket named <code><gcp_project_id>-vigenair</code> (if it doesn't already exist), deploying the `vigenair` Cloud Function to your Cloud project, and finally deploying the Angular UI web app to a new Apps Script project. The URL of the web app will be output at the end of the deployment process, which you can use to run the app and start generating videos.
 
 See [Solution Overview](#solution-overview) for more details on the different components of the solution.
 
 ### UI Web App Access Settings
 
-By default, Vigenair runs only for the user that deployed it. This is controlled by the [Web App access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which is set to `MYSELF` by default. This setup works well for most cases, however if you are a Google Workspace customer you may change this value to `DOMAIN` to allow other individuals within your organization to run the app.
+By default, Vigenair runs only for the user that deployed it. This is controlled by the [Web App access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which is set to `MYSELF` by default. This setup works well for most cases, however if you are a Google Workspace customer you may change this value to `DOMAIN` to allow other individuals within your organization to run the app. The `npm start` command will prompt you for this as well if you opt to deploy the UI.
 
 ## Challenges
 

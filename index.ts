@@ -33,8 +33,11 @@ interface ConfigReplace {
 
 interface PromptsResponse {
   gcpProjectId: string;
+  deployGcpComponents: boolean;
+  deployUi: boolean;
   gcpRegion?: string;
   gcsLocation?: string;
+  webappDomainAccess?: boolean;
 }
 
 class ClaspManager {
@@ -188,23 +191,31 @@ class UserConfigManager {
       paths: ["./service/.env.yaml", "./service/deploy.sh"],
     });
 
-    configReplace({
-      regex: "<gcp-region>",
-      replacement: gcpRegion,
-      paths: ["./service/.env.yaml", "./service/deploy.sh"],
-    });
+    if (response.deployGcpComponents) {
+      configReplace({
+        regex: "<gcp-region>",
+        replacement: gcpRegion,
+        paths: ["./service/.env.yaml", "./service/deploy.sh"],
+      });
 
+      configReplace({
+        regex: "<gcs-location>",
+        replacement: gcsLocation,
+        paths: ["./service/deploy.sh"],
+      });
+    }
     configReplace({
       regex: "<gcs-bucket>",
       replacement: gcsBucket,
       paths: ["./service/deploy.sh", "./ui/src/config.ts"],
     });
-
-    configReplace({
-      regex: "<gcs-location>",
-      replacement: gcsLocation,
-      paths: ["./service/deploy.sh"],
-    });
+    if (response.webappDomainAccess) {
+      configReplace({
+        regex: "MYSELF",
+        replacement: "DOMAIN",
+        paths: ["./ui/appsscript.json"],
+      });
+    }
     console.log();
   }
 }
@@ -218,23 +229,53 @@ class UserConfigManager {
       validate: (value: string) => (!value ? "Required" : true),
     },
     {
-      type: "text",
+      type: "toggle",
+      name: "deployGcpComponents",
+      message: "Would you like to deploy GCP components?",
+      initial: false,
+      active: "Yes",
+      inactive: "No",
+    },
+    {
+      type: (prev: boolean) => (prev ? "text" : null),
       name: "gcpRegion",
       message: `Enter a GCP region for the 'vigenair' service to run in (defaults to '${DEFAULT_GCP_REGION}'):`,
       intitial: DEFAULT_GCP_REGION,
     },
     {
-      type: "text",
+      type: (prev: boolean | string) =>
+        typeof prev === "string" || prev ? "text" : null,
       name: "gcsLocation",
       message: `Enter a GCS location to store your data in (can be multi-region like 'us' or 'eu' or single region like 'us-central1' or 'europe-west4' - defaults to '${DEFAULT_GCS_LOCATION}'):`,
       intitial: DEFAULT_GCS_LOCATION,
     },
+    {
+      type: "toggle",
+      name: "deployUi",
+      message: "Would you like to deploy the UI?",
+      initial: true,
+      active: "Yes",
+      inactive: "No",
+    },
+    {
+      type: (prev: boolean) => (prev ? "toggle" : null),
+      name: "webappDomainAccess",
+      message:
+        "Are you a Google Workspace customer or will you be using your company email to login to the App?",
+      initial: false,
+      active: "Yes",
+      inactive: "No",
+    },
   ]);
   UserConfigManager.setUserConfig(response);
 
-  await GcpDeploymentHandler.checkGcloudAuth();
-  GcpDeploymentHandler.deployGcpComponents();
+  if (response.deployGcpComponents) {
+    await GcpDeploymentHandler.checkGcloudAuth();
+    GcpDeploymentHandler.deployGcpComponents();
+  }
 
-  await UiDeploymentHandler.createScriptProject();
-  UiDeploymentHandler.deployUi();
+  if (response.deployUi) {
+    await UiDeploymentHandler.createScriptProject();
+    UiDeploymentHandler.deployUi();
+  }
 })();
