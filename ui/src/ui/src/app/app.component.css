@@ -125,3 +125,23 @@ mat-divider {
 [hidden] {
   display: none;
 }
+
+.score-1 {
+  color: #b71c1c;
+}
+
+.score-2 {
+  color: #e65100;
+}
+
+.score-3 {
+  color: #ffa000;
+}
+
+.score-4 {
+  color: #afb42b;
+}
+
+.score-5 {
+  color: #33691e;
+}

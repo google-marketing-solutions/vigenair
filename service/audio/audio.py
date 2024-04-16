@@ -23,13 +23,12 @@ import pathlib
 import shutil
 from typing import Tuple
 
+import config as ConfigService
+import pandas as pd
+import utils as Utils
+import whisper
 from faster_whisper import WhisperModel
 from iso639 import languages
-import pandas as pd
-import whisper
-
-import config as ConfigService
-import utils as Utils
 
 
 def extract_audio(video_file_path: str) -> str:
@@ -120,14 +119,13 @@ def transcribe_audio(output_dir: str, audio_file_path: str) -> pd.DataFrame:
   )
 
   video_language = languages.get(alpha2=info.language).name
-  Utils.execute_subprocess_commands(
-      cmds=[
-          'echo',
-          video_language,
-          '>>',
-          f'{output_dir}/language.txt',
-      ],
-      description='write language.txt',
+  with open(
+      f'{output_dir}/{ConfigService.OUTPUT_LANGUAGE_FILE}', 'w', encoding='utf8'
+  ) as f:
+    f.write(video_language)
+  logging.info(
+      'LANGUAGE - %s written successfully!',
+      ConfigService.OUTPUT_LANGUAGE_FILE,
   )
 
   results = list(segments)

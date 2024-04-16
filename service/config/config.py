@@ -24,8 +24,9 @@ from vertexai.preview import generative_models
 
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', 'my-gcp-project')
 GCP_LOCATION = os.environ.get('GCP_LOCATION', 'us-central1')
-CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-pro')
-CONFIG_VISION_MODEL = os.environ.get('CONFIG_VISION_MODEL', 'gemini-pro-vision')
+CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-1.0-pro')
+CONFIG_VISION_MODEL = os.environ.get('CONFIG_VISION_MODEL',
+                                     'gemini-1.0-pro-vision')
 CONFIG_WHISPER_MODEL = os.environ.get('CONFIG_WHISPER_MODEL', 'small')
 CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD = float(
     os.environ.get('CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD', '0.7')
@@ -51,6 +52,7 @@ INPUT_FILENAME = 'input'
 INPUT_RENDERING_FILE = 'render.json'
 OUTPUT_SUBTITLES_TYPE = 'vtt'  # 'vtt' or 'srt'
 OUTPUT_SUBTITLES_FILE = f'{INPUT_FILENAME}.{OUTPUT_SUBTITLES_TYPE}'
+OUTPUT_LANGUAGE_FILE = 'language.txt'
 OUTPUT_SPEECH_FILE = 'vocals.wav'
 OUTPUT_MUSIC_FILE = 'accompaniment.wav'
 OUTPUT_ANALYSIS_FILE = 'analysis.json'
@@ -72,5 +74,6 @@ Keywords: the keywords, comma-separated.
 """
 )
 
+# pylint: disable=line-too-long
 FFMPEG_VERTICAL_BLUR_FILTER = '"split[original][copy];[original]scale=iw*0.316:-1[scaled];[copy]gblur=sigma=20[blurred];[blurred][scaled]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[overlay];[overlay]crop=iw*0.316:ih"'
 FFMPEG_SQUARE_BLUR_FILTER = '"split[original][copy];[original]scale=ih:-1[scaled];[copy]gblur=sigma=20[blurred];[blurred][scaled]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[overlay];[overlay]crop=ih:ih"'

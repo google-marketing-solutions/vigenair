@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 """Vigenair video service.
 
 This module contains functions to interact with the Video AI API.
@@ -20,11 +19,10 @@ This module contains functions to interact with the Video AI API.
 
 from typing import Sequence
 
-from google.cloud import videointelligence
-import pandas as pd
-
 import config as ConfigService
+import pandas as pd
 import utils as Utils
+from google.cloud import videointelligence
 
 
 def analyse_video(
@@ -73,7 +71,10 @@ def analyse_video(
       request={
           'features': features,
           'input_uri': f'gs://{bucket_name}/{video_file.full_gcs_path}',
-          'output_uri': f'gs://{bucket_name}/{video_file.gcs_folder}/{ConfigService.OUTPUT_ANALYSIS_FILE}',
+          'output_uri': (
+              f'gs://{bucket_name}/{video_file.gcs_folder}/'
+              f'{ConfigService.OUTPUT_ANALYSIS_FILE}'
+          ),
           'video_context': context,
       }
   )

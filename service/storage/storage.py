@@ -22,10 +22,9 @@ import os
 import pathlib
 from typing import Optional, Sequence, Union
 
+import utils as Utils
 from google.cloud import storage
 from google.cloud.storage import transfer_manager
-
-import utils as Utils
 
 
 def download_gcs_file(
@@ -94,8 +93,9 @@ def upload_gcs_file(
   bucket = storage_client.bucket(bucket_name)
 
   blob = bucket.blob(destination_file_name)
-  blob.upload_from_filename(file_path,
-                            if_generation_match=None if overwrite else 0)
+  blob.upload_from_filename(
+      file_path, if_generation_match=None if overwrite else 0
+  )
 
   logging.info('UPLOAD - Uploaded path "%s".', destination_file_name)
 
@@ -144,7 +144,7 @@ def filter_video_files(
     prefix: str,
     bucket_name: str,
     first_only: bool = False,
-) -> Optional[Sequence[str]]:
+) -> Sequence[str]:
   """Filters video files in a GCS bucket based on a prefix.
 
   Args:
@@ -153,7 +153,8 @@ def filter_video_files(
     first_only: Whether to only return the first matching file.
 
   Returns:
-    A list of video files matching the given prefix, or None if no files match.
+    A list of video files matching the given prefix, or an empty list if no
+    files match.
   """
   storage_client = storage.Client()
   blobs = storage_client.list_blobs(bucket_name, prefix=prefix)
@@ -169,4 +170,4 @@ def filter_video_files(
       result.append(blob.name)
       if first_only:
         break
-  return result or None
+  return result

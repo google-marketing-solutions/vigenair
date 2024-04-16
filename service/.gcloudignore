@@ -13,5 +13,7 @@
 # limitations under the License.
 
 .env.yaml
+.gitignore
 deploy.sh
 update_config.sh
+pylintrc

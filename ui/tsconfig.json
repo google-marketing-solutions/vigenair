@@ -14,5 +14,8 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false
   },
+  "angularCompilerOptions": {
+    "strictTemplates": true
+  },
   "include": ["src/**/*", "test/**/*", "rollup.config.mjs"]
 }

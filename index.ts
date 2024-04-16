@@ -38,6 +38,7 @@ interface PromptsResponse {
   gcpRegion?: string;
   gcsLocation?: string;
   webappDomainAccess?: boolean;
+  vertexAiRegion?: string;
 }
 
 class ClaspManager {
@@ -123,7 +124,9 @@ class GcpDeploymentHandler {
   }
 
   static deployGcpComponents() {
-    console.log("Deploying GCP components...");
+    console.log(
+      "Deploying the 'vigenair' service on Cloud Run / Cloud Functions..."
+    );
     spawn.sync("npm run deploy-service", { stdio: "inherit", shell: true });
   }
 }
@@ -147,7 +150,7 @@ class UiDeploymentHandler {
   }
 
   static deployUi() {
-    console.log("Deploying UI Web App...");
+    console.log("Deploying the UI Web App...");
     spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
     const res = spawn.sync("cd ui && clasp undeploy -a && clasp deploy", {
       stdio: "pipe",
@@ -184,11 +187,16 @@ class UserConfigManager {
     const gcpRegion = response.gcpRegion || DEFAULT_GCP_REGION;
     const gcsLocation = response.gcsLocation || DEFAULT_GCS_LOCATION;
     const gcsBucket = `${gcpProjectId}${GCS_BUCKET_NAME_SUFFIX}`;
+    const vertexAiRegion = response.vertexAiRegion || DEFAULT_GCP_REGION;
 
     configReplace({
       regex: "<gcp-project-id>",
       replacement: gcpProjectId,
-      paths: ["./service/.env.yaml", "./service/deploy.sh"],
+      paths: [
+        "./service/.env.yaml",
+        "./service/deploy.sh",
+        "./ui/src/config.ts",
+      ],
     });
 
     if (response.deployGcpComponents) {
@@ -216,6 +224,13 @@ class UserConfigManager {
         paths: ["./ui/appsscript.json"],
       });
     }
+    if (response.deployUi) {
+      configReplace({
+        regex: "<vertexai-region>",
+        replacement: vertexAiRegion,
+        paths: ["./ui/src/config.ts"],
+      });
+    }
     console.log();
   }
 }
@@ -231,22 +246,24 @@ class UserConfigManager {
     {
       type: "toggle",
       name: "deployGcpComponents",
-      message: "Would you like to deploy GCP components?",
+      message:
+        "Would you like to deploy the 'vigenair' service on Cloud Run / Cloud Functions?",
       initial: false,
       active: "Yes",
       inactive: "No",
     },
     {
-      type: (prev: boolean) => (prev ? "text" : null),
+      type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
+        values.deployGcpComponents ? "text" : null,
       name: "gcpRegion",
       message: `Enter a GCP region for the 'vigenair' service to run in (defaults to '${DEFAULT_GCP_REGION}'):`,
       intitial: DEFAULT_GCP_REGION,
     },
     {
-      type: (prev: boolean | string) =>
-        typeof prev === "string" || prev ? "text" : null,
+      type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
+        values.deployGcpComponents ? "text" : null,
       name: "gcsLocation",
-      message: `Enter a GCS location to store your data in (can be multi-region like 'us' or 'eu' or single region like 'us-central1' or 'europe-west4' - defaults to '${DEFAULT_GCS_LOCATION}'):`,
+      message: `Enter a GCS location to store videos in (can be multi-region like 'us' or 'eu' or single region like 'us-central1' or 'europe-west4' - defaults to '${DEFAULT_GCS_LOCATION}'):`,
       intitial: DEFAULT_GCS_LOCATION,
     },
     {
@@ -258,13 +275,21 @@ class UserConfigManager {
       inactive: "No",
     },
     {
-      type: (prev: boolean) => (prev ? "toggle" : null),
+      type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
+        values.deployUi ? "toggle" : null,
       name: "webappDomainAccess",
       message:
-        "Are you a Google Workspace customer or will you be using your company email to login to the App?",
+        "Are you a Google Workspace user and would like to deploy the application for all users in your domain?",
       initial: false,
       active: "Yes",
       inactive: "No",
+    },
+    {
+      type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
+        values.deployUi ? "text" : null,
+      name: "vertexAiRegion",
+      message: `Enter a GCP region to access Vertex AI generative models. Refer to https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions for available regions (defaults to '${DEFAULT_GCP_REGION}'):`,
+      intitial: DEFAULT_GCP_REGION,
     },
   ]);
   UserConfigManager.setUserConfig(response);

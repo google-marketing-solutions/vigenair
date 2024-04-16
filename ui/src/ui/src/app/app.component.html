@@ -126,6 +126,12 @@ limitations under the License.
           <div class="row" style="justify-content: start">
             {{ variant.description }}
           </div>
+          <div style="font-size: 3em" [ngClass]="'score-' + variant.score" class="row">
+            Score: {{ variant.score }}
+          </div>
+          <div class="row" style="white-space: pre-line">
+            {{ variant.reasoning }}
+          </div>
         </mat-tab>
       }
     </mat-tab-group>

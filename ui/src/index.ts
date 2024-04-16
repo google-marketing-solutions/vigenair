@@ -14,53 +14,24 @@
  * limitations under the License.
  */
 
-import { CONFIG } from './config';
+/**
+ * Methods in this file are referenced in ./ui/src/app/api-calls/*.
+ * Do not rename without ensuring all references are updated.
+ */
+
+import { GenerationHelper, GenerationSettings } from './generation';
+import { StorageManager } from './storage';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getRunsFromGcs() {
-  const url = `https://storage.googleapis.com/storage/v1/b/${
-    CONFIG.GCS_BUCKET
-  }/o?delimiter=${encodeURIComponent('/')}`;
-  const accessToken = ScriptApp.getOAuthToken();
-
-  const response = UrlFetchApp.fetch(url, {
-    method: 'get',
-    muteHttpExceptions: true,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  const result: GoogleCloud.Storage.ListResponse = JSON.parse(
-    response.getContentText()
-  );
-  if (!result.prefixes) {
-    return [];
-  }
-  return result.prefixes.map(e => e.split('/')[0]);
-}
-
-function _getFromGcs(filePath: string) {
-  const url = `https://storage.googleapis.com/storage/v1/b/${CONFIG.GCS_BUCKET}/o/${encodeURIComponent(filePath)}?alt=media`;
-  const accessToken = ScriptApp.getOAuthToken();
-  const response = UrlFetchApp.fetch(url, {
-    method: 'get',
-    muteHttpExceptions: true,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-  if (response.getResponseCode() === 404) {
-    return;
-  }
-  return response.getContent();
+  return StorageManager.listObjects();
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getFromGcs(filePath: string, mimeType: string) {
-  const result = _getFromGcs(filePath);
+function getFromGcs(filePath: string, mimeType: string): string | null {
+  const result = StorageManager.loadFile(filePath) as GoogleAppsScript.Byte[];
   if (!result) {
-    return;
+    return null;
   }
   const dataUrl = `data:${mimeType};base64,${Utilities.base64Encode(result)}`;
   return dataUrl;
@@ -72,32 +43,13 @@ function uploadVideo(dataUrl: string, uploadedFileName: string) {
     ? Utilities.base64Encode(Session.getActiveUser().getEmail())
     : Session.getTemporaryActiveUserKey();
   const folder = `${uploadedFileName}--${Date.now()}--${encodedUserId}`;
-  const filename = 'input.mp4';
-  const videoBlob = Utilities.newBlob(
-    Utilities.base64Decode(dataUrl.split(',')[1]),
-    'video/mp4',
-    filename
-  );
-  const fullName = encodeURIComponent(`${folder}/${filename}`);
-  const url = `https://storage.googleapis.com/upload/storage/v1/b/${CONFIG.GCS_BUCKET}/o?uploadType=media&name=${fullName}`;
-  const bytes = videoBlob.getBytes();
-  const accessToken = ScriptApp.getOAuthToken();
-
-  const response = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: videoBlob.getContentType()!,
-    payload: bytes,
-    muteHttpExceptions: true,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  const result = JSON.parse(response.getContentText());
-  Logger.log(
-    `https://storage.cloud.google.com/${result.bucket}/${result.name}`
-  );
+  StorageManager.uploadFile(dataUrl.split(',')[1], folder);
   return folder;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function generateVariants(gcsFolder: string, settings: GenerationSettings) {
+  return GenerationHelper.generateVariants(gcsFolder, settings);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

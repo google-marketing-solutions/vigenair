@@ -26,16 +26,14 @@ import re
 import tempfile
 from typing import Dict, Sequence, Tuple, Union
 
-import pandas as pd
-import vertexai
-from vertexai.preview.generative_models import GenerativeModel
-from vertexai.preview.generative_models import Part
-
 import audio as AudioService
 import config as ConfigService
+import pandas as pd
 import storage as StorageService
 import utils as Utils
+import vertexai
 import video as VideoService
+from vertexai.preview.generative_models import GenerativeModel, Part
 
 
 class Extractor:
@@ -162,7 +160,10 @@ class Extractor:
         'top_p': 1,
         'top_k': 16,
     }
-    gcs_cuts_folder_path = f'gs://{self.gcs_bucket_name}/{self.video_file.gcs_folder}/{ConfigService.OUTPUT_AV_SEGMENTS_DIR}'
+    gcs_cuts_folder_path = (
+        f'gs://{self.gcs_bucket_name}/{self.video_file.gcs_folder}/'
+        f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}'
+    )
     descriptions = []
     keywords = []
     cut_paths = []
@@ -192,13 +193,17 @@ class Extractor:
         descriptions.insert(index, description)
         keywords.insert(index, keyword)
         resources_base_path = (
-            f'{ConfigService.GCS_BASE_URL}/{self.gcs_bucket_name}/{self.video_file.gcs_folder}/{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/{index+1}'
+            f'{ConfigService.GCS_BASE_URL}/{self.gcs_bucket_name}/'
+            f'{self.video_file.gcs_folder}/'
+            f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/{index+1}'
         )
-        cut_paths.insert(index,
-                         f'{resources_base_path}.{self.video_file.file_ext}')
+        cut_paths.insert(
+            index, f'{resources_base_path}.{self.video_file.file_ext}'
+        )
         screenshot_paths.insert(
             index,
-            f'{resources_base_path}{ConfigService.SEGMENT_SCREENSHOT_EXT}')
+            f'{resources_base_path}{ConfigService.SEGMENT_SCREENSHOT_EXT}'
+        )
 
     optimised_av_segments = optimised_av_segments.assign(
         **{
@@ -206,7 +211,8 @@ class Extractor:
             'keywords': keywords,
             'segment_uri': cut_paths,
             'segment_screenshot_uri': screenshot_paths,
-        })
+        }
+    )
     return optimised_av_segments
 
 
@@ -239,7 +245,8 @@ def _cut_and_annotate_av_segment(
   _, video_ext = os.path.splitext(video_file_path)
   full_cut_path = str(pathlib.Path(cuts_path, f'{index}{video_ext}'))
   full_screenshot_path = str(
-      pathlib.Path(cuts_path, f'{index}{ConfigService.SEGMENT_SCREENSHOT_EXT}'))
+      pathlib.Path(cuts_path, f'{index}{ConfigService.SEGMENT_SCREENSHOT_EXT}')
+  )
   Utils.execute_subprocess_commands(
       cmds=[
           'ffmpeg',
@@ -284,7 +291,8 @@ def _cut_and_annotate_av_segment(
       file_path=full_screenshot_path,
       bucket_name=bucket_name,
       destination_file_name=(
-          f'{gcs_cut_dest_file_prefix}{ConfigService.SEGMENT_SCREENSHOT_EXT}'),
+          f'{gcs_cut_dest_file_prefix}{ConfigService.SEGMENT_SCREENSHOT_EXT}'
+      ),
   )
   description = ''
   keywords = ''

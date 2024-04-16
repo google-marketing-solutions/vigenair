@@ -190,7 +190,6 @@ export class AppComponent {
       return;
     }
     this.currentSegmentId = currentSegment.av_segment_id;
-    console.log(this.currentSegmentId);
   }
 
   drawEntity(
@@ -265,7 +264,6 @@ export class AppComponent {
             e.selected = false;
             return e;
           });
-          console.log(this.avSegments);
           this.segmentsStatus = 'check_circle';
           this.loading = false;
         },
@@ -297,7 +295,6 @@ export class AppComponent {
         next: dataUrl => {
           this.analysisJson = JSON.parse(atob(dataUrl.split(',')[1]));
           this.analysisStatus = 'check_circle';
-          // console.log(this.analysisJson);
           this.parseAnalysis();
           this.getAvSegments(folder);
           //this.getMagicCombos(folder);
@@ -349,7 +346,7 @@ export class AppComponent {
   processVideo(folder: string) {
     this.resetState();
     this.folder = folder;
-    this.gcsVideoPath = `https://storage.mtls.cloud.google.com/${CONFIG.GCS_BUCKET}/${folder}/input.mp4`;
+    this.gcsVideoPath = `https://storage.mtls.cloud.google.com/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`;
     this.previewVideoElem.nativeElement.src = this.gcsVideoPath;
     this.previewVideoElem.nativeElement.onloadeddata = () => {
       this.magicCanvas.nativeElement.width =
@@ -379,7 +376,7 @@ export class AppComponent {
   generateVariants() {
     this.loading = true;
     this.apiCallsService
-      .generateVariants({
+      .generateVariants(this.folder, {
         prompt: this.prompt,
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,

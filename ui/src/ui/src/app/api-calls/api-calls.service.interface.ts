@@ -25,6 +25,8 @@ export interface GenerateVariantsResponse {
   title: string;
   scenes: number[];
   description: string;
+  score: number;
+  reasoning: string;
 }
 
 export interface ApiCalls {
@@ -36,6 +38,7 @@ export interface ApiCalls {
     maxRetries?: number
   ): Observable<string>;
   generateVariants(
+    gcsFolder: string,
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]>;
   getRunsFromGcs(): Observable<string[]>;

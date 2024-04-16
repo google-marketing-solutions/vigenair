@@ -28,12 +28,11 @@ import sys
 import tempfile
 from typing import Any, Dict, Sequence, Tuple
 
-import vertexai
-from vertexai.preview.generative_models import GenerativeModel
-
 import config as ConfigService
 import storage as StorageService
 import utils as Utils
+import vertexai
+from vertexai.preview.generative_models import GenerativeModel
 
 
 @dataclasses.dataclass(frozen=True)
@@ -150,11 +149,15 @@ class Combiner:
     root_video_folder = str(
         pathlib.Path(self.render_file.full_gcs_path).parents[1]
     )
-    video_file_name = StorageService.filter_video_files(
-        prefix=f'{root_video_folder}/{ConfigService.INPUT_FILENAME}',
-        bucket_name=self.gcs_bucket_name,
-        first_only=True,
-    )[0]
+    video_file_name = next(
+        iter(
+            StorageService.filter_video_files(
+                prefix=f'{root_video_folder}/{ConfigService.INPUT_FILENAME}',
+                bucket_name=self.gcs_bucket_name,
+                first_only=True,
+            )
+        ), None
+    )
     logging.info('RENDERING - Video file name: %s', video_file_name)
     video_file_path = StorageService.download_gcs_file(
         file_path=Utils.TriggerFile(video_file_name),
@@ -196,7 +199,8 @@ class Combiner:
         )
     )
     video_variants_dict = {
-        variant.variant_id: variant for variant in video_variants
+        variant.variant_id: variant
+        for variant in video_variants
     }
     logging.info('RENDERING - Rendering video variants: %r...', video_variants)
     combos_dir = tempfile.mkdtemp()
@@ -223,7 +227,8 @@ class Combiner:
         combo = vars(variant)
         combo.pop('render_settings', None)
         combo['av_segments'] = {
-            key: vars(value) for key, value in variant.av_segments.items()
+            key: vars(value)
+            for key, value in variant.av_segments.items()
         }
         combo['variants'] = rendered_variant_paths
         rendered_combos[str(variant_id)] = combo
@@ -235,7 +240,7 @@ class Combiner:
     combos_json_path = os.path.join(
         combos_dir, ConfigService.OUTPUT_COMBINATIONS_FILE
     )
-    with open(combos_json_path, 'w') as f:
+    with open(combos_json_path, 'w', encoding='utf8') as f:
       json.dump(rendered_combos, f, indent=2)
 
     StorageService.upload_gcs_dir(
@@ -247,8 +252,8 @@ class Combiner:
         file_path=combos_json_path,
         bucket_name=self.gcs_bucket_name,
         destination_file_name=os.path.join(
-            self.render_file.gcs_folder,
-            ConfigService.OUTPUT_COMBINATIONS_FILE),
+            self.render_file.gcs_folder, ConfigService.OUTPUT_COMBINATIONS_FILE
+        ),
         overwrite=True,
     )
     logging.info('COMBINER - Rendering completed successfully!')
@@ -382,7 +387,8 @@ def _render_video_variant(
 
   return {
       format_type: (
-          f'{ConfigService.GCS_BASE_URL}/{pathlib.Path(gcs_bucket_name, gcs_folder_path, rendered_path)}'
+          f'{ConfigService.GCS_BASE_URL}/'
+          f'{pathlib.Path(gcs_bucket_name, gcs_folder_path, rendered_path)}'
       )
       for format_type, rendered_path in rendered_paths.items()
   }

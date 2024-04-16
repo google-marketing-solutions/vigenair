@@ -80,27 +80,20 @@ export class ApiCallsService implements ApiCalls {
   }
 
   generateVariants(
+    gcsFolder: string,
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]> {
     return new Observable<GenerateVariantsResponse[]>(subscriber => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       google.script.run
-        .withSuccessHandler(() => {
+        .withSuccessHandler((variants: GenerateVariantsResponse[]) => {
           this.ngZone.run(() => {
-            // TODO: Return actual data
-            subscriber.next([
-              {
-                combo_id: 1,
-                title: 'Title',
-                description: 'Description',
-                scenes: [1],
-              },
-            ]);
+            subscriber.next(variants);
             subscriber.complete();
           });
         })
-        .generateVariants(settings);
+        .generateVariants(gcsFolder, settings);
     });
   }
 
