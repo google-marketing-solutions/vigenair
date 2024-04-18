@@ -32,14 +32,15 @@ from iso639 import languages
 
 
 def extract_audio(video_file_path: str) -> Optional[str]:
-  """Extracts the audio track from a video file, if exists.
+  """Extracts the audio track from a video file, if it exists.
 
   Args:
     video_file_path: path to the video file from which the audio will be
       extracted.
 
   Returns:
-    The path to the extracted audio file if exists.
+    The path to the extracted audio file if it exists, or None if the video does
+    not contain an audio track.
   """
   output = Utils.execute_subprocess_commands(
       cmds=[

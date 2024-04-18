@@ -34,7 +34,7 @@ limitations under the License.
 
 ## Overview
 
-**ViGenAiR** *(pronounced vision-air)* uses state-of-the-art multimodal Generative AI on Google Cloud Platform (GCP) to automatically repurpose long-form Video Ads and generate several shorter variants and storylines at scale. It generates horizontal, vertical and square assets to power [Demand Gen](https://support.google.com/google-ads/answer/13695777?hl=en) and [YouTube video campaigns](https://support.google.com/youtube/answer/2375497?hl=en), and leverages Google Ads' built-in A/B testing to automatically identify the best variants tailored to your target audiences. ViGenAiR is an acronym for <u>Vi</u>deo <u>Gen</u>eration via <u>A</u>ds <u>R</u>ecrafting, and is more colloquially referred to as vigenair.
+**ViGenAiR** *(pronounced vision-air)* uses state-of-the-art multimodal Generative AI on Google Cloud Platform (GCP) to automatically repurpose long-form Video Ads and generate several shorter variants and storylines at scale. It generates horizontal, vertical and square assets to power [Demand Gen](https://support.google.com/google-ads/answer/13695777?hl=en) and [YouTube video campaigns](https://support.google.com/youtube/answer/2375497?hl=en), and leverages Google Ads' built-in A/B testing to automatically identify the best variants tailored to your target audiences. ViGenAiR is an acronym for <u>Vi</u>deo <u>Gen</u>eration via <u>A</u>ds <u>R</u>ecrafting, and is more colloquially referred to as *Vigenair*.
 
 ## Get Started
 
@@ -55,6 +55,28 @@ See [Solution Overview](#solution-overview) for more details on the different co
 
 By default, Vigenair runs only for the user that deployed it. This is controlled by the [Web App access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which is set to `MYSELF` by default. This setup works well for most cases, however if you are a Google Workspace customer you may change this value to `DOMAIN` to allow other individuals within your organization to run the app. The `npm start` command will prompt you for this as well if you opt to deploy the UI.
 
+### Requirements
+
+You need the following to use Vigenair:
+
+* Google account: required to access the Vigenair UI.
+* GCP project with:
+  * The [Vertex AI API](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/api-quickstart) enabled: required to access Gemini in Vertex AI.
+    * All users running Vigenair must be granted the [Vertex AI User](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user) role on the associated GCP project.
+  * The [Video AI API](https://cloud.google.com/video-intelligence) enabled (AKA Cloud Video Intelligence API): required for analysing input videos.
+  * All users running Vigenair must be granted the [Storage Object User](https://cloud.google.com/storage/docs/access-control/iam-roles) role on the associated GCP project.
+
+The Vigenair [setup and deployment script](#get-started) will create the following components:
+
+* A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
+* A Cloud Function (2nd gen) named `vigenair` that fulfills both the Extractor and Combiner services. Refer to [deploy.sh](./service/deploy.sh) for specs.
+* An Apps Script deployment for the frontend web app.
+
+If you will also be deploying Vigenair, you need to have the following additional roles on the associated GCP project:
+
+* `Storage Admin` for the entire project OR `Storage Legacy Bucket Writer` on the <code>*<gcp_project_id>*-vigenair</code> bucket. See [IAM Roles for Cloud Storage](https://cloud.google.com/storage/docs/access-control/iam-roles) for more information.
+* `Cloud Functions Developer` to deploy and manage Cloud Functions. See [IAM Roles for Cloud Functions](https://cloud.google.com/functions/docs/reference/iam/roles) for more information.
+
 ## Challenges
 
 Current Video Ads creative solutions, both within YouTube / Google Ads as well as open source, primarily focus on 4 of the [5 keys to effective advertising](https://info.ncsolutions.com/hubfs/2023%20Five%20Keys%20to%20Advertising%20Effectiveness/NCS_Five_Keys_to_Advertising_Effectiveness_E-Book_08-23.pdf) - Brand, Targeting, Reach and Recency. Those 4 pillars contribute to *only ~50%* of the potential marketing ROI, with the 5th pillar - **Creative** - capturing a *whopping ~50%* all on its own.
@@ -63,7 +85,7 @@ Current Video Ads creative solutions, both within YouTube / Google Ads as well a
 
 Vigenair focuses on the *Creative* pillar to help potentially **unlock ~50% ROI** while solving a huge pain point for advertisers; the generation, trafficking and A/B testing of different Video Ad formats, at **scale**, powered by Google's multimodal Generative AI - Gemini.
 
-## Benefits
+### Benefits
 
 * **Inventory**: Horizontal, vertical and square Video assets in different durations allow advertisers to tap into virtually ALL Google-owned sources of inventory
 * **Campaigns**: Shorter more compelling Video Ads that still capture the meaning and storyline of their original ads - ideal for *Social* and *Awareness/Consideration* campaigns
@@ -73,17 +95,17 @@ Vigenair focuses on the *Creative* pillar to help potentially **unlock ~50% ROI*
 
 ## Solution Overview
 
-Vigenair's frontend is an Angular Progressive Web App (PWA) hosted on Google Apps Script and accessible via a [web app deployment](https://developers.google.com/apps-script/guides/web). As with all Google Workspace apps, users must authenticate with a Google account in order to use the vigenair web app. Backend services are hosted on [Cloud Functions 2nd gen](https://cloud.google.com/functions/docs/concepts/version-comparison), and are triggered via Cloud Storage (GCS). Decoupling the UI and core services via GCS significantly reduces authentication overhead and effectively implements separation of concerns between the frontend and backend layers.
+Vigenair's frontend is an Angular Progressive Web App (PWA) hosted on Google Apps Script and accessible via a [web app deployment](https://developers.google.com/apps-script/guides/web). As with all Google Workspace apps, users must authenticate with a Google account in order to use the Vigenair web app. Backend services are hosted on [Cloud Functions 2nd gen](https://cloud.google.com/functions/docs/concepts/version-comparison), and are triggered via Cloud Storage (GCS). Decoupling the UI and core services via GCS significantly reduces authentication overhead and effectively implements separation of concerns between the frontend and backend layers.
 
 Vigenair uses Gemini on Vertex AI to *holistically* understand and analyse the content and storyline of a Video Ad, **automatically** splitting it into *coherent* audio/video segments that are then used to generate different shorter variants and Ad formats. Vigenair analyses the spoken dialogue in a video (if present), the visually changing shots, on-screen entities such as any identified logos and/or text, and background music and effects. It then uses all of this information to combine sections of the video together that are *coherent*; segments that won't be cut mid-dialogue nor mid-scene, and that are semantically and contextually related to one another. These coherent A/V segments serve as the building blocks for both GenAI- and user-driven recombination.
 
-<center><img src='./img/overview.png' alt='How vigenair works' /></center>
+<center><img src='./img/overview.png' alt='How Vigenair works' /></center>
 
 The generated variants may follow the original Ad's storyline - and thus serve as *mid-funnel reminder campaigns* of the original Ad for **Awareness and/or Consideration** - or introduce whole new storylines altogether, all while following Google's best practices for creatives.
 
 ### Architecture
 
-The diagram below shows how vigenair's components interact and communicate with one another.
+The diagram below shows how Vigenair's components interact and communicate with one another.
 
 <center><img src='./img/architecture.png' alt='Vigenair Architecture' /></center>
 
@@ -97,31 +119,9 @@ The diagram below shows how vigenair's components interact and communicate with 
 5. Once users are satisfied with the resulting variants, they can render them in their desired formats and settings via the Combiner Service (writing `render.json` to GCS, which serves as the input to the service, and the output is a `combos.json`).
 6. The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos of the variants and all associated assets will be displayed. Users can then approve the final variants they would like to upload into Google Ads / YouTube.
 
-### Requirements
-
-You need the following to use vigenair:
-
-* Google account: required to access the vigenair UI.
-* GCP project with:
-  * The [Vertex AI API](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/api-quickstart) enabled: required to access Gemini in Vertex AI.
-    * All users running Vigenair must be granted the [Vertex AI User](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user) role on the associated GCP project.
-  * The [Video AI API](https://cloud.google.com/video-intelligence) enabled (AKA Cloud Video Intelligence API): required for analysing input videos.
-  * All users running Vigenair must be granted the [Storage Object User](https://cloud.google.com/storage/docs/access-control/iam-roles) role on the associated GCP project.
-
-The Vigenair [setup and deployment script](#get-started) will create the following components:
-
-* A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
-* A Cloud Function (2nd gen) named `vigenair` that fulfills both the Extractor and Combiner services. Refer to [deploy.sh](./service/deploy.sh) for specs.
-* An Apps Script deployment for the frontend web app.
-
-If you will also be deploying vigenair, you need to have the following additional roles on the associated GCP project:
-
-* `Storage Admin` for the entire project OR `Storage Legacy Bucket Writer` on the <code>*<gcp_project_id>*-vigenair</code> bucket. See [IAM Roles for Cloud Storage](https://cloud.google.com/storage/docs/access-control/iam-roles) for more information.
-* `Cloud Functions Developer` to deploy and manage Cloud Functions. See [IAM Roles for Cloud Functions](https://cloud.google.com/functions/docs/reference/iam/roles) for more information.
-
 ## How to Contribute
 
-Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), you would need to follow these additional steps to build vigenair locally and modify the source code:
+Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), you would need to follow these additional steps to build Vigenair locally and modify the source code:
 
 ### Build and Deploy GCP Components
 
