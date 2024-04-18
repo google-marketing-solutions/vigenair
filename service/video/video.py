@@ -108,16 +108,18 @@ def get_visual_shots_data(
     end_time = (
         shot.end_time_offset.seconds + shot.end_time_offset.microseconds / 1e6
     )
+    duration = end_time - start_time
 
-    shots_data.append((
-        i + 1,
-        _identify_segments(
-            start_time, end_time, transcription_dataframe, audio_segment_id_key
-        ),
-        start_time,
-        end_time,
-        end_time - start_time,
-    ))
+    if duration > 0:
+      shots_data.append((
+          i + 1,
+          _identify_segments(
+              start_time, end_time, transcription_dataframe, audio_segment_id_key
+          ),
+          start_time,
+          end_time,
+          duration,
+      ))
 
   shots_dataframe = pd.DataFrame(
       shots_data,
