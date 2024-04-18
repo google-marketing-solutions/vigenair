@@ -73,5 +73,6 @@ export const CONFIG = {
     `,
   },
   maxRetries: 3,
+  defaultVideoLanguage: 'English',
   debug: false,
 };

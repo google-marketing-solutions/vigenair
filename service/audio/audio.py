@@ -21,7 +21,7 @@ import logging
 import os
 import pathlib
 import shutil
-from typing import Tuple
+from typing import Optional, Tuple
 
 import config as ConfigService
 import pandas as pd
@@ -31,18 +31,37 @@ from faster_whisper import WhisperModel
 from iso639 import languages
 
 
-def extract_audio(video_file_path: str) -> str:
-  """Extracts the audio track from a video file.
+def extract_audio(video_file_path: str) -> Optional[str]:
+  """Extracts the audio track from a video file, if exists.
 
   Args:
     video_file_path: path to the video file from which the audio will be
       extracted.
 
   Returns:
-    The path to the extracted audio file.
+    The path to the extracted audio file if exists.
   """
-  audio_file_path = f"{video_file_path.split('.')[0]}.wav"
+  output = Utils.execute_subprocess_commands(
+      cmds=[
+          'ffprobe',
+          '-i',
+          video_file_path,
+          '-show_streams',
+          '-select_streams',
+          'a',
+          '-loglevel',
+          'error',
+      ],
+      description='check if video has audio with ffprobe',
+  )
+  if not output:
+    logging.warning(
+        'AUDIO_EXTRACTION - Video does not contain an audio track! '
+        'Skipping audio extraction...'
+    )
+    return None
 
+  audio_file_path = f"{video_file_path.split('.')[0]}.wav"
   Utils.execute_subprocess_commands(
       cmds=[
           'ffmpeg',

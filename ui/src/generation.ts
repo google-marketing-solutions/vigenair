@@ -56,10 +56,9 @@ export class GenerationHelper {
     gcsFolder: string,
     settings: GenerationSettings
   ): string {
-    const videoLanguage = StorageManager.loadFile(
-      `${gcsFolder}/language.txt`,
-      true
-    ) as string;
+    const videoLanguage =
+      (StorageManager.loadFile(`${gcsFolder}/language.txt`, true) as string) ||
+      CONFIG.defaultVideoLanguage;
     const duration = Number(settings.duration) || 30;
     const expectedDurationRange =
       GenerationHelper.calculateExpectedDurationRange(duration);

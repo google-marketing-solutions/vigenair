@@ -65,7 +65,68 @@ class Extractor:
         bucket_name=self.gcs_bucket_name,
     )
     audio_file_path = AudioService.extract_audio(video_file_path)
+    transcription_dataframe = pd.DataFrame()
+    annotation_results = None
 
+    if audio_file_path:
+      (
+          transcription_dataframe,
+          annotation_results,
+          vocals_file_path,
+          music_file_path,
+      ) = self.process_video_with_audio(
+          tmp_dir,
+          audio_file_path,
+      )
+      logging.info('AUDIO - vocals_file_path: %s', vocals_file_path)
+      logging.info('AUDIO - music_file_path: %s', music_file_path)
+    else:
+      annotation_results = self.process_video_without_audio(tmp_dir)
+
+    optimised_av_segments = _create_optimised_segments(
+        annotation_results,
+        transcription_dataframe,
+    )
+    logging.info('SEGMENTS - Optimised segments: %r', optimised_av_segments)
+
+    optimised_av_segments = self.cut_and_annotate_av_segments(
+        tmp_dir,
+        video_file_path,
+        optimised_av_segments,
+    )
+    logging.info(
+        'SEGMENTS - Final optimised segments: %r',
+        optimised_av_segments,
+    )
+
+    data_file_path = str(pathlib.Path(tmp_dir, ConfigService.OUTPUT_DATA_FILE))
+    optimised_av_segments.to_json(data_file_path, orient='records')
+
+    StorageService.upload_gcs_dir(
+        source_directory=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+        target_dir=self.video_file.gcs_folder,
+    )
+    logging.info('EXTRACTOR - Extraction completed successfully!')
+
+  def process_video_without_audio(self, tmp_dir):
+    """Runs video analysis only."""
+    annotation_results = VideoService.analyse_video(
+        video_file=self.video_file,
+        bucket_name=self.gcs_bucket_name,
+    )
+    with open(
+        f'{tmp_dir}/{ConfigService.OUTPUT_SUBTITLES_FILE}', 'w', encoding='utf8'
+    ):
+      pass
+    logging.info(
+        'TRANSCRIPTION - Empty %s written successfully!',
+        ConfigService.OUTPUT_SUBTITLES_FILE,
+    )
+    return annotation_results
+
+  def process_video_with_audio(self, tmp_dir: str, audio_file_path: str):
+    """Runs video and audio analyses in parallel."""
     transcription_dataframe = None
     annotation_results = None
     vocals_file_path = None
@@ -107,34 +168,12 @@ class Extractor:
             vocals_file_path, music_file_path = future.result()
             logging.info('THREADING - split_audio finished!')
 
-    logging.info('AUDIO - vocals_file_path: %s', vocals_file_path)
-    logging.info('AUDIO - music_file_path: %s', music_file_path)
-
-    optimised_av_segments = _create_optimised_segments(
-        annotation_results,
+    return (
         transcription_dataframe,
+        annotation_results,
+        vocals_file_path,
+        music_file_path,
     )
-    logging.info('SEGMENTS - Optimised segments: %r', optimised_av_segments)
-
-    optimised_av_segments = self.cut_and_annotate_av_segments(
-        tmp_dir,
-        video_file_path,
-        optimised_av_segments,
-    )
-    logging.info(
-        'SEGMENTS - Final optimised segments: %r',
-        optimised_av_segments,
-    )
-
-    data_file_path = str(pathlib.Path(tmp_dir, ConfigService.OUTPUT_DATA_FILE))
-    optimised_av_segments.to_json(data_file_path, orient='records')
-
-    StorageService.upload_gcs_dir(
-        source_directory=tmp_dir,
-        bucket_name=self.gcs_bucket_name,
-        target_dir=self.video_file.gcs_folder,
-    )
-    logging.info('EXTRACTOR - Extraction completed successfully!')
 
   def cut_and_annotate_av_segments(
       self,
@@ -318,6 +357,7 @@ def _cut_and_annotate_av_segment(
     else:
       logging.warning('ANNOTATION - Could not annotate segment %s!', index)
   # Execution should continue regardless of the underlying exception
+  # pylint: disable=broad-exception-caught
   except Exception:
     logging.exception(
         'Encountered error during segment %s annotation! Continuing...',
