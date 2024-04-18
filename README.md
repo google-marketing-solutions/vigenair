@@ -99,17 +99,25 @@ The diagram below shows how vigenair's components interact and communicate with 
 
 ### Requirements
 
-You need the following to use and deploy vigenair:
+You need the following to use vigenair:
 
 * Google account: required to access the vigenair UI.
 * GCP project with:
   * The [Vertex AI API](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/api-quickstart) enabled: required to access Gemini in Vertex AI.
     * All users running Vigenair must be granted the [Vertex AI User](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user) role on the associated GCP project.
-  * The [Video AI API](https://cloud.google.com/video-intelligence) enabled: required for analysing input videos.
-* The Vigenair [setup and deployment script](#get-started) will create the following components
-  * A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
-  * A Cloud Function named `vigenair` that fulfills both the Extractor and Combiner Services. Refer to [deploy.sh](./service/deploy.sh) for specs.
-  * An Apps Script deployment for the frontend web app.
+  * The [Video AI API](https://cloud.google.com/video-intelligence) enabled (AKA Cloud Video Intelligence API): required for analysing input videos.
+  * All users running Vigenair must be granted the [Storage Object User](https://cloud.google.com/storage/docs/access-control/iam-roles) role on the associated GCP project.
+
+The Vigenair [setup and deployment script](#get-started) will create the following components:
+
+* A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
+* A Cloud Function (2nd gen) named `vigenair` that fulfills both the Extractor and Combiner services. Refer to [deploy.sh](./service/deploy.sh) for specs.
+* An Apps Script deployment for the frontend web app.
+
+If you will also be deploying vigenair, you need to have the following additional roles on the associated GCP project:
+
+* `Storage Admin` for the entire project OR `Storage Legacy Bucket Writer` on the <code>*<gcp_project_id>*-vigenair</code> bucket. See [IAM Roles for Cloud Storage](https://cloud.google.com/storage/docs/access-control/iam-roles) for more information.
+* `Cloud Functions Developer` to deploy and manage Cloud Functions. See [IAM Roles for Cloud Functions](https://cloud.google.com/functions/docs/reference/iam/roles) for more information.
 
 ## How to Contribute
 
