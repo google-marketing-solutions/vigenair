@@ -446,13 +446,14 @@ def _identify_segments(
   Returns:
     The identified row IDs for the given column.
   """
-  result = data[
-      # Segments starting before and ending within or after the range
-      (data[start_key] <= start_time) & (data[end_key] > start_time)
-      |
-      # Segments starting within the range
-      (data[start_key] >= start_time) & (data[start_key] < end_time)
-  ]
-  if not result.empty:
-    return result[key].tolist()
+  if not data.empty:
+    result = data[
+        # Segments starting before and ending within or after the range
+        (data[start_key] <= start_time) & (data[end_key] > start_time)
+        |
+        # Segments starting within the range
+        (data[start_key] >= start_time) & (data[start_key] < end_time)
+    ]
+    if not result.empty:
+      return result[key].tolist()
   return []

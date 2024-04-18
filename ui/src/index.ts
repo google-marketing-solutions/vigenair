@@ -48,6 +48,11 @@ function uploadVideo(dataUrl: string, uploadedFileName: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+function deleteGcsFolder(folder: string) {
+  StorageManager.deleteFolder(folder);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateVariants(gcsFolder: string, settings: GenerationSettings) {
   return GenerationHelper.generateVariants(gcsFolder, settings);
 }

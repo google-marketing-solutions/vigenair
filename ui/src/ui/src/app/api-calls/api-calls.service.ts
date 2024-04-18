@@ -55,6 +55,12 @@ export class ApiCallsService implements ApiCalls {
     });
   }
 
+  deleteGcsFolder(folder: string): void {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    google.script.run.deleteGcsFolder(folder);
+  }
+
   getFromGcs(
     url: string,
     mimeType: string,

@@ -20,14 +20,14 @@ import { ScriptUtil } from './utils';
 
 export class StorageManager {
   static getGcsUrlBase(): string {
-    return `${CONFIG.cloudStorage.endpointBase}/b/${CONFIG.cloudStorage.bucket}/o`;
+    return `${CONFIG.cloudStorage.endpointBase}/b/${CONFIG.cloudStorage.bucket}`;
   }
 
   static loadFile(
     filePath: string,
     asString = false
   ): string | GoogleAppsScript.Byte[] | null {
-    const url = `${this.getGcsUrlBase()}/${encodeURIComponent(filePath)}?alt=media`;
+    const url = `${this.getGcsUrlBase()}/o/${encodeURIComponent(filePath)}?alt=media`;
 
     const response = ScriptUtil.executeWithRetry(() =>
       ScriptUtil.urlFetch(url)
@@ -38,8 +38,18 @@ export class StorageManager {
     return asString ? response.getContentText() : response.getContent();
   }
 
-  static listObjects(prefix = '/'): string[] {
-    const url = `${this.getGcsUrlBase()}?delimiter=${encodeURIComponent(prefix)}`;
+  static listObjects(delimiter = '/', prefix?: string): string[] {
+    let url = `${this.getGcsUrlBase()}/o?`;
+
+    if (delimiter) {
+      url += `delimiter=${encodeURIComponent(delimiter)}`;
+    }
+    if (prefix) {
+      if (!url.endsWith('?')) {
+        url += '&';
+      }
+      url += `prefix=${encodeURIComponent(prefix)}`;
+    }
 
     const response = ScriptUtil.executeWithRetry(() =>
       ScriptUtil.urlFetch(url)
@@ -47,10 +57,13 @@ export class StorageManager {
     const result: GoogleCloud.Storage.ListResponse = JSON.parse(
       response.getContentText()
     );
-    if (!result.prefixes) {
+    if (delimiter && !result.prefixes) {
       return [];
     }
-    return result.prefixes.map((e: string) => e.split('/')[0]);
+    if (delimiter) {
+      return result.prefixes.map((e: string) => e.split('/')[0]);
+    }
+    return result.items.map((e: GoogleCloud.Storage.Objects) => e.name);
   }
 
   static uploadFile(
@@ -72,6 +85,17 @@ export class StorageManager {
       payload: bytes,
     });
     const result = JSON.parse(response.getContentText());
-    AppLogger.debug(`Uploaded video to ${result.bucket}/${result.name}`);
+    AppLogger.debug(`Uploaded ${filename} to ${result.bucket}/${result.name}`);
+  }
+
+  static deleteFile(filePath: string) {
+    const url = `${this.getGcsUrlBase()}/o/${encodeURIComponent(filePath)}`;
+    ScriptUtil.urlFetch(url, 'DELETE');
+    AppLogger.debug(`Deleted file ${filePath}`);
+  }
+
+  static deleteFolder(folder: string) {
+    this.listObjects('', folder).forEach(file => this.deleteFile(file));
+    AppLogger.debug(`Deleted video folder ${folder}`);
   }
 }

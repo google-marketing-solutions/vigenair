@@ -111,18 +111,29 @@ class Extractor:
 
   def process_video_without_audio(self, tmp_dir):
     """Runs video analysis only."""
-    annotation_results = VideoService.analyse_video(
-        video_file=self.video_file,
-        bucket_name=self.gcs_bucket_name,
+    subtitles_filepath = str(
+        pathlib.Path(tmp_dir, ConfigService.OUTPUT_SUBTITLES_FILE)
     )
-    with open(
-        f'{tmp_dir}/{ConfigService.OUTPUT_SUBTITLES_FILE}', 'w', encoding='utf8'
-    ):
+    with open(subtitles_filepath, 'w', encoding='utf8'):
       pass
+    StorageService.upload_gcs_file(
+        file_path=subtitles_filepath,
+        bucket_name=self.gcs_bucket_name,
+        destination_file_name=str(
+            pathlib.Path(
+                self.video_file.gcs_folder, ConfigService.OUTPUT_SUBTITLES_FILE
+            )
+        ),
+    )
     logging.info(
         'TRANSCRIPTION - Empty %s written successfully!',
         ConfigService.OUTPUT_SUBTITLES_FILE,
     )
+    annotation_results = VideoService.analyse_video(
+        video_file=self.video_file,
+        bucket_name=self.gcs_bucket_name,
+    )
+    logging.info('VIDEO_ANALYSIS - Completed successfully!')
     return annotation_results
 
   def process_video_with_audio(self, tmp_dir: str, audio_file_path: str):

@@ -142,6 +142,11 @@ export class AppComponent {
       });
   }
 
+  cleanUpBrokenUpload(folder: string) {
+    this.apiCallsService.deleteGcsFolder(folder);
+    this.getPreviousRuns();
+  }
+
   drawFrame(entities?: any[]) {
     const context = this.canvas;
     if (!context || !entities) {
@@ -250,7 +255,6 @@ export class AppComponent {
             }),
           };
         });
-    // console.log(this.videoObjects);
   }
 
   getAvSegments(folder: string) {
@@ -267,7 +271,10 @@ export class AppComponent {
           this.segmentsStatus = 'check_circle';
           this.loading = false;
         },
-        error: () => this.failHandler(),
+        error: () => {
+          this.failHandler();
+          this.cleanUpBrokenUpload(folder);
+        },
       });
   }
 
@@ -299,7 +306,10 @@ export class AppComponent {
           this.getAvSegments(folder);
           //this.getMagicCombos(folder);
         },
-        error: () => this.failHandler(),
+        error: () => {
+          this.failHandler();
+          this.cleanUpBrokenUpload(folder);
+        },
       });
   }
 
@@ -313,7 +323,10 @@ export class AppComponent {
           this.transcriptStatus = 'check_circle';
           this.getMagicAnalysis(folder);
         },
-        error: () => this.failHandler(),
+        error: () => {
+          this.failHandler();
+          this.cleanUpBrokenUpload(folder);
+        },
       });
   }
 

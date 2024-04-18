@@ -31,6 +31,7 @@ export interface GenerateVariantsResponse {
 
 export interface ApiCalls {
   uploadVideo(file: Blob): Observable<string>;
+  deleteGcsFolder(folder: string): void;
   getFromGcs(
     url: string,
     mimeType: string,
