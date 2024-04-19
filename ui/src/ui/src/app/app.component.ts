@@ -24,6 +24,10 @@ import {
 } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import {
+  MatSlideToggle,
+  MatSlideToggleModule,
+} from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -61,6 +65,7 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
     MatSnackBarModule,
     MatTabsModule,
     MatToolbarModule,
+    MatSlideToggleModule,
     MatChipsModule,
     MatIconModule,
     MatButtonToggleModule,
@@ -96,6 +101,7 @@ export class AppComponent {
   duration = 'auto';
   demandGenAssets = true;
   previousRuns: string[] | undefined;
+  encodedUserId: string | undefined;
   folder = '';
 
   get combos(): any[] {
@@ -111,6 +117,7 @@ export class AppComponent {
   @ViewChild('magicCanvas') magicCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('videoCombosPanel') videoCombosPanel!: MatExpansionPanel;
   @ViewChild('segmentModeToggle') segmentModeToggle!: MatButtonToggleGroup;
+  @ViewChild('videosFilterToggle') videosFilterToggle!: MatSlideToggle;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -120,9 +127,18 @@ export class AppComponent {
   }
 
   getPreviousRuns() {
-    this.apiCallsService.getRunsFromGcs().subscribe(runs => {
-      this.previousRuns = runs;
+    this.apiCallsService.getRunsFromGcs().subscribe(result => {
+      this.previousRuns = result.runs;
+      this.encodedUserId = result.encodedUserId;
     });
+  }
+
+  isCurrentUserRun(run: string) {
+    if (this.videosFilterToggle && this.videosFilterToggle.checked) {
+      const encodedUserId = run.split('--')[2];
+      return encodedUserId === this.encodedUserId;
+    }
+    return true;
   }
 
   onFileSelected(file: File) {

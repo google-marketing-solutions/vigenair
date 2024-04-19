@@ -20,6 +20,7 @@ import {
   ApiCalls,
   GenerateVariantsResponse,
   GenerationSettings,
+  PreviousRunsResponse,
 } from './api-calls.service.interface';
 
 @Injectable({
@@ -103,14 +104,14 @@ export class ApiCallsService implements ApiCalls {
     });
   }
 
-  getRunsFromGcs(): Observable<string[]> {
-    return new Observable<string[]>(subscriber => {
+  getRunsFromGcs(): Observable<PreviousRunsResponse> {
+    return new Observable<PreviousRunsResponse>(subscriber => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       google.script.run
-        .withSuccessHandler((runs: string[]) => {
+        .withSuccessHandler((response: PreviousRunsResponse) => {
           this.ngZone.run(() => {
-            subscriber.next(runs);
+            subscriber.next(response);
             subscriber.complete();
           });
         })

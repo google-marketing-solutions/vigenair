@@ -40,6 +40,15 @@ limitations under the License.
   >
     Upload video
   </button>
+  <mat-slide-toggle
+    #videosFilterToggle="matSlideToggle"
+    color="primary"
+    style="display: block; margin-bottom: 10px"
+    *ngIf="previousRuns && previousRuns.length > 0"
+    [checked]="false"
+    [disabled]="loading"
+    >Show only my videos</mat-slide-toggle
+  >
   <mat-form-field
     subscriptSizing="dynamic"
     *ngIf="previousRuns && previousRuns.length > 0"
@@ -51,7 +60,9 @@ limitations under the License.
       (click)="getPreviousRuns()"
     >
       @for (run of previousRuns; track $index) {
-        <mat-option [value]="run">{{ run.split('--')[0] }}</mat-option>
+        <mat-option *ngIf="isCurrentUserRun(run)" [value]="run">{{
+          run.split('--')[0]
+        }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
@@ -126,7 +137,11 @@ limitations under the License.
           <div class="row" style="justify-content: start">
             {{ variant.description }}
           </div>
-          <div style="font-size: 3em" [ngClass]="'score-' + variant.score" class="row">
+          <div
+            style="font-size: 3em"
+            [ngClass]="'score-' + variant.score"
+            class="row"
+          >
             Score: {{ variant.score }}
           </div>
           <div class="row" style="white-space: pre-line">

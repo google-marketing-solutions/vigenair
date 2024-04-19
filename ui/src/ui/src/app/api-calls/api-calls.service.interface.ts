@@ -29,6 +29,11 @@ export interface GenerateVariantsResponse {
   reasoning: string;
 }
 
+export interface PreviousRunsResponse {
+  encodedUserId: string;
+  runs: string[];
+}
+
 export interface ApiCalls {
   uploadVideo(file: Blob): Observable<string>;
   deleteGcsFolder(folder: string): void;
@@ -42,5 +47,5 @@ export interface ApiCalls {
     gcsFolder: string,
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]>;
-  getRunsFromGcs(): Observable<string[]>;
+  getRunsFromGcs(): Observable<PreviousRunsResponse>;
 }

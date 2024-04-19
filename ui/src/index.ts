@@ -22,9 +22,20 @@
 import { GenerationHelper, GenerationSettings } from './generation';
 import { StorageManager } from './storage';
 
+function getEncodedUserId() {
+  const encodedUserId = Session.getActiveUser().getEmail()
+    ? Utilities.base64Encode(Session.getActiveUser().getEmail())
+    : Session.getTemporaryActiveUserKey();
+
+  return encodedUserId;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getRunsFromGcs() {
-  return StorageManager.listObjects();
+  return {
+    encodedUserId: getEncodedUserId(),
+    runs: StorageManager.listObjects(),
+  };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -39,10 +50,7 @@ function getFromGcs(filePath: string, mimeType: string): string | null {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function uploadVideo(dataUrl: string, uploadedFileName: string) {
-  const encodedUserId = Session.getActiveUser().getEmail()
-    ? Utilities.base64Encode(Session.getActiveUser().getEmail())
-    : Session.getTemporaryActiveUserKey();
-  const folder = `${uploadedFileName}--${Date.now()}--${encodedUserId}`;
+  const folder = `${uploadedFileName}--${Date.now()}--${getEncodedUserId()}`;
   StorageManager.uploadFile(dataUrl.split(',')[1], folder);
   return folder;
 }
