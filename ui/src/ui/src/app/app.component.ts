@@ -118,6 +118,7 @@ export class AppComponent {
   @ViewChild('videoCombosPanel') videoCombosPanel!: MatExpansionPanel;
   @ViewChild('segmentModeToggle') segmentModeToggle!: MatButtonToggleGroup;
   @ViewChild('videosFilterToggle') videosFilterToggle!: MatSlideToggle;
+  @ViewChild('objectTrackingToggle') objectTrackingToggle!: MatSlideToggle;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -174,23 +175,25 @@ export class AppComponent {
       this.previewVideoElem.nativeElement.videoWidth,
       this.previewVideoElem.nativeElement.videoHeight
     );
-    const timestamp = this.previewVideoElem.nativeElement.currentTime;
-    entities.forEach(e => {
-      if (e.start <= timestamp && e.end >= timestamp) {
-        for (let i = 0; i < e.frames.length; i++) {
-          if (e.frames[i].time >= timestamp) {
-            this.drawEntity(
-              e.name,
-              e.frames[i].x,
-              e.frames[i].y,
-              e.frames[i].width,
-              e.frames[i].height
-            );
-            break;
+    if (this.objectTrackingToggle && this.objectTrackingToggle.checked) {
+      const timestamp = this.previewVideoElem.nativeElement.currentTime;
+      entities.forEach(e => {
+        if (e.start <= timestamp && e.end >= timestamp) {
+          for (let i = 0; i < e.frames.length; i++) {
+            if (e.frames[i].time >= timestamp) {
+              this.drawEntity(
+                e.name,
+                e.frames[i].x,
+                e.frames[i].y,
+                e.frames[i].width,
+                e.frames[i].height
+              );
+              break;
+            }
           }
         }
-      }
-    });
+      });
+    }
   }
 
   setCurrentSegmentId() {

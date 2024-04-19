@@ -73,18 +73,30 @@ limitations under the License.
     <mat-panel-title>✨ Magic editing ✨</mat-panel-title>
   </mat-expansion-panel-header>
   <div class="row">
-    <mat-button-toggle-group
-      #segmentModeToggle="matButtonToggleGroup"
-      value="preview"
-      [disabled]="loading"
-    >
-      <mat-button-toggle value="preview">
-        <mat-icon>play_arrow</mat-icon>
-      </mat-button-toggle>
-      <mat-button-toggle value="segments">
-        <mat-icon>theaters</mat-icon>
-      </mat-button-toggle>
-    </mat-button-toggle-group>
+    <div style="margin-right: auto"></div>
+    <div>
+      <mat-button-toggle-group
+        #segmentModeToggle="matButtonToggleGroup"
+        value="preview"
+        [disabled]="loading"
+      >
+        <mat-button-toggle value="preview">
+          <mat-icon>play_arrow</mat-icon>
+        </mat-button-toggle>
+        <mat-button-toggle value="segments">
+          <mat-icon>theaters</mat-icon>
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+    <div style="margin-left: auto">
+      <mat-slide-toggle
+        #objectTrackingToggle="matSlideToggle"
+        color="primary"
+        [checked]="true"
+        [disabled]="this.analysisStatus !== 'check_circle'"
+        >Show frames</mat-slide-toggle
+      >
+    </div>
   </div>
   <div class="preview-video-row">
     <segments-list
