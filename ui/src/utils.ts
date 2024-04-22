@@ -60,3 +60,21 @@ export class ScriptUtil {
     );
   }
 }
+
+export class TimeUtil {
+  static timeStringToSeconds(timeString: string): number {
+    const [minutes, seconds] = timeString.split(':');
+    return Number(minutes) * 60 + Number(seconds);
+  }
+
+  static secondsToTimeString(seconds: number): string {
+    const date = new Date(0);
+    date.setSeconds(Number(seconds.toFixed()));
+    // extracts mm:ss from yyyy-MM-ddTHH:mm:ss.SSSZ
+    const timeString = date.toISOString().substring(14, 19);
+    if (timeString.startsWith('0')) {
+      return timeString.substring(1);
+    }
+    return timeString;
+  }
+}

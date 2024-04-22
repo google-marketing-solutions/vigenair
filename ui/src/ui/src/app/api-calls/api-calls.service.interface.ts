@@ -27,6 +27,7 @@ export interface GenerateVariantsResponse {
   description: string;
   score: number;
   reasoning: string;
+  duration: string;
 }
 
 export interface PreviousRunsResponse {

@@ -47,6 +47,8 @@ import { FileChooserComponent } from './file-chooser/file-chooser.component';
 import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
+import { marked } from 'marked';
+
 import { CONFIG } from '../../../config';
 import { GenerateVariantsResponse } from './api-calls/api-calls.service.interface';
 
@@ -103,6 +105,7 @@ export class AppComponent {
   previousRuns: string[] | undefined;
   encodedUserId: string | undefined;
   folder = '';
+  marked = marked;
 
   get combos(): any[] {
     return this.combosJson ? Object.values(this.combosJson) : [];
@@ -136,7 +139,7 @@ export class AppComponent {
 
   isCurrentUserRun(run: string) {
     if (this.videosFilterToggle && this.videosFilterToggle.checked) {
-      const encodedUserId = run.split('--')[2];
+      const encodedUserId = run.split('--').at(-1);
       return encodedUserId === this.encodedUserId;
     }
     return true;
@@ -279,7 +282,7 @@ export class AppComponent {
   getAvSegments(folder: string) {
     this.segmentsStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/data.json`, 'application/json', 10000, 180)
+      .getFromGcs(`${folder}/data.json`, 'application/json', 10000, 30)
       .subscribe({
         next: dataUrl => {
           const dataJson = JSON.parse(atob(dataUrl.split(',')[1]));
@@ -300,7 +303,7 @@ export class AppComponent {
   getMagicCombos(folder: string) {
     this.combinationStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/combos.json`, 'application/json', 10000, 180)
+      .getFromGcs(`${folder}/combos.json`, 'application/json', 10000, 30)
       .subscribe({
         next: dataUrl => {
           this.combosJson = JSON.parse(atob(dataUrl.split(',')[1]));

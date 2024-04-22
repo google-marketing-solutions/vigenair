@@ -17,6 +17,7 @@
 import { CONFIG } from './config';
 import { AppLogger } from './logging';
 import { StorageManager } from './storage';
+import { TimeUtil } from './utils';
 import { VertexHelper } from './vertex';
 
 export interface AvSegment {
@@ -49,6 +50,7 @@ export interface GenerateVariantsResponse {
   description: string;
   score: number;
   reasoning: string;
+  duration: string;
 }
 
 export class GenerationHelper {
@@ -81,10 +83,29 @@ export class GenerationHelper {
     return expectedDurationRange;
   }
 
+  static getAvSegments(gcsFolder: string): AvSegment[] {
+    const key = `${gcsFolder}/data.json`;
+    let avSegments = CacheService.getScriptCache().get(key);
+
+    if (!avSegments) {
+      avSegments = StorageManager.loadFile(key, true) as string;
+      try {
+        CacheService.getScriptCache().put(
+          key,
+          avSegments,
+          CONFIG.defaultCacheExpiration
+        );
+      } catch (e) {
+        AppLogger.warn(
+          `WARNING - Failed to cache ${key} - check the associated file size as Apps Script caches content up to 100KB only.`
+        );
+      }
+    }
+    return JSON.parse(avSegments) as AvSegment[];
+  }
+
   static createVideoScript(gcsFolder: string): string {
-    const avSegments = JSON.parse(
-      StorageManager.loadFile(`${gcsFolder}/data.json`, true) as string
-    ) as AvSegment[];
+    const avSegments = GenerationHelper.getAvSegments(gcsFolder);
     const videoScript: string[] = [];
 
     avSegments.forEach((avSegment, index) => {
@@ -132,6 +153,14 @@ export class GenerationHelper {
       settings
     );
     const variants: GenerateVariantsResponse[] = [];
+    const avSegmentsMap = GenerationHelper.getAvSegments(gcsFolder).reduce(
+      (segments, segment) => ({
+        ...segments,
+        [String(segment.av_segment_id + 1)]: segment,
+      }),
+      {}
+    );
+    const allScenes = Object.keys(avSegmentsMap).join(', ');
     let iteration = 0;
 
     while (!variants.length) {
@@ -139,9 +168,9 @@ export class GenerationHelper {
       const response = VertexHelper.generate(prompt);
       AppLogger.info(`GenerateVariants Response #${iteration}: ${response}`);
 
-      const results = response.split('\n\n\n');
+      const results = response.split('## Combination').filter(Boolean);
       const regex =
-        /.*Title:\**(?<title>.*)\n+\**Scenes:\**(?<scenes>.*)\n+\**Reasoning:\**(?<description>.*)\n+\**Score:\**(?<score>.*)\n+\**ABCD:\**\n+(?<reasoning>[\w\W\s\S\d\D]*)/ms;
+        /.*Title:\**(?<title>.*)\n+\**Scenes:\**(?<scenes>.*)\n+\**Reasoning:\**(?<description>.*)\n+\**Score:\**(?<score>.*)\n+\**ABCD:\**\n+(?<reasoning>[\w\W\s\S\d\D]*)/ims;
 
       results.forEach((result, index) => {
         const matches = result.match(regex);
@@ -154,26 +183,57 @@ export class GenerationHelper {
               score: string;
               reasoning: string;
             };
-          const variant: GenerateVariantsResponse = {
-            combo_id: index + 1,
-            title: String(title).trim(),
-            scenes: String(scenes)
+          if (scenes.trim() !== allScenes) {
+            const outputScenes = String(scenes)
               .trim()
               .split(', ')
               .filter(Boolean)
-              .map(scene => Number(scene)),
-            description: String(description).trim(),
-            score: Number(String(score).trim()),
-            reasoning: String(reasoning).trim(),
-          };
-          variants.push(variant);
+              .map(scene => Number(scene));
+            const variant: GenerateVariantsResponse = {
+              combo_id: index + 1,
+              title: String(title).trim(),
+              scenes: outputScenes,
+              description: String(description).trim(),
+              score: Number(String(score).trim()),
+              reasoning: String(reasoning).trim(),
+              duration: GenerationHelper.calculateVariantDuration(
+                outputScenes,
+                avSegmentsMap
+              ),
+            };
+            variants.push(variant);
+          } else {
+            AppLogger.warn(
+              `WARNING - Received a response with ALL scenes.\nResponse: ${result}`
+            );
+          }
         } else {
           AppLogger.warn(
-            `WARNING - Received an incomplete response for iteration #${iteration} from the API!`
+            `WARNING - Received an incomplete response for iteration #${iteration} from the API!\nResponse: ${result}`
           );
         }
       });
     }
-    return variants;
+    return variants.sort(
+      (a, b) =>
+        b.score - a.score ||
+        TimeUtil.timeStringToSeconds(a.duration) -
+          TimeUtil.timeStringToSeconds(b.duration)
+    );
+  }
+
+  static calculateVariantDuration(
+    scenes: number[],
+    avSegmentsMap: Record<string, AvSegment>
+  ): string {
+    let duration = 0;
+
+    for (const scene of scenes) {
+      const avSegment = avSegmentsMap[String(scene)];
+      if (avSegment) {
+        duration += avSegment.end_s - avSegment.start_s;
+      }
+    }
+    return TimeUtil.secondsToTimeString(duration);
   }
 }

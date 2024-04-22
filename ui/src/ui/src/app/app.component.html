@@ -145,7 +145,10 @@ limitations under the License.
       (selectedTabChange)="variantChanged()"
     >
       @for (variant of variants; track variant.combo_id) {
-        <mat-tab label="{{ variant.title }}">
+        <mat-tab label="{{ variant.title }} -- {{ variant.duration }}">
+          <div class="row" style="justify-content: start">
+            Scenes: {{ variant.scenes }}
+          </div>
           <div class="row" style="justify-content: start">
             {{ variant.description }}
           </div>
@@ -156,9 +159,11 @@ limitations under the License.
           >
             Score: {{ variant.score }}
           </div>
-          <div class="row" style="white-space: pre-line">
-            {{ variant.reasoning }}
-          </div>
+          <div
+            class="row"
+            style="white-space: pre-line; margin-top: 0px"
+            [innerHTML]="marked.parse(variant.reasoning)"
+          ></div>
         </mat-tab>
       }
     </mat-tab-group>
@@ -199,7 +204,7 @@ limitations under the License.
           <mat-option value="30">30s</mat-option>
         </mat-select>
       </mat-form-field>
-      <mat-checkbox color="primary" [checked]="demandGenAssets">
+      <mat-checkbox color="primary" [(ngModel)]="demandGenAssets">
         Generate Demand Gen assets
       </mat-checkbox>
     </div>

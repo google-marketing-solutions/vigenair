@@ -36,6 +36,10 @@ limitations under the License.
       </mat-icon>
     </div>
     <div class="current-segment-info" *ngIf="segmentMode === 'segments'">
+      <span class="scene-number">
+        <strong>Scene:</strong>
+        {{ i + 1 }}
+      </span>
       <span class="description">
         <strong>Description:</strong>
         {{ segment.description }}
