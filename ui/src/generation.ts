@@ -39,7 +39,7 @@ export interface AvSegment {
 
 export interface GenerationSettings {
   prompt: string;
-  duration: string;
+  duration: number;
   demandGenAssets: boolean;
 }
 
@@ -47,6 +47,7 @@ export interface GenerateVariantsResponse {
   combo_id: number;
   title: string;
   scenes: number[];
+  av_segments: AvSegment[];
   description: string;
   score: number;
   reasoning: string;
@@ -61,7 +62,7 @@ export class GenerationHelper {
     const videoLanguage =
       (StorageManager.loadFile(`${gcsFolder}/language.txt`, true) as string) ||
       CONFIG.defaultVideoLanguage;
-    const duration = Number(settings.duration) || 30;
+    const duration = settings.duration;
     const expectedDurationRange =
       GenerationHelper.calculateExpectedDurationRange(duration);
     const videoScript = GenerationHelper.createVideoScript(gcsFolder);
@@ -153,7 +154,8 @@ export class GenerationHelper {
       settings
     );
     const variants: GenerateVariantsResponse[] = [];
-    const avSegmentsMap = GenerationHelper.getAvSegments(gcsFolder).reduce(
+    const avSegments = GenerationHelper.getAvSegments(gcsFolder);
+    const avSegmentsMap = avSegments.reduce(
       (segments, segment) => ({
         ...segments,
         [String(segment.av_segment_id + 1)]: segment,
@@ -193,6 +195,9 @@ export class GenerationHelper {
               combo_id: index + 1,
               title: String(title).trim(),
               scenes: outputScenes,
+              av_segments: avSegments.filter((segment: AvSegment) =>
+                outputScenes.includes(segment.av_segment_id)
+              ),
               description: String(description).trim(),
               score: Number(String(score).trim()),
               reasoning: String(reasoning).trim(),

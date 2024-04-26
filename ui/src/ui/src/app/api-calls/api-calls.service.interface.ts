@@ -17,13 +17,22 @@
 import { Observable } from 'rxjs';
 export interface GenerationSettings {
   prompt: string;
-  duration: string;
+  duration: number;
   demandGenAssets: boolean;
 }
+
+export interface AvSegment {
+  av_segment_id: number;
+  start_s: number;
+  end_s: number;
+  selected?: boolean;
+}
+
 export interface GenerateVariantsResponse {
   combo_id: number;
   title: string;
   scenes: number[];
+  av_segments: AvSegment[];
   description: string;
   score: number;
   reasoning: string;
@@ -33,6 +42,29 @@ export interface GenerateVariantsResponse {
 export interface PreviousRunsResponse {
   encodedUserId: string;
   runs: string[];
+}
+
+export interface RenderSettings {
+  durations_s: number;
+  generate_image_assets: boolean;
+  generate_text_assets: boolean;
+  render_all_formats: boolean;
+  use_music_overlay: boolean;
+  use_continuous_audio: boolean;
+}
+
+export interface RenderQueueVariant {
+  av_segments: AvSegment[];
+  title: string;
+  description: string;
+  score: number;
+  score_reasoning: string;
+  render_settings: RenderSettings;
+}
+
+export interface SelectedSegmentEventParams {
+  segmentId: number;
+  selected: boolean;
 }
 
 export interface ApiCalls {

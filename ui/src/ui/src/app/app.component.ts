@@ -49,10 +49,18 @@ import { FileChooserComponent } from './file-chooser/file-chooser.component';
 import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
+import { MatSliderModule } from '@angular/material/slider';
+
 import { marked } from 'marked';
 
 import { CONFIG } from '../../../config';
-import { GenerateVariantsResponse } from './api-calls/api-calls.service.interface';
+import {
+  AvSegment,
+  GenerateVariantsResponse,
+  RenderQueueVariant,
+  RenderSettings,
+  SelectedSegmentEventParams,
+} from './api-calls/api-calls.service.interface';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
 
@@ -82,12 +90,14 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
     MatCheckboxModule,
     MatTooltipModule,
     MatBadgeModule,
+    MatSliderModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
 export class AppComponent {
   loading = false;
+  generatingVariants = false;
   selectedFile?: File;
   gcsVideoPath?: string;
   analysisJson?: any;
@@ -104,12 +114,16 @@ export class AppComponent {
   frameInterval?: number;
   currentSegmentId?: number;
   prompt = '';
-  duration = 'auto';
+  duration = 0;
+  step = 0;
+  renderAllFormats = true;
+  audioSettings = 'segment';
   demandGenAssets = true;
   previousRuns: string[] | undefined;
   encodedUserId: string | undefined;
   folder = '';
   marked = marked;
+  math = Math;
   renderQueue: any[] = [];
 
   get combos(): any[] {
@@ -395,6 +409,9 @@ export class AppComponent {
         this.previewVideoElem.nativeElement.videoHeight;
       this.previewVideoElem.nativeElement.onloadeddata = null;
       this.canvas = this.magicCanvas.nativeElement.getContext('2d')!;
+      this.calculateVideoDefaultDuration(
+        this.previewVideoElem.nativeElement.duration
+      );
     };
     this.previewVideoElem.nativeElement.onplaying = () => {
       this.frameInterval = window.setInterval(() => {
@@ -413,8 +430,18 @@ export class AppComponent {
     this.getMagicVoiceOver(folder);
   }
 
+  calculateVideoDefaultDuration(duration: number) {
+    const fullDuration = Math.round(duration) % 10;
+    const step = fullDuration ? Math.min(10, fullDuration) : 10;
+    const halfDuration = Math.round(duration / 2);
+
+    this.step = step;
+    this.duration = Math.min(30, halfDuration - (halfDuration % step));
+  }
+
   generateVariants() {
     this.loading = true;
+    this.generatingVariants = true;
     this.apiCallsService
       .generateVariants(this.folder, {
         prompt: this.prompt,
@@ -423,6 +450,7 @@ export class AppComponent {
       })
       .subscribe(variants => {
         this.loading = false;
+        this.generatingVariants = false;
         this.selectedVariant = 0;
         this.variants = variants;
         this.setSelectedSegments();
@@ -438,7 +466,36 @@ export class AppComponent {
     }
   }
 
+  toggleSelectedSegment(selectedSegment: SelectedSegmentEventParams) {
+    this.avSegments[selectedSegment.segmentId].selected =
+      selectedSegment.selected;
+  }
+
   variantChanged() {
     this.setSelectedSegments();
+  }
+
+  addToRenderQueue() {
+    const variant = this.variants![this.selectedVariant];
+    const selectedSegments = this.avSegments!.filter(
+      (segment: AvSegment) => segment.selected
+    );
+    const renderSettings: RenderSettings = {
+      durations_s: this.duration,
+      generate_image_assets: this.demandGenAssets,
+      generate_text_assets: this.demandGenAssets,
+      render_all_formats: this.renderAllFormats,
+      use_music_overlay: this.audioSettings === 'music',
+      use_continuous_audio: this.audioSettings === 'continuous',
+    };
+    const renderQueueVariant: RenderQueueVariant = {
+      av_segments: selectedSegments,
+      title: variant.title,
+      description: variant.description,
+      score: variant.score,
+      score_reasoning: variant.reasoning,
+      render_settings: renderSettings,
+    };
+    console.log(renderQueueVariant);
   }
 }

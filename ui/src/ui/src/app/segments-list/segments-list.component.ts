@@ -15,13 +15,15 @@
  */
 
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { CONFIG } from '../../../../config';
+
+import { SelectedSegmentEventParams } from '../api-calls/api-calls.service.interface';
 
 @Component({
   selector: 'segments-list',
@@ -41,6 +43,9 @@ export class SegmentsListComponent {
   @Input({ required: true }) segmentMode!: 'preview' | 'segments';
   @Input({ required: true }) allowSelection!: boolean;
 
+  @Output() toggleSelectedSegmentEvent =
+    new EventEmitter<SelectedSegmentEventParams>();
+
   CONFIG = CONFIG;
 
   private _currentSegmentId: number = 0;
@@ -57,7 +62,7 @@ export class SegmentsListComponent {
     return this._currentSegmentId;
   }
 
-  toggleVariant(i: number) {
-    this.segmentList![i].selected = !this.segmentList![i].selected;
+  toggleSegment(i: number, selected: boolean) {
+    this.toggleSelectedSegmentEvent.emit({ segmentId: i, selected: selected });
   }
 }

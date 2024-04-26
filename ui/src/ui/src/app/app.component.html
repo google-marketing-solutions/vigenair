@@ -46,11 +46,24 @@ limitations under the License.
     class="file-chooser"
     (file)="onFileSelected($event)"
   ></file-chooser>
+  <mat-checkbox
+    style="
+      justify-content: center;
+      display: flex;
+      margin-top: 4px;
+      margin-right: 15px;
+    "
+    color="primary"
+    [(ngModel)]="analyseAudio"
+    [disabled]="!selectedFile || loading"
+  >
+    Analyse audio
+  </mat-checkbox>
   <button
     type="button"
     mat-raised-button
     color="primary"
-    style="margin: 24px auto 4px; display: block"
+    style="margin: auto; margin-top: 4px; display: block"
     [disabled]="!selectedFile || loading"
     (click)="uploadVideo()"
   >
@@ -63,7 +76,7 @@ limitations under the License.
     *ngIf="previousRuns && previousRuns.length > 0"
     [checked]="false"
     [disabled]="loading"
-    >Show only my videos</mat-slide-toggle
+    >My videos only</mat-slide-toggle
   >
   <mat-form-field
     subscriptSizing="dynamic"
@@ -94,7 +107,7 @@ limitations under the License.
       <mat-button-toggle-group
         #segmentModeToggle="matButtonToggleGroup"
         value="preview"
-        [disabled]="loading"
+        [disabled]="loading && !generatingVariants"
       >
         <mat-button-toggle value="preview" matTooltip="Video preview">
           <mat-icon>play_arrow</mat-icon>
@@ -110,7 +123,7 @@ limitations under the License.
         color="primary"
         [checked]="true"
         [disabled]="this.analysisStatus !== 'check_circle'"
-        >Show frames</mat-slide-toggle
+        >Object tracking</mat-slide-toggle
       >
     </div>
   </div>
@@ -120,6 +133,7 @@ limitations under the License.
       [segmentMode]="segmentModeToggle.value"
       [allowSelection]="variants !== undefined"
       [currentSegmentId]="currentSegmentId || 0"
+      (toggleSelectedSegmentEvent)="toggleSelectedSegment($event)"
     ></segments-list>
     <div
       [hidden]="segmentModeToggle.value !== 'preview'"
@@ -185,7 +199,12 @@ limitations under the License.
     </mat-tab-group>
     <br />
     <div class="row">
-      <button type="button" mat-raised-button color="primary">
+      <button
+        type="button"
+        mat-raised-button
+        color="primary"
+        (click)="addToRenderQueue()"
+      >
         Add to render queue
       </button>
     </div>
@@ -213,15 +232,28 @@ limitations under the License.
     </div>
     <div class="row" style="justify-content: start; margin-top: 16px">
       <mat-form-field subscriptSizing="dynamic">
-        <mat-label>Duration:</mat-label>
-        <mat-select [value]="duration">
-          <mat-option value="auto">Auto</mat-option>
-          <mat-option value="15">15s</mat-option>
-          <mat-option value="30">30s</mat-option>
+        <mat-label>Variant audio:</mat-label>
+        <mat-select [value]="audioSettings">
+          <mat-option value="segment">Individual segments</mat-option>
+          <mat-option value="music">Overlay music only</mat-option>
+          <mat-option value="continuous">Overlay all</mat-option>
         </mat-select>
       </mat-form-field>
+      <mat-label>Duration:</mat-label>
+      <mat-slider
+        [max]="math.round(this.previewVideoElem.duration)"
+        [min]="10"
+        [step]="this.step"
+        [discrete]="true"
+        [showTickMarks]="true"
+      >
+        <input matSliderThumb [(ngModel)]="duration" #slider />
+      </mat-slider>
       <mat-checkbox color="primary" [(ngModel)]="demandGenAssets">
         Generate Demand Gen assets
+      </mat-checkbox>
+      <mat-checkbox color="primary" [(ngModel)]="renderAllFormats">
+        Render all formats
       </mat-checkbox>
     </div>
   </ng-container>
