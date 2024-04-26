@@ -45,7 +45,7 @@ export interface PreviousRunsResponse {
 }
 
 export interface RenderSettings {
-  durations_s: number;
+  duration_s: number;
   generate_image_assets: boolean;
   generate_text_assets: boolean;
   render_all_formats: boolean;

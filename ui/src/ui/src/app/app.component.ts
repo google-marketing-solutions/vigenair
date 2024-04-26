@@ -125,7 +125,7 @@ export class AppComponent {
   folder = '';
   marked = marked;
   math = Math;
-  renderQueue: any[] = [];
+  renderQueue: RenderQueueVariant[] = [];
 
   get combos(): any[] {
     return this.combosJson ? Object.values(this.combosJson) : [];
@@ -482,9 +482,15 @@ export class AppComponent {
     const variant = this.variants![this.selectedVariant];
     const selectedSegments = this.avSegments!.filter(
       (segment: AvSegment) => segment.selected
-    );
+    ).map((segment: AvSegment) => {
+      return {
+        av_segment_id: segment.av_segment_id + 1,
+        start_s: segment.start_s,
+        end_s: segment.end_s,
+      };
+    });
     const renderSettings: RenderSettings = {
-      durations_s: this.duration,
+      duration_s: this.duration,
       generate_image_assets: this.demandGenAssets,
       generate_text_assets: this.demandGenAssets,
       render_all_formats: this.renderAllFormats,
@@ -499,6 +505,7 @@ export class AppComponent {
       score_reasoning: variant.reasoning,
       render_settings: renderSettings,
     };
+    this.renderQueue.push(renderQueueVariant);
     console.log(renderQueueVariant);
   }
 }

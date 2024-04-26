@@ -233,7 +233,7 @@ limitations under the License.
     <div class="row" style="justify-content: start; margin-top: 16px">
       <mat-form-field subscriptSizing="dynamic">
         <mat-label>Variant audio:</mat-label>
-        <mat-select [value]="audioSettings">
+        <mat-select [(ngModel)]="audioSettings">
           <mat-option value="segment">Individual segments</mat-option>
           <mat-option value="music">Overlay music only</mat-option>
           <mat-option value="continuous">Overlay all</mat-option>
