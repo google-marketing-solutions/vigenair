@@ -42,6 +42,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiCallsService } from './api-calls/api-calls.service';
 import { FileChooserComponent } from './file-chooser/file-chooser.component';
 import { SegmentsListComponent } from './segments-list/segments-list.component';
@@ -78,6 +79,7 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
     MatInputModule,
     MatSelectModule,
     MatCheckboxModule,
+    MatTooltipModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
