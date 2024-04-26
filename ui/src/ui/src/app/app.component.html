@@ -18,6 +18,22 @@ limitations under the License.
   <span style="font-size: 1.5em">
     ViGenAiR - Recrafting Video Ads with Generative AI
   </span>
+  <span style="flex: 1 1 auto"></span>
+  <button
+    mat-icon-button
+    matTooltip="Render queue"
+    [matBadge]="renderQueue.length"
+    [matBadgeHidden]="renderQueue.length === 0"
+    matBadgeColor="accent"
+    matBadgeSize="small"
+  >
+    <mat-icon fontIcon="subscriptions">
+      <span class="cdk-visually-hidden">
+        Render queue with overlaid badge showing the number
+        {{ renderQueue.length }}
+      </span>
+    </mat-icon>
+  </button>
 </mat-toolbar>
 <div [hidden]="!loading" class="sticky" style="top: 64px">
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>

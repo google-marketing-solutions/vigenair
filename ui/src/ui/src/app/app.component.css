@@ -145,3 +145,11 @@ mat-divider {
 .score-5 {
   color: #33691e;
 }
+
+::ng-deep #mat-badge-content-0 {
+  right: 3px;
+  top: 3px;
+  font-family: 'Roboto';
+  font-size: 12px;
+  font-weight: 800;
+}

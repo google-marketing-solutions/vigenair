@@ -34,6 +34,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatBadgeModule } from '@angular/material/badge';
 import {
   MatButtonToggleGroup,
   MatButtonToggleModule,
@@ -80,6 +81,7 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
     MatSelectModule,
     MatCheckboxModule,
     MatTooltipModule,
+    MatBadgeModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -108,6 +110,7 @@ export class AppComponent {
   encodedUserId: string | undefined;
   folder = '';
   marked = marked;
+  renderQueue: any[] = [];
 
   get combos(): any[] {
     return this.combosJson ? Object.values(this.combosJson) : [];
