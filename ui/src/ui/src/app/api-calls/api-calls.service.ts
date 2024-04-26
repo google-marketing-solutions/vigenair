@@ -39,7 +39,7 @@ export class ApiCallsService implements ApiCalls {
     });
   }
 
-  uploadVideo(file: File): Observable<string> {
+  uploadVideo(file: File, analyseAudio: boolean): Observable<string> {
     return new Observable(subscriber => {
       this.blobToDataURL(file).then(dataUrl => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -51,7 +51,7 @@ export class ApiCallsService implements ApiCalls {
               subscriber.complete();
             });
           })
-          .uploadVideo(dataUrl, file.name);
+          .uploadVideo(dataUrl, file.name, analyseAudio);
       });
     });
   }

@@ -119,6 +119,7 @@ export class AppComponent {
   renderAllFormats = true;
   audioSettings = 'segment';
   demandGenAssets = true;
+  analyseAudio = true;
   previousRuns: string[] | undefined;
   encodedUserId: string | undefined;
   folder = '';
@@ -378,9 +379,11 @@ export class AppComponent {
 
   uploadVideo() {
     this.loading = true;
-    this.apiCallsService.uploadVideo(this.selectedFile!).subscribe(folder => {
-      this.processVideo(folder);
-    });
+    this.apiCallsService
+      .uploadVideo(this.selectedFile!, this.analyseAudio)
+      .subscribe(folder => {
+        this.processVideo(folder);
+      });
   }
 
   resetState() {

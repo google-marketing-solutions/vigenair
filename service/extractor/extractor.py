@@ -44,8 +44,8 @@ class Extractor:
 
     Args:
       gcs_bucket_name: The GCS bucket to read from and store files in.
-      video_file: Path to the input video file, which is in a
-        `<timestamp>-<user_session_id>` folder on GCS.
+      video_file: Path to the input video file, which is in a specific folder on
+        GCS. See Utils.VideoMetadata for more information.
     """
     self.gcs_bucket_name = gcs_bucket_name
     self.video_file = video_file
@@ -68,7 +68,7 @@ class Extractor:
     transcription_dataframe = pd.DataFrame()
     annotation_results = None
 
-    if audio_file_path:
+    if audio_file_path and self.video_file.video_metadata.analyse_audio:
       (
           transcription_dataframe,
           annotation_results,

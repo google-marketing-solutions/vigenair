@@ -40,6 +40,50 @@ class VideoExtension(enum.Enum):
     return ext in values
 
 
+class VideoMetadata:
+  """Metadata about a video file.
+
+  Represented via a single string formatted as follows:
+  <video_name>--<analyse_audio?>--<video_timestamp>--<encoded_user_id>
+  """
+
+  def __init__(self, metadata: str):
+    """Initialiser.
+
+    Args:
+      metadata: Formatted metadata string.
+    """
+    components = metadata.split('--')
+    self.analyse_audio = True
+    if len(components) == 4:
+      (
+          video_file_name,
+          analyse_audio,
+          video_timestamp,
+          encoded_user_id,
+      ) = components
+      self.analyse_audio = 'n' != analyse_audio
+    else:
+      (
+          video_file_name,
+          video_timestamp,
+          encoded_user_id,
+      ) = components
+      self.analyse_audio = True
+
+    self.video_file_name = video_file_name
+    self.video_timestamp = int(video_timestamp)
+    self.encoded_user_id = encoded_user_id
+
+  def __str__(self):
+    return (
+        f'VideoMetadata(video_file_name={self.video_file_name}, '
+        f'analyse_audio={self.analyse_audio}, '
+        f'video_timestamp={self.video_timestamp}, '
+        f'encoded_user_id={self.encoded_user_id})'
+    )
+
+
 class TriggerFile:
   """Represents an input file that was uploaded to GCS and triggered the CF."""
 
@@ -56,6 +100,7 @@ class TriggerFile:
     self.file_name = file_path.name
     self.file_ext = file_ext[1:]
     self.gcs_folder = str(file_path.parents[0])
+    self.video_metadata = VideoMetadata(self.gcs_folder)
     self.full_gcs_path = filepath
     self.file_name_ext = f'{self.file_name}.{self.file_ext}'
 
@@ -63,13 +108,13 @@ class TriggerFile:
     return (
         f'TriggerFile(file_name_ext={self.file_name_ext}, '
         f'full_gcs_path={self.full_gcs_path}, '
-        f'gcs_folder={self.gcs_folder})'
+        f'gcs_folder={self.gcs_folder}, '
+        f'video_metadata={self.video_metadata})'
     )
 
   def is_extractor_trigger(self) -> bool:
     return (
-        self.file_ext
-        and VideoExtension.has_value(self.file_ext)
+        self.file_ext and VideoExtension.has_value(self.file_ext)
         and self.file_name == ConfigService.INPUT_FILENAME
     )
 

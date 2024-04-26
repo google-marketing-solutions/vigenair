@@ -68,7 +68,7 @@ export interface SelectedSegmentEventParams {
 }
 
 export interface ApiCalls {
-  uploadVideo(file: Blob): Observable<string>;
+  uploadVideo(file: Blob, analyseAudio: boolean): Observable<string>;
   deleteGcsFolder(folder: string): void;
   getFromGcs(
     url: string,

@@ -48,6 +48,9 @@ class VideoVariantRenderSettings:
     use_music_overlay: Whether to use the music overlay feature, where a
       contiguous section of the input's background music will be used for the
       video variant instead of the individual segments' background music.
+    use_continuous_audio: Whether to use a contiguous section of the input's
+      audio track for the video variant instead of the individual segments'
+      audio track portions.
   """
 
   duration_s: int
@@ -55,6 +58,7 @@ class VideoVariantRenderSettings:
   generate_text_assets: bool = False
   render_all_formats: bool = False
   use_music_overlay: bool = False
+  use_continuous_audio: bool = False
 
   def __str__(self):
     return (
@@ -62,7 +66,8 @@ class VideoVariantRenderSettings:
         f'generate_image_assets={self.generate_image_assets}, '
         f'generate_text_assets={self.generate_text_assets}, '
         f'render_all_formats={self.render_all_formats}, '
-        f'use_music_overlay={self.use_music_overlay})'
+        f'use_music_overlay={self.use_music_overlay}, '
+        f'use_continuous_audio={self.use_continuous_audio})'
     )
 
 
@@ -318,6 +323,7 @@ def _render_video_variant(
       video_select_filter,
       full_audio_select_filter,
       merged_audio_select_filter,
+      continuous_audio_select_filter,
   ) = _build_ffmpeg_filters(shot_timestamps)
 
   ffmpeg_cmds = [
@@ -325,7 +331,16 @@ def _render_video_variant(
       '-i',
       video_file_path,
   ]
-  if video_variant.render_settings.use_music_overlay:
+  audio_filter = (
+      continuous_audio_select_filter
+      if video_variant.render_settings.use_continuous_audio else
+      full_audio_select_filter
+  )
+  if (
+      video_variant.render_settings.use_music_overlay
+      and speech_track_path
+      and music_track_path
+  ):
     ffmpeg_cmds.extend([
         '-i',
         speech_track_path,
@@ -347,7 +362,7 @@ def _render_video_variant(
         '-vf',
         video_select_filter,
         '-af',
-        full_audio_select_filter,
+        audio_filter,
     ])
 
   horizontal_combo_name = f'combo_{video_variant.variant_id}_h{video_ext}'
@@ -467,7 +482,7 @@ def _group_consecutive_segments(
 
 def _build_ffmpeg_filters(
     shot_timestamps: Sequence[Tuple[float, float]]
-) -> Tuple[str, str, str]:
+) -> Tuple[str, str, str, str]:
   """Builds the ffmpeg filters.
 
   Args:
@@ -475,7 +490,8 @@ def _build_ffmpeg_filters(
       and end timestamps of a shot.
 
   Returns:
-    A tuple containing the video, full audio and merged audio ffmpeg filters.
+    A tuple containing the video, full audio, merged audio and continuous audio
+    ffmpeg filters.
   """
   ffmpeg_select_filter = []
   idx = 0
@@ -501,14 +517,17 @@ def _build_ffmpeg_filters(
       + ffmpeg_select_filter
       + [', asetpts=N/SR/TB[speech]']
   )
-  music_select_filter = [
+  music_select_filter = (
       f"[2:a:0]aselect='between(t,{all_start},{all_start+duration})',"
       ' asetpts=N/SR/TB[music]'
-  ]
+  )
+  continuous_audio_select_filter = (
+      f"\"aselect='between(t,{all_start},{all_start+duration})',"
+      ' asetpts=N/SR/TB"'
+  )
   video_select_filter = ''.join(video_select_filter)
   full_audio_select_filter = ''.join(full_audio_select_filter)
   vocals_select_filter = ''.join(vocals_select_filter)
-  music_select_filter = ''.join(music_select_filter)
   merged_audio_select_filter = (
       f'"{vocals_select_filter};{music_select_filter};'
       '[speech][music]amerge=inputs=2"'
@@ -518,4 +537,5 @@ def _build_ffmpeg_filters(
       video_select_filter,
       full_audio_select_filter,
       merged_audio_select_filter,
+      continuous_audio_select_filter,
   )

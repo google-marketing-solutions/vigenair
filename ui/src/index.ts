@@ -49,8 +49,12 @@ function getFromGcs(filePath: string, mimeType: string): string | null {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function uploadVideo(dataUrl: string, uploadedFileName: string) {
-  const folder = `${uploadedFileName}--${Date.now()}--${getEncodedUserId()}`;
+function uploadVideo(
+  dataUrl: string,
+  uploadedFileName: string,
+  analyseAudio: boolean
+) {
+  const folder = `${uploadedFileName}--${analyseAudio ? '' : 'n--'}${Date.now()}--${getEncodedUserId()}`;
   StorageManager.uploadFile(dataUrl.split(',')[1], folder);
   return folder;
 }
