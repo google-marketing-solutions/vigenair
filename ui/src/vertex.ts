@@ -16,7 +16,7 @@
 
 import { CONFIG } from './config';
 import { AppLogger } from './logging';
-import { ScriptUtil } from './utils';
+import { ScriptUtil } from './script-util';
 
 interface VertexAiModelParams {
   temperature: number;

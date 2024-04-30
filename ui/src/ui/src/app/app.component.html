@@ -15,257 +15,402 @@ limitations under the License.
 -->
 
 <mat-toolbar color="primary" class="sticky">
-  <span style="font-size: 1.5em">
-    ViGenAiR - Recrafting Video Ads with Generative AI
-  </span>
-  <span style="flex: 1 1 auto"></span>
-  <button
-    mat-icon-button
-    matTooltip="Render queue"
-    [matBadge]="renderQueue.length"
-    [matBadgeHidden]="renderQueue.length === 0"
-    matBadgeColor="accent"
-    matBadgeSize="small"
+  <span style="font-size: 1.5em; margin-right: auto"> ViGenAiR </span>
+  <span class="header-text">
+    <a href="https://github.com/google-marketing-solutions/vigenair"
+      >Recrafting Video Ads with Generative AI</a
+    ></span
   >
-    <mat-icon fontIcon="subscriptions">
-      <span class="cdk-visually-hidden">
-        Render queue with overlaid badge showing the number
-        {{ renderQueue.length }}
-      </span>
-    </mat-icon>
-  </button>
+  <span style="margin-left: auto"></span>
+  <span #renderQueueButtonSpan>
+    <button
+      mat-icon-button
+      matTooltip="Render queue"
+      [matBadge]="renderQueue.length"
+      [matBadgeHidden]="renderQueue.length === 0"
+      matBadgeColor="accent"
+      matBadgeSize="small"
+      (click)="toggleRenderQueueSidenav()"
+    >
+      <mat-icon fontIcon="subscriptions">
+        <span class="cdk-visually-hidden">
+          Render queue with overlaid badge showing the number
+          {{ renderQueue.length }}
+        </span>
+      </mat-icon>
+    </button>
+  </span>
 </mat-toolbar>
 <div [hidden]="!loading" class="sticky" style="top: 64px">
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </div>
-<mat-expansion-panel #videoUploadPanel expanded>
-  <mat-expansion-panel-header>
-    <mat-panel-title>Video upload</mat-panel-title>
-  </mat-expansion-panel-header>
-  <file-chooser
-    class="file-chooser"
-    (file)="onFileSelected($event)"
-  ></file-chooser>
-  <mat-checkbox
-    style="
-      justify-content: center;
-      display: flex;
-      margin-top: 4px;
-      margin-right: 15px;
-    "
-    color="primary"
-    [(ngModel)]="analyseAudio"
-    [disabled]="!selectedFile || loading"
-  >
-    Analyse audio
-  </mat-checkbox>
-  <button
-    type="button"
-    mat-raised-button
-    color="primary"
-    style="margin: auto; margin-top: 4px; display: block"
-    [disabled]="!selectedFile || loading"
-    (click)="uploadVideo()"
-  >
-    Upload video
-  </button>
-  <mat-slide-toggle
-    #videosFilterToggle="matSlideToggle"
-    color="primary"
-    style="display: block; margin-bottom: 10px"
-    *ngIf="previousRuns && previousRuns.length > 0"
-    [checked]="false"
-    [disabled]="loading"
-    >My videos only</mat-slide-toggle
-  >
-  <mat-form-field
-    subscriptSizing="dynamic"
-    *ngIf="previousRuns && previousRuns.length > 0"
-  >
-    <mat-label>Load existing video</mat-label>
-    <mat-select
-      (selectionChange)="loadPreviousRun($event.value)"
-      [disabled]="loading"
-      (click)="getPreviousRuns()"
-    >
-      @for (run of previousRuns; track $index) {
-        <mat-option *ngIf="isCurrentUserRun(run)" [value]="run">{{
-          run.split('--')[0]
-        }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-</mat-expansion-panel>
-
-<mat-expansion-panel #videoMagicPanel>
-  <mat-expansion-panel-header>
-    <mat-panel-title>✨ Magic editing ✨</mat-panel-title>
-  </mat-expansion-panel-header>
-  <div class="row">
-    <div style="margin-right: auto"></div>
-    <div>
-      <mat-button-toggle-group
-        #segmentModeToggle="matButtonToggleGroup"
-        value="preview"
-        [disabled]="loading && !generatingVariants"
-      >
-        <mat-button-toggle value="preview" matTooltip="Video preview">
-          <mat-icon>play_arrow</mat-icon>
-        </mat-button-toggle>
-        <mat-button-toggle value="segments" matTooltip="Segments info">
-          <mat-icon>theaters</mat-icon>
-        </mat-button-toggle>
-      </mat-button-toggle-group>
-    </div>
-    <div style="margin-left: auto">
-      <mat-slide-toggle
-        #objectTrackingToggle="matSlideToggle"
+<mat-sidenav-container style="height: 100%">
+  <mat-sidenav-content>
+    <mat-expansion-panel #videoUploadPanel expanded>
+      <mat-expansion-panel-header>
+        <mat-panel-title>Video upload</mat-panel-title>
+      </mat-expansion-panel-header>
+      <file-chooser
+        class="file-chooser"
+        (file)="onFileSelected($event)"
+      ></file-chooser>
+      <mat-checkbox
+        style="
+          justify-content: center;
+          display: flex;
+          margin-top: 4px;
+          margin-right: 15px;
+        "
         color="primary"
-        [checked]="true"
-        [disabled]="this.analysisStatus !== 'check_circle'"
-        >Object tracking</mat-slide-toggle
+        [(ngModel)]="analyseAudio"
+        [disabled]="!selectedFile || loading"
       >
-    </div>
-  </div>
-  <div class="preview-video-row">
-    <segments-list
-      [segmentList]="avSegments"
-      [segmentMode]="segmentModeToggle.value"
-      [allowSelection]="variants !== undefined"
-      [currentSegmentId]="currentSegmentId || 0"
-      (toggleSelectedSegmentEvent)="toggleSelectedSegment($event)"
-    ></segments-list>
-    <div
-      [hidden]="segmentModeToggle.value !== 'preview'"
-      class="video-container"
-    >
-      <video class="mat-elevation-z8" #previewVideoElem autoplay controls>
-        <source src="" />
-        <track
-          label="Voice-over"
-          kind="subtitles"
-          srclang="en"
-          #previewTrackElem
-          default
-        />
-      </video>
-      <canvas #magicCanvas></canvas>
-    </div>
-  </div>
-  <div class="row">
-    <mat-chip-set>
-      <mat-chip disableRipple [ngClass]="transcriptStatus">
-        <mat-icon matChipAvatar fontIcon="{{ transcriptStatus }}"></mat-icon>
-        Transcribing voice-over
-      </mat-chip>
-      <mat-chip disableRipple [ngClass]="analysisStatus">
-        <mat-icon matChipAvatar fontIcon="{{ analysisStatus }}"></mat-icon>
-        Analysing video elements
-      </mat-chip>
-      <mat-chip disableRipple [ngClass]="segmentsStatus">
-        <mat-icon matChipAvatar fontIcon="{{ segmentsStatus }}"></mat-icon>
-        Analysing video segments
-      </mat-chip>
-    </mat-chip-set>
-  </div>
-  <ng-container *ngIf="variants">
-    <mat-divider></mat-divider>
-    <mat-tab-group
-      [(selectedIndex)]="selectedVariant"
-      (selectedTabChange)="variantChanged()"
-    >
-      @for (variant of variants; track variant.combo_id) {
-        <mat-tab label="{{ variant.title }} -- {{ variant.duration }}">
-          <div class="row" style="justify-content: start">
-            Scenes: {{ variant.scenes }}
-          </div>
-          <div class="row" style="justify-content: start">
-            {{ variant.description }}
-          </div>
-          <div
-            style="font-size: 3em"
-            [ngClass]="'score-' + variant.score"
-            class="row"
+        Analyse audio
+      </mat-checkbox>
+      <button
+        type="button"
+        mat-raised-button
+        color="primary"
+        style="margin: auto; margin-top: 4px; display: block"
+        [disabled]="!selectedFile || loading"
+        (click)="uploadVideo()"
+      >
+        Upload video
+      </button>
+      <mat-slide-toggle
+        #videosFilterToggle="matSlideToggle"
+        color="primary"
+        style="display: block; margin-bottom: 10px"
+        *ngIf="previousRuns && previousRuns.length > 0"
+        [checked]="false"
+        [disabled]="loading"
+        >My videos only</mat-slide-toggle
+      >
+      <mat-form-field
+        subscriptSizing="dynamic"
+        *ngIf="previousRuns && previousRuns.length > 0"
+      >
+        <mat-label>Load existing video</mat-label>
+        <mat-select
+          (selectionChange)="loadPreviousRun($event.value)"
+          [disabled]="loading"
+          (click)="getPreviousRuns()"
+        >
+          @for (run of previousRuns; track $index) {
+            <mat-option *ngIf="isCurrentUserRun(run)" [value]="run">{{
+              run.split('--')[0]
+            }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel #videoMagicPanel>
+      <mat-expansion-panel-header>
+        <mat-panel-title>✨ Magic editing ✨</mat-panel-title>
+      </mat-expansion-panel-header>
+      <div class="row">
+        <div style="margin-right: auto"></div>
+        <div>
+          <mat-button-toggle-group
+            #segmentModeToggle="matButtonToggleGroup"
+            value="preview"
+            [disabled]="loading && !generatingVariants"
           >
-            Score: {{ variant.score }}
+            <mat-button-toggle value="preview" matTooltip="Video preview">
+              <mat-icon>play_arrow</mat-icon>
+            </mat-button-toggle>
+            <mat-button-toggle value="segments" matTooltip="Segments info">
+              <mat-icon>theaters</mat-icon>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+        <div style="margin-left: auto">
+          <mat-slide-toggle
+            #objectTrackingToggle="matSlideToggle"
+            color="primary"
+            [checked]="true"
+            [disabled]="this.analysisStatus !== 'check_circle'"
+            >Object tracking</mat-slide-toggle
+          >
+        </div>
+      </div>
+      <div class="preview-video-row">
+        <segments-list
+          [segmentList]="avSegments"
+          [segmentMode]="segmentModeToggle.value"
+          [allowSelection]="variants !== undefined"
+          [currentSegmentId]="currentSegmentId || 0"
+          (toggleSelectedSegmentEvent)="toggleSelectedSegment($event)"
+        ></segments-list>
+        <div
+          [hidden]="segmentModeToggle.value !== 'preview'"
+          class="video-container"
+        >
+          <video class="mat-elevation-z8" #previewVideoElem autoplay controls>
+            <source src="" />
+            <track
+              label="Voice-over"
+              kind="subtitles"
+              srclang="en"
+              #previewTrackElem
+              default
+            />
+          </video>
+          <canvas #magicCanvas></canvas>
+        </div>
+      </div>
+      <div class="row">
+        <mat-chip-set>
+          <mat-chip disableRipple [ngClass]="transcriptStatus">
+            <mat-icon
+              matChipAvatar
+              fontIcon="{{ transcriptStatus }}"
+            ></mat-icon>
+            Transcribing voice-over
+          </mat-chip>
+          <mat-chip disableRipple [ngClass]="analysisStatus">
+            <mat-icon matChipAvatar fontIcon="{{ analysisStatus }}"></mat-icon>
+            Analysing video elements
+          </mat-chip>
+          <mat-chip disableRipple [ngClass]="segmentsStatus">
+            <mat-icon matChipAvatar fontIcon="{{ segmentsStatus }}"></mat-icon>
+            Analysing video segments
+          </mat-chip>
+        </mat-chip-set>
+      </div>
+      <ng-container *ngIf="variants">
+        <mat-divider></mat-divider>
+        <mat-tab-group
+          [(selectedIndex)]="selectedVariant"
+          (selectedTabChange)="variantChanged()"
+        >
+          @for (variant of variants; track variant.combo_id) {
+            <mat-tab label="{{ variant.title }} -- {{ variant.duration }}">
+              <div class="row" style="justify-content: start">
+                Scenes: {{ variant.scenes }}
+              </div>
+              <div class="row" style="justify-content: start">
+                {{ variant.description }}
+              </div>
+              <div
+                style="font-size: 3em"
+                [ngClass]="'score-' + variant.score"
+                class="row"
+              >
+                Score: {{ variant.score }}
+              </div>
+              <div
+                class="row"
+                style="white-space: pre-line; margin-top: 0px"
+                [innerHTML]="marked.parse(variant.reasoning)"
+              ></div>
+            </mat-tab>
+          }
+        </mat-tab-group>
+        <br />
+        <div class="row">
+          <button
+            type="button"
+            mat-raised-button
+            color="primary"
+            (click)="addToRenderQueue()"
+          >
+            Add to render queue
+          </button>
+        </div>
+      </ng-container>
+      <ng-container *ngIf="avSegments">
+        <mat-divider></mat-divider>
+        <div *ngIf="variants?.length">
+          <div style="margin-top: 8px; font-weight: 500">
+            <u>Variant rendering settings</u>
           </div>
-          <div
-            class="row"
-            style="white-space: pre-line; margin-top: 0px"
-            [innerHTML]="marked.parse(variant.reasoning)"
-          ></div>
+          <div style="margin-top: 8px">
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>Variant audio:</mat-label>
+              <mat-select [(ngModel)]="audioSettings">
+                <mat-option value="segment">Individual segments</mat-option>
+                <mat-option value="music">Overlay music only</mat-option>
+                <mat-option value="continuous">Overlay all</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div class="user-settings" style="margin-top: 8px">
+            <mat-checkbox color="primary" [(ngModel)]="demandGenAssets">
+              Generate Demand Gen assets
+            </mat-checkbox>
+            <img
+              class="demand-gen"
+              src="//storage.googleapis.com/support-kms-prod/1jn04nExNejhtrTJy7qjEhsjiBkDci1r27Ga"
+              alt="This icon represents Demand Gen, which generates demands and delivers business results on Google's most visual and entertaining surfaces."
+              data-mime-type="image/svg+xml"
+            />
+          </div>
+          <div class="user-settings">
+            <mat-checkbox color="primary" [(ngModel)]="renderAllFormats">
+              Render all formats
+            </mat-checkbox>
+            <span class="format-icons">
+              <span class="format-icon"><mat-icon>computer</mat-icon></span>
+              <span class="format-icon"><mat-icon>smartphone</mat-icon></span>
+              <span class="format-icon"><mat-icon>slideshow</mat-icon></span>
+            </span>
+          </div>
+        </div>
+        <div class="row" style="gap: 16px">
+          <mat-form-field style="flex: 1" subscriptSizing="dynamic">
+            <mat-label>What should your video variants be about?</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="prompt"
+              placeholder="e.g. 'Discovering new experiences'"
+            ></textarea>
+          </mat-form-field>
+          <button
+            type="button"
+            mat-raised-button
+            color="primary"
+            (click)="generateVariants()"
+            [disabled]="loading"
+          >
+            Generate variants
+          </button>
+        </div>
+        <div
+          class="row"
+          style="justify-content: start; margin-top: 16px; display: block"
+        >
+          <div style="margin-top: 8px">
+            <mat-label>Target duration:</mat-label>
+            <mat-slider
+              [max]="math.round(this.previewVideoElem.duration)"
+              [min]="10"
+              [step]="this.step"
+              [discrete]="true"
+              [showTickMarks]="true"
+            >
+              <input matSliderThumb [(ngModel)]="duration" #slider />
+            </mat-slider>
+          </div>
+        </div>
+      </ng-container>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel #videoCombosPanel [disabled]="!combosJson">
+      <mat-expansion-panel-header>
+        <mat-panel-title>Magic combos</mat-panel-title>
+      </mat-expansion-panel-header>
+      <mat-tab-group>
+        <mat-tab *ngFor="let combo of combos" label="{{ combo.title }}">
+          <video-combo [combo]="combo"></video-combo>
         </mat-tab>
+      </mat-tab-group>
+    </mat-expansion-panel>
+  </mat-sidenav-content>
+  <mat-sidenav
+    #renderQueueSidenav
+    position="end"
+    autoFocus="false"
+    style="width: 35rem"
+  >
+    <div style="margin-bottom: auto">
+      @for (variant of renderQueue; track variant; let i = $index) {
+        <div class="variant-row">
+          <div style="display: flex; flex-direction: column">
+            <img
+              class="variant-img"
+              src="{{ variant.av_segments[0].segment_screenshot_uri }}"
+            />
+            <div style="display: flex; flex-direction: row">
+              <span
+                *ngIf="variant.render_settings.render_all_formats"
+                class="render-queue-format-icons"
+                matTooltip="Render all formats"
+              >
+                <span class="format-icon"><mat-icon>computer</mat-icon></span>
+                <span class="format-icon"><mat-icon>smartphone</mat-icon></span>
+                <span class="format-icon"><mat-icon>slideshow</mat-icon></span>
+              </span>
+              <span
+                *ngIf="
+                  variant.render_settings.generate_image_assets &&
+                  variant.render_settings.generate_text_assets
+                "
+                style="margin-left: auto; margin-top: 9px; margin-right: 8px"
+                matTooltip="Generate Demand Gen assets"
+              >
+                <img
+                  width="25"
+                  height="25"
+                  src="//storage.googleapis.com/support-kms-prod/1jn04nExNejhtrTJy7qjEhsjiBkDci1r27Ga"
+                  alt="This icon represents Demand Gen, which generates demands and delivers business results on Google's most visual and entertaining surfaces."
+                  data-mime-type="image/svg+xml"
+                />
+              </span>
+            </div>
+          </div>
+          <div>
+            <div class="variant-score" matTooltip="Score: {{ variant.score }}">
+              @for (_ of stars; track _; let i = $index) {
+                <mat-icon
+                  fontIcon="{{
+                    i + 1 <= variant.score ? 'star' : 'star_outlined'
+                  }}"
+                >
+                  <span class="cdk-visually-hidden"
+                    >1
+                    {{ i + 1 <= variant.score ? 'full' : 'empty' }} star</span
+                  >
+                </mat-icon>
+              }
+            </div>
+            <div class="variant-title">
+              {{ variant.title }}
+              <span *ngIf="variant.userSelection">(modified)</span>
+            </div>
+            <div class="variant-scenes">
+              <b>Scenes:</b> {{ variant.scenes }}
+            </div>
+            <div class="variant-duration">
+              <b>Duration:</b> {{ variant.duration }}
+            </div>
+            <div class="variant-settings">
+              <b>Audio:</b>
+              {{
+                variant.render_settings.use_continuous_audio
+                  ? 'Overlay all'
+                  : variant.render_settings.use_music_overlay
+                    ? 'Overlay music'
+                    : 'Individual segments'
+              }}
+            </div>
+          </div>
+          <span class="variant-action-remove">
+            <button
+              mat-icon-button
+              matTooltip="Remove"
+              (click)="removeRenderQueueVariant(i)"
+            >
+              <mat-icon fontIcon="close">
+                <span class="cdk-visually-hidden"
+                  >Remove video variant from render queue</span
+                >
+              </mat-icon>
+            </button>
+          </span>
+        </div>
       }
-    </mat-tab-group>
-    <br />
+    </div>
     <div class="row">
       <button
         type="button"
         mat-raised-button
         color="primary"
-        (click)="addToRenderQueue()"
+        (click)="renderVariants()"
       >
-        Add to render queue
+        Render
       </button>
     </div>
-  </ng-container>
-  <ng-container *ngIf="avSegments">
-    <mat-divider></mat-divider>
-    <div class="row" style="gap: 16px">
-      <mat-form-field style="flex: 1" subscriptSizing="dynamic">
-        <mat-label>What should your video variants be about?</mat-label>
-        <textarea
-          matInput
-          [(ngModel)]="prompt"
-          placeholder="e.g. 'Discovering new experiences'"
-        ></textarea>
-      </mat-form-field>
-      <button
-        type="button"
-        mat-raised-button
-        color="primary"
-        (click)="generateVariants()"
-        [disabled]="loading"
-      >
-        Generate variants
-      </button>
-    </div>
-    <div class="row" style="justify-content: start; margin-top: 16px">
-      <mat-form-field subscriptSizing="dynamic">
-        <mat-label>Variant audio:</mat-label>
-        <mat-select [(ngModel)]="audioSettings">
-          <mat-option value="segment">Individual segments</mat-option>
-          <mat-option value="music">Overlay music only</mat-option>
-          <mat-option value="continuous">Overlay all</mat-option>
-        </mat-select>
-      </mat-form-field>
-      <mat-label>Duration:</mat-label>
-      <mat-slider
-        [max]="math.round(this.previewVideoElem.duration)"
-        [min]="10"
-        [step]="this.step"
-        [discrete]="true"
-        [showTickMarks]="true"
-      >
-        <input matSliderThumb [(ngModel)]="duration" #slider />
-      </mat-slider>
-      <mat-checkbox color="primary" [(ngModel)]="demandGenAssets">
-        Generate Demand Gen assets
-      </mat-checkbox>
-      <mat-checkbox color="primary" [(ngModel)]="renderAllFormats">
-        Render all formats
-      </mat-checkbox>
-    </div>
-  </ng-container>
-</mat-expansion-panel>
-
-<mat-expansion-panel #videoCombosPanel [disabled]="!combosJson">
-  <mat-expansion-panel-header>
-    <mat-panel-title>Magic combos</mat-panel-title>
-  </mat-expansion-panel-header>
-  <mat-tab-group>
-    <mat-tab *ngFor="let combo of combos" label="{{ combo.title }}">
-      <video-combo [combo]="combo"></video-combo>
-    </mat-tab>
-  </mat-tab-group>
-</mat-expansion-panel>
+  </mat-sidenav>
+</mat-sidenav-container>

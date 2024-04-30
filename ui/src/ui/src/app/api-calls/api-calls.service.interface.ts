@@ -26,6 +26,7 @@ export interface AvSegment {
   start_s: number;
   end_s: number;
   selected?: boolean;
+  segment_screenshot_uri?: string;
 }
 
 export interface GenerateVariantsResponse {
@@ -45,7 +46,6 @@ export interface PreviousRunsResponse {
 }
 
 export interface RenderSettings {
-  duration_s: number;
   generate_image_assets: boolean;
   generate_text_assets: boolean;
   render_all_formats: boolean;
@@ -60,6 +60,9 @@ export interface RenderQueueVariant {
   score: number;
   score_reasoning: string;
   render_settings: RenderSettings;
+  duration: string;
+  userSelection: boolean;
+  scenes: string;
 }
 
 export interface SelectedSegmentEventParams {
@@ -81,4 +84,8 @@ export interface ApiCalls {
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]>;
   getRunsFromGcs(): Observable<PreviousRunsResponse>;
+  renderVariants(
+    gcsFolder: string,
+    renderQueue: RenderQueueVariant[]
+  ): Observable<void>;
 }

@@ -40,7 +40,6 @@ class VideoVariantRenderSettings:
   """Represents the settings for a video variant.
 
   Attributes:
-    duration_s: The duration of the video variant in seconds.
     generate_image_assets: Whether to generate image assets.
     generate_text_assets: Whether to generate text assets.
     render_all_formats: Whether to render all formats (square and vertical)
@@ -53,7 +52,6 @@ class VideoVariantRenderSettings:
       audio track portions.
   """
 
-  duration_s: int
   generate_image_assets: bool = False
   generate_text_assets: bool = False
   render_all_formats: bool = False
@@ -62,8 +60,7 @@ class VideoVariantRenderSettings:
 
   def __str__(self):
     return (
-        f'VideoVariantRenderSettings(duration_s={self.duration_s}, '
-        f'generate_image_assets={self.generate_image_assets}, '
+        f'VideoVariantRenderSettings(generate_image_assets={self.generate_image_assets}, '
         f'generate_text_assets={self.generate_text_assets}, '
         f'render_all_formats={self.render_all_formats}, '
         f'use_music_overlay={self.use_music_overlay}, '

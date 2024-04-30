@@ -21,6 +21,7 @@ import {
   GenerateVariantsResponse,
   GenerationSettings,
   PreviousRunsResponse,
+  RenderQueueVariant,
 } from './api-calls.service.interface';
 
 @Injectable({
@@ -116,6 +117,21 @@ export class ApiCallsService implements ApiCalls {
           });
         })
         .getRunsFromGcs();
+    });
+  }
+
+  renderVariants(gcsFolder: string, renderQueue: RenderQueueVariant[]) {
+    return new Observable<void>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler(() => {
+          this.ngZone.run(() => {
+            subscriber.next();
+            subscriber.complete();
+          });
+        })
+        .renderVariants(gcsFolder, renderQueue);
     });
   }
 }

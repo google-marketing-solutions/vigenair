@@ -19,8 +19,12 @@
  * Do not rename without ensuring all references are updated.
  */
 
-import { GenerationHelper, GenerationSettings } from './generation';
+import { GenerationHelper } from './generation';
 import { StorageManager } from './storage';
+import {
+  GenerationSettings,
+  RenderQueueVariant,
+} from './ui/src/app/api-calls/api-calls.service.interface';
 
 function getEncodedUserId() {
   const encodedUserId = Session.getActiveUser().getEmail()
@@ -67,6 +71,19 @@ function deleteGcsFolder(folder: string) {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateVariants(gcsFolder: string, settings: GenerationSettings) {
   return GenerationHelper.generateVariants(gcsFolder, settings);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function renderVariants(gcsFolder: string, renderQueue: RenderQueueVariant[]) {
+  const encodedRenderQueueJson = Utilities.base64Encode(
+    JSON.stringify(renderQueue)
+  );
+  StorageManager.uploadFile(
+    encodedRenderQueueJson,
+    `${gcsFolder}/${Date.now()}-combos`,
+    'render.json',
+    'application/json'
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

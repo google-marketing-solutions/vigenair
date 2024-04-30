@@ -16,7 +16,7 @@
 
 import { CONFIG } from './config';
 import { AppLogger } from './logging';
-import { ScriptUtil } from './utils';
+import { ScriptUtil } from './script-util';
 
 export class StorageManager {
   static getGcsUrlBase(): string {
@@ -69,19 +69,20 @@ export class StorageManager {
   static uploadFile(
     base64EncodedContent: string,
     folder: string,
-    filename: string = 'input.mp4'
+    filename = 'input.mp4',
+    contentType = 'video/mp4'
   ) {
-    const videoBlob = Utilities.newBlob(
+    const fileBlob = Utilities.newBlob(
       Utilities.base64Decode(base64EncodedContent),
-      'video/mp4',
+      contentType,
       filename
     );
     const fullName = encodeURIComponent(`${folder}/${filename}`);
     const url = `${CONFIG.cloudStorage.uploadEndpointBase}/b/${CONFIG.cloudStorage.bucket}/o?uploadType=media&name=${fullName}`;
-    const bytes = videoBlob.getBytes();
+    const bytes = fileBlob.getBytes();
 
     const response = ScriptUtil.urlFetch(url, 'POST', {
-      contentType: videoBlob.getContentType()!,
+      contentType: fileBlob.getContentType()!,
       payload: bytes,
     });
     const result = JSON.parse(response.getContentText());

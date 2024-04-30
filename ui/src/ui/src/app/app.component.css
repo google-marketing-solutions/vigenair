@@ -116,6 +116,8 @@ segments-list {
   position: sticky;
   top: 0;
   z-index: 1;
+  display: flex;
+  flex-direction: row;
 }
 
 mat-divider {
@@ -134,7 +136,8 @@ mat-divider {
   color: #e65100;
 }
 
-.score-3 {
+.score-3,
+.variant-score {
   color: #ffa000;
 }
 
@@ -152,4 +155,85 @@ mat-divider {
   font-family: 'Roboto';
   font-size: 11px;
   font-weight: 500;
+}
+
+.header-text,
+.header-text a {
+  color: white;
+  font-size: 12px;
+}
+
+.variant-row {
+  display: flex;
+  flex-direction: row;
+  margin-top: 12px;
+  border: 1px solid #cccccc !important;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px;
+}
+
+.variant-img {
+  width: 150px;
+  border-radius: 8px;
+  margin-right: 12px;
+  height: fit-content;
+  align-self: center;
+}
+
+.variant-title {
+  margin-left: 5px;
+}
+
+.variant-scenes {
+  margin-top: 4px;
+}
+
+.variant-scenes,
+.variant-duration,
+.variant-settings {
+  margin-left: 5px;
+  font-size: 14px;
+}
+
+.variant-action-remove {
+  margin-left: auto;
+}
+
+::ng-deep .mat-drawer-inner-container {
+  display: grid;
+}
+
+.demand-gen {
+  position: relative;
+  margin-top: 7px;
+  margin-left: 12px;
+  width: 25px;
+  height: 25px;
+}
+
+.user-settings {
+  margin-left: -10px;
+  display: flex;
+}
+
+.format-icons,
+.render-queue-format-icons {
+  border-radius: var(--mat-standard-button-toggle-shape);
+  border: solid 1px var(--mat-standard-button-toggle-divider-color);
+  margin-left: 12px;
+  display: inline-flex;
+  height: 33px;
+}
+
+.render-queue-format-icons {
+  width: 99px;
+  margin-left: 0px;
+  margin-top: 4px;
+  margin-right: auto;
+}
+
+.format-icon {
+  border-left: solid 1px var(--mat-standard-button-toggle-divider-color);
+  padding: 4px;
 }

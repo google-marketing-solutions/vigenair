@@ -17,7 +17,8 @@
 import { CONFIG } from './config';
 import { AppLogger } from './logging';
 import { StorageManager } from './storage';
-import { TimeUtil } from './utils';
+import { TimeUtil } from './time-util';
+import { GenerationSettings } from './ui/src/app/api-calls/api-calls.service.interface';
 import { VertexHelper } from './vertex';
 
 export interface AvSegment {
@@ -35,12 +36,6 @@ export interface AvSegment {
   logos: string[];
   details: string[];
   keywords: string;
-}
-
-export interface GenerationSettings {
-  prompt: string;
-  duration: number;
-  demandGenAssets: boolean;
 }
 
 export interface GenerateVariantsResponse {

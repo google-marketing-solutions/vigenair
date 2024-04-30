@@ -49,11 +49,14 @@ import { FileChooserComponent } from './file-chooser/file-chooser.component';
 import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
+import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
+
 import { MatSliderModule } from '@angular/material/slider';
 
 import { marked } from 'marked';
 
 import { CONFIG } from '../../../config';
+import { TimeUtil } from '../../../time-util';
 import {
   AvSegment,
   GenerateVariantsResponse,
@@ -91,6 +94,7 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
     MatTooltipModule,
     MatBadgeModule,
     MatSliderModule,
+    MatSidenavModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -125,7 +129,9 @@ export class AppComponent {
   folder = '';
   marked = marked;
   math = Math;
+  stars: number[] = new Array(5).fill(0);
   renderQueue: RenderQueueVariant[] = [];
+  renderQueueJsonArray: string[] = [];
 
   get combos(): any[] {
     return this.combosJson ? Object.values(this.combosJson) : [];
@@ -142,6 +148,9 @@ export class AppComponent {
   @ViewChild('segmentModeToggle') segmentModeToggle!: MatButtonToggleGroup;
   @ViewChild('videosFilterToggle') videosFilterToggle!: MatSlideToggle;
   @ViewChild('objectTrackingToggle') objectTrackingToggle!: MatSlideToggle;
+  @ViewChild('renderQueueSidenav') renderQueueSidenav!: MatSidenav;
+  @ViewChild('renderQueueButtonSpan')
+  renderQueueButtonSpan!: ElementRef<HTMLSpanElement>;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -346,7 +355,6 @@ export class AppComponent {
           this.analysisStatus = 'check_circle';
           this.parseAnalysis();
           this.getAvSegments(folder);
-          //this.getMagicCombos(folder);
         },
         error: () => {
           this.failHandler();
@@ -396,7 +404,6 @@ export class AppComponent {
     this.analysisStatus = 'hourglass_top';
     this.combinationStatus = 'hourglass_top';
     this.segmentsStatus = 'hourglass_top';
-    // TODO: Fix old subtitles still showing when loading another video
     this.previewTrackElem.nativeElement.src = '';
   }
 
@@ -487,16 +494,26 @@ export class AppComponent {
         av_segment_id: segment.av_segment_id + 1,
         start_s: segment.start_s,
         end_s: segment.end_s,
+        segment_screenshot_uri: segment.segment_screenshot_uri,
       };
     });
     const renderSettings: RenderSettings = {
-      duration_s: this.duration,
       generate_image_assets: this.demandGenAssets,
       generate_text_assets: this.demandGenAssets,
       render_all_formats: this.renderAllFormats,
       use_music_overlay: this.audioSettings === 'music',
       use_continuous_audio: this.audioSettings === 'continuous',
     };
+    const selectedScenes = selectedSegments.map(
+      (segment: AvSegment) => segment.av_segment_id
+    );
+    const duration = TimeUtil.secondsToTimeString(
+      selectedSegments.reduce(
+        (total: number, segment: AvSegment) =>
+          total + segment.end_s - segment.start_s,
+        0
+      )
+    );
     const renderQueueVariant: RenderQueueVariant = {
       av_segments: selectedSegments,
       title: variant.title,
@@ -504,8 +521,49 @@ export class AppComponent {
       score: variant.score,
       score_reasoning: variant.reasoning,
       render_settings: renderSettings,
+      duration: duration,
+      scenes: selectedScenes.join(', '),
+      userSelection:
+        JSON.stringify(variant.scenes) !== JSON.stringify(selectedScenes),
     };
-    this.renderQueue.push(renderQueueVariant);
-    console.log(renderQueueVariant);
+    const renderQueueVariantJson = JSON.stringify(renderQueueVariant);
+    if (!this.renderQueueJsonArray.includes(renderQueueVariantJson)) {
+      this.renderQueueJsonArray.push(renderQueueVariantJson);
+      this.renderQueue.push(renderQueueVariant);
+    }
+    this.renderQueueSidenav.autoFocus = true;
+    this.renderQueueSidenav.open();
+    this.renderQueueSidenav.autoFocus = false;
+  }
+
+  toggleRenderQueueSidenav() {
+    if (this.renderQueue.length) {
+      this.renderQueueSidenav.toggle();
+    }
+  }
+
+  removeRenderQueueVariant(index: number) {
+    this.renderQueueJsonArray.splice(index, 1);
+    this.renderQueue.splice(index, 1);
+
+    if (this.renderQueue.length === 0) {
+      this.renderQueueSidenav.close();
+      const trenderQueueButton = this.renderQueueButtonSpan.nativeElement
+        .firstChild! as HTMLButtonElement;
+      trenderQueueButton.blur();
+    }
+  }
+
+  renderVariants() {
+    this.loading = true;
+    this.apiCallsService
+      .renderVariants(this.folder, this.renderQueue)
+      .subscribe(() => {
+        this.loading = false;
+        this.renderQueue = [];
+        this.renderQueueJsonArray = [];
+        this.renderQueueSidenav.close();
+        this.getMagicCombos(this.folder);
+      });
   }
 }
