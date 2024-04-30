@@ -30,7 +30,7 @@ limitations under the License.
 
 ## Updates
 
-* [April/May 2024]: Launch! 🚀
+* [May 2024]: Launch! 🚀
 
 ## Overview
 
@@ -107,7 +107,7 @@ The generated variants may follow the original Ad's storyline - and thus serve a
 
 The diagram below shows how Vigenair's components interact and communicate with one another.
 
-<center><img src='./img/architecture.png' alt='Vigenair Architecture' /></center>
+<center><img src='./img/architecture.png' alt="Vigenair's architecture" /></center>
 
 1. Users upload or select videos they have previously analysed via the UI (step #2 is skipped for already analysed videos).
 2. New uploads into GCS trigger the Extractor Service, which extracts all video information and stores the results on GCS (`input.vtt`, `analysis.json` and `data.json`).
@@ -118,6 +118,12 @@ The diagram below shows how Vigenair's components interact and communicate with 
 4. Users can generate and iterate on variants via a storyboard preview while modifying controls, adding desired variants to the render queue.
 5. Once users are satisfied with the resulting variants, they can render them in their desired formats and settings via the Combiner Service (writing `render.json` to GCS, which serves as the input to the service, and the output is a `combos.json`).
 6. The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos of the variants and all associated assets will be displayed. Users can then approve the final variants they would like to upload into Google Ads / YouTube.
+
+### Rendering Settings
+
+Vigenair supports different rendering settings for the audio of the generated videos. The image below describes the supported options and how they differ:
+
+<center><img src='./img/audio.png' width='640px' alt="Vigenair's audio rendering options" /></center>
 
 ## How to Contribute
 
