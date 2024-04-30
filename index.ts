@@ -186,7 +186,10 @@ class UserConfigManager {
     const gcpProjectId = response.gcpProjectId;
     const gcpRegion = response.gcpRegion || DEFAULT_GCP_REGION;
     const gcsLocation = response.gcsLocation || DEFAULT_GCS_LOCATION;
-    const gcsBucket = `${gcpProjectId}${GCS_BUCKET_NAME_SUFFIX}`;
+    const gcsBucket = `${gcpProjectId
+      .replace("google.com:", "")
+      .replace(".", "-")
+      .replace(":", "-")}${GCS_BUCKET_NAME_SUFFIX}`;
     const vertexAiRegion = response.vertexAiRegion || DEFAULT_GCP_REGION;
 
     configReplace({

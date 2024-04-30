@@ -21,6 +21,7 @@ if "${BUCKET_EXISTS}"; then
   printf "\nWARN - Bucket '<gcs-bucket>' already exists. Skipping bucket creation...\n"
 else
   gcloud storage buckets create gs://<gcs-bucket> --project=<gcp-project-id> --location=<gcs-location>
+  test $? -eq 0 || exit
   printf "\nINFO - Bucket '<gcs-bucket>' created successfully in location '<gcs-location>'!\n"
 fi
 
@@ -40,3 +41,4 @@ gcloud functions deploy vigenair \
 --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
 --trigger-event-filters="bucket=<gcs-bucket>" \
 --trigger-location="<gcs-location>"
+test $? -eq 0 || exit
