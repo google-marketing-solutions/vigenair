@@ -31,6 +31,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ApiCallsService } from '../api-calls/api-calls.service';
 
+import { marked } from 'marked';
+import {
+  GenerateVariantsResponse,
+  RenderedVariant,
+} from '../api-calls/api-calls.service.interface';
+
 @Component({
   selector: 'video-combo',
   standalone: true,
@@ -44,17 +50,21 @@ import { ApiCallsService } from '../api-calls/api-calls.service';
   styleUrl: './video-combo.component.css',
 })
 export class VideoComboComponent implements AfterViewInit {
-  @Input({ required: true }) combo!: any;
+  @Input({ required: true }) combo!: RenderedVariant | GenerateVariantsResponse;
+  @Input() displayMode: string = 'combo';
   @ViewChild('videoElem') videoElem!: ElementRef<HTMLVideoElement>;
   @ViewChild('variantGroup', { static: true })
   variantGroup!: MatButtonToggleGroup;
 
   loading = false;
+  marked = marked;
 
   constructor(private apiCallsService: ApiCallsService) {}
 
-  loadVideo(file: string) {
-    this.videoElem.nativeElement.src = this.combo.variants[file] as string;
+  loadVideo(format: 'horizontal' | 'vertical' | 'square') {
+    if (this.displayMode === 'combo') {
+      this.videoElem.nativeElement.src = this.combo.variants![format];
+    }
   }
 
   onChangeVideo(e: MatButtonToggleChange) {

@@ -17,7 +17,7 @@ limitations under the License.
 <div [hidden]="!loading">
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </div>
-<div class="row">
+<div *ngIf="displayMode === 'combo'" class="row">
   <mat-button-toggle-group
     #variantGroup="matButtonToggleGroup"
     [disabled]="loading"
@@ -26,29 +26,32 @@ limitations under the License.
   >
     <mat-button-toggle
       value="horizontal"
-      [disabled]="!combo?.variants?.horizontal"
+      [disabled]="!combo.variants?.horizontal"
     >
       <mat-icon>computer</mat-icon>
     </mat-button-toggle>
-    <mat-button-toggle value="vertical" [disabled]="!combo?.variants?.vertical">
+    <mat-button-toggle value="vertical" [disabled]="!combo.variants?.vertical">
       <mat-icon>smartphone</mat-icon>
     </mat-button-toggle>
-    <mat-button-toggle value="square" [disabled]="!combo?.variants?.square">
+    <mat-button-toggle value="square" [disabled]="!combo.variants?.square">
       <mat-icon>slideshow</mat-icon>
     </mat-button-toggle>
   </mat-button-toggle-group>
 </div>
-<div class="row">
-  <video class="mat-elevation-z8" #videoElem controls muted>
+<div *ngIf="displayMode === 'combo'" class="row">
+  <video class="mat-elevation-z8" #videoElem controls>
     <source src="" />
   </video>
 </div>
-<div class="row">
+<div class="row" style="justify-content: start">Scenes: {{ combo.scenes }}</div>
+<div class="row" style="justify-content: start">
   {{ combo.description }}
 </div>
 <div style="font-size: 2.5em" [ngClass]="'score-' + combo.score" class="row">
   Score: {{ combo.score }}
 </div>
-<div class="row" style="white-space: pre-line">
-  {{ combo.reasoning }}
-</div>
+<div
+  class="row"
+  style="white-space: pre-line; margin-top: 0px"
+  [innerHTML]="marked.parse(combo.reasoning)"
+></div>

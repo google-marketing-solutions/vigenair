@@ -38,6 +38,7 @@ export interface GenerateVariantsResponse {
   score: number;
   reasoning: string;
   duration: string;
+  variants?: VariantFormats;
 }
 
 export interface PreviousRunsResponse {
@@ -62,6 +63,24 @@ export interface RenderQueueVariant {
   render_settings: RenderSettings;
   duration: string;
   userSelection: boolean;
+  scenes: string;
+}
+
+export interface VariantFormats {
+  horizontal: string;
+  vertical: string;
+  square: string;
+}
+
+export interface RenderedVariant {
+  variant_id: number;
+  av_segments: Record<string, AvSegment>;
+  title: string;
+  description: string;
+  score: number;
+  reasoning: string;
+  variants: VariantFormats;
+  duration: string;
   scenes: string;
 }
 

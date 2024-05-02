@@ -53,8 +53,6 @@ import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 
 import { MatSliderModule } from '@angular/material/slider';
 
-import { marked } from 'marked';
-
 import { CONFIG } from '../../../config';
 import { TimeUtil } from '../../../time-util';
 import {
@@ -62,6 +60,7 @@ import {
   GenerateVariantsResponse,
   RenderQueueVariant,
   RenderSettings,
+  RenderedVariant,
 } from './api-calls/api-calls.service.interface';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
@@ -101,11 +100,13 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
 export class AppComponent {
   loading = false;
   generatingVariants = false;
+  rendering = false;
   selectedFile?: File;
   gcsVideoPath?: string;
   analysisJson?: any;
   videoObjects?: any[];
   combosJson?: any;
+  combos?: RenderedVariant[];
   avSegments?: any;
   variants?: GenerateVariantsResponse[];
   selectedVariant = 0;
@@ -126,15 +127,10 @@ export class AppComponent {
   previousRuns: string[] | undefined;
   encodedUserId: string | undefined;
   folder = '';
-  marked = marked;
   math = Math;
   stars: number[] = new Array(5).fill(0);
   renderQueue: RenderQueueVariant[] = [];
   renderQueueJsonArray: string[] = [];
-
-  get combos(): any[] {
-    return this.combosJson ? Object.values(this.combosJson) : [];
-  }
 
   @ViewChild('previewVideoElem')
   previewVideoElem!: ElementRef<HTMLVideoElement>;
@@ -335,10 +331,11 @@ export class AppComponent {
       .subscribe({
         next: dataUrl => {
           this.combosJson = JSON.parse(atob(dataUrl.split(',')[1]));
+          this.setCombos();
           this.combinationStatus = 'check_circle';
           this.loading = false;
-          // this.videoMagicPanel.close();
-          // this.videoCombosPanel.open();
+          this.videoMagicPanel.close();
+          this.videoCombosPanel.open();
         },
         error: () => this.failHandler(),
       });
@@ -394,9 +391,11 @@ export class AppComponent {
   }
 
   resetState() {
+    this.rendering = false;
     this.analysisJson = undefined;
     this.avSegments = undefined;
     this.combosJson = undefined;
+    this.combos = undefined;
     this.videoObjects = undefined;
     this.variants = undefined;
     this.transcriptStatus = 'hourglass_top';
@@ -543,23 +542,52 @@ export class AppComponent {
     this.renderQueue.splice(index, 1);
 
     if (this.renderQueue.length === 0) {
-      this.renderQueueSidenav.close();
-      const trenderQueueButton = this.renderQueueButtonSpan.nativeElement
-        .firstChild! as HTMLButtonElement;
-      trenderQueueButton.blur();
+      this.closeRenderQueueSidenav();
     }
+  }
+
+  closeRenderQueueSidenav() {
+    this.renderQueueSidenav.close();
+    const trenderQueueButton = this.renderQueueButtonSpan.nativeElement
+      .firstChild! as HTMLButtonElement;
+    trenderQueueButton.blur();
   }
 
   renderVariants() {
     this.loading = true;
+    this.rendering = true;
     this.apiCallsService
       .renderVariants(this.folder, this.renderQueue)
       .subscribe(() => {
         this.loading = false;
         this.renderQueue = [];
         this.renderQueueJsonArray = [];
-        this.renderQueueSidenav.close();
+        this.closeRenderQueueSidenav();
         this.getMagicCombos(this.folder);
       });
+  }
+
+  setCombos() {
+    this.combos = Object.values(this.combosJson).map((combo: any) => {
+      const segments = Object.values(combo.av_segments) as AvSegment[];
+      const duration = TimeUtil.secondsToTimeString(
+        segments.reduce(
+          (total: number, segment: AvSegment) =>
+            total + segment.end_s - segment.start_s,
+          0
+        )
+      );
+      return {
+        variant_id: combo.variant_id,
+        av_segments: combo.av_segments,
+        title: combo.title,
+        description: combo.description,
+        score: combo.score,
+        reasoning: combo.score_reasoning,
+        variants: combo.variants,
+        duration: duration,
+        scenes: Object.keys(combo.av_segments).join(', '),
+      };
+    });
   }
 }

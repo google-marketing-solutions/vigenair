@@ -120,7 +120,7 @@ limitations under the License.
       </mat-expansion-panel-header>
       <div class="row">
         <div style="margin-right: auto"></div>
-        <div>
+        <div style="padding-left: 440px">
           <mat-button-toggle-group
             #segmentModeToggle="matButtonToggleGroup"
             value="preview"
@@ -185,6 +185,17 @@ limitations under the License.
             <mat-icon matChipAvatar fontIcon="{{ segmentsStatus }}"></mat-icon>
             Analysing video segments
           </mat-chip>
+          <mat-chip
+            *ngIf="rendering"
+            disableRipple
+            [ngClass]="combinationStatus"
+          >
+            <mat-icon
+              matChipAvatar
+              fontIcon="{{ combinationStatus }}"
+            ></mat-icon>
+            Rendering video variants
+          </mat-chip>
         </mat-chip-set>
       </div>
       <ng-container *ngIf="variants">
@@ -193,28 +204,12 @@ limitations under the License.
           [(selectedIndex)]="selectedVariant"
           (selectedTabChange)="variantChanged()"
         >
-          @for (variant of variants; track variant.combo_id) {
-            <mat-tab label="{{ variant.title }} -- {{ variant.duration }}">
-              <div class="row" style="justify-content: start">
-                Scenes: {{ variant.scenes }}
-              </div>
-              <div class="row" style="justify-content: start">
-                {{ variant.description }}
-              </div>
-              <div
-                style="font-size: 2.5em"
-                [ngClass]="'score-' + variant.score"
-                class="row"
-              >
-                Score: {{ variant.score }}
-              </div>
-              <div
-                class="row"
-                style="white-space: pre-line; margin-top: 0px"
-                [innerHTML]="marked.parse(variant.reasoning)"
-              ></div>
-            </mat-tab>
-          }
+          <mat-tab
+            *ngFor="let variant of variants"
+            label="{{ variant.title }} -- {{ variant.duration }}"
+          >
+            <video-combo [combo]="variant" displayMode="variant"></video-combo>
+          </mat-tab>
         </mat-tab-group>
         <br />
         <div class="row">
@@ -273,7 +268,7 @@ limitations under the License.
             </span>
           </div>
         </div>
-        <div class="row" style="gap: 16px; margin-top: 12px">
+        <div class="row" style="gap: 16px">
           <mat-form-field style="flex: 1" subscriptSizing="dynamic">
             <mat-label>What should your video variants be about?</mat-label>
             <textarea
@@ -282,17 +277,8 @@ limitations under the License.
               placeholder="e.g. 'Discovering new experiences'"
             ></textarea>
           </mat-form-field>
-          <div style="display: flex; flex-direction: column; margin-top: 16px">
-            <button
-              type="button"
-              mat-raised-button
-              color="primary"
-              (click)="generateVariants()"
-              [disabled]="loading"
-            >
-              Generate variants
-            </button>
-            <div style="margin-top: 4px">
+          <div style="display: flex; flex-direction: column; margin-top: -12px">
+            <div>
               <mat-label>Target duration:</mat-label>
               <mat-slider
                 [max]="math.round(previewVideoElem.duration)"
@@ -304,9 +290,18 @@ limitations under the License.
                 <input matSliderThumb [(ngModel)]="duration" #slider />
               </mat-slider>
             </div>
+            <button
+              type="button"
+              mat-raised-button
+              color="primary"
+              (click)="generateVariants()"
+              [disabled]="loading"
+            >
+              Generate variants
+            </button>
           </div>
         </div>
-        <div class="row" style="margin-top: 0px">
+        <div class="row">
           <span class="notice-text"
             >Segments selected by the LLM might not follow prompt instructions,
             and the overall video variant might not follow the desired target
@@ -322,7 +317,10 @@ limitations under the License.
         <mat-panel-title>Magic combos</mat-panel-title>
       </mat-expansion-panel-header>
       <mat-tab-group>
-        <mat-tab *ngFor="let combo of combos" label="{{ combo.title }}">
+        <mat-tab
+          *ngFor="let combo of combos"
+          label="{{ combo.title }} -- {{ combo.duration }}"
+        >
           <video-combo [combo]="combo"></video-combo>
         </mat-tab>
       </mat-tab-group>
@@ -336,7 +334,7 @@ limitations under the License.
   >
     <div style="margin-bottom: auto">
       @for (variant of renderQueue; track variant; let i = $index) {
-        <div class="variant-row">
+        <div class="variant-row mat-elevation-z4">
           <div style="display: flex; flex-direction: column">
             <img
               class="variant-img"
