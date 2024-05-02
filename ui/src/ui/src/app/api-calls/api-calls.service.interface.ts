@@ -65,11 +65,6 @@ export interface RenderQueueVariant {
   scenes: string;
 }
 
-export interface SelectedSegmentEventParams {
-  segmentId: number;
-  selected: boolean;
-}
-
 export interface ApiCalls {
   uploadVideo(file: Blob, analyseAudio: boolean): Observable<string>;
   deleteGcsFolder(folder: string): void;

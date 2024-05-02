@@ -62,7 +62,6 @@ import {
   GenerateVariantsResponse,
   RenderQueueVariant,
   RenderSettings,
-  SelectedSegmentEventParams,
 } from './api-calls/api-calls.service.interface';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
@@ -405,6 +404,8 @@ export class AppComponent {
     this.combinationStatus = 'hourglass_top';
     this.segmentsStatus = 'hourglass_top';
     this.previewTrackElem.nativeElement.src = '';
+    this.renderQueue = [];
+    this.renderQueueJsonArray = [];
   }
 
   processVideo(folder: string) {
@@ -441,8 +442,8 @@ export class AppComponent {
   }
 
   calculateVideoDefaultDuration(duration: number) {
-    const fullDuration = Math.round(duration) % 10;
-    const step = fullDuration ? Math.min(10, fullDuration) : 10;
+    const durationInt = Math.round(duration) % 10;
+    const step = durationInt ? Math.min(10, durationInt) : 10;
     const halfDuration = Math.round(duration / 2);
 
     this.step = step;
@@ -474,11 +475,6 @@ export class AppComponent {
     for (const segment of this.variants![this.selectedVariant].scenes) {
       this.avSegments[segment - 1].selected = true;
     }
-  }
-
-  toggleSelectedSegment(selectedSegment: SelectedSegmentEventParams) {
-    this.avSegments[selectedSegment.segmentId].selected =
-      selectedSegment.selected;
   }
 
   variantChanged() {

@@ -17,7 +17,9 @@ limitations under the License.
 <mat-toolbar color="primary" class="sticky">
   <span style="font-size: 1.5em; margin-right: auto"> ViGenAiR </span>
   <span class="header-text">
-    <a href="https://github.com/google-marketing-solutions/vigenair"
+    <a
+      target="_blank"
+      href="https://github.com/google-marketing-solutions/vigenair"
       >Recrafting Video Ads with Generative AI</a
     ></span
   >
@@ -55,6 +57,7 @@ limitations under the License.
         (file)="onFileSelected($event)"
       ></file-chooser>
       <mat-checkbox
+        matTooltip="Uncheck for videos where there is no voice-over"
         style="
           justify-content: center;
           display: flex;
@@ -65,7 +68,7 @@ limitations under the License.
         [(ngModel)]="analyseAudio"
         [disabled]="!selectedFile || loading"
       >
-        Analyse audio
+        Analyse voice-over
       </mat-checkbox>
       <button
         type="button"
@@ -87,6 +90,7 @@ limitations under the License.
         >My videos only</mat-slide-toggle
       >
       <mat-form-field
+        style="width: 300px"
         subscriptSizing="dynamic"
         *ngIf="previousRuns && previousRuns.length > 0"
       >
@@ -97,9 +101,14 @@ limitations under the License.
           (click)="getPreviousRuns()"
         >
           @for (run of previousRuns; track $index) {
-            <mat-option *ngIf="isCurrentUserRun(run)" [value]="run">{{
-              run.split('--')[0]
-            }}</mat-option>
+            <mat-option *ngIf="isCurrentUserRun(run)" [value]="run"
+              >{{ run.split('--')[0]
+              }}{{
+                run.split('--').length === 4 && run.split('--')[1] === 'n'
+                  ? ' (no voice-over)'
+                  : ''
+              }}</mat-option
+            >
           }
         </mat-select>
       </mat-form-field>
@@ -141,7 +150,6 @@ limitations under the License.
           [segmentMode]="segmentModeToggle.value"
           [allowSelection]="variants !== undefined"
           [currentSegmentId]="currentSegmentId || 0"
-          (toggleSelectedSegmentEvent)="toggleSelectedSegment($event)"
         ></segments-list>
         <div
           [hidden]="segmentModeToggle.value !== 'preview'"
@@ -194,7 +202,7 @@ limitations under the License.
                 {{ variant.description }}
               </div>
               <div
-                style="font-size: 3em"
+                style="font-size: 2.5em"
                 [ngClass]="'score-' + variant.score"
                 class="row"
               >
@@ -223,16 +231,23 @@ limitations under the License.
       <ng-container *ngIf="avSegments">
         <mat-divider></mat-divider>
         <div *ngIf="variants?.length">
-          <div style="margin-top: 8px; font-weight: 500">
-            <u>Variant rendering settings</u>
-          </div>
+          <br />
+          <span style="font-size: 18px">Variant rendering settings</span>
+          <br /><br />
           <div style="margin-top: 8px">
             <mat-form-field subscriptSizing="dynamic">
               <mat-label>Variant audio:</mat-label>
               <mat-select [(ngModel)]="audioSettings">
                 <mat-option value="segment">Individual segments</mat-option>
-                <mat-option value="music">Overlay music only</mat-option>
-                <mat-option value="continuous">Overlay all</mat-option>
+                <span
+                  matTooltip="Only available for videos with voice-over"
+                  [matTooltipDisabled]="analyseAudio"
+                >
+                  <mat-option value="music" [disabled]="!analyseAudio"
+                    >Overlay music only</mat-option
+                  >
+                </span>
+                <mat-option value="continuous">Overlay all audio</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -258,7 +273,7 @@ limitations under the License.
             </span>
           </div>
         </div>
-        <div class="row" style="gap: 16px">
+        <div class="row" style="gap: 16px; margin-top: 12px">
           <mat-form-field style="flex: 1" subscriptSizing="dynamic">
             <mat-label>What should your video variants be about?</mat-label>
             <textarea
@@ -267,32 +282,37 @@ limitations under the License.
               placeholder="e.g. 'Discovering new experiences'"
             ></textarea>
           </mat-form-field>
-          <button
-            type="button"
-            mat-raised-button
-            color="primary"
-            (click)="generateVariants()"
-            [disabled]="loading"
-          >
-            Generate variants
-          </button>
-        </div>
-        <div
-          class="row"
-          style="justify-content: start; margin-top: 16px; display: block"
-        >
-          <div style="margin-top: 8px">
-            <mat-label>Target duration:</mat-label>
-            <mat-slider
-              [max]="math.round(this.previewVideoElem.duration)"
-              [min]="10"
-              [step]="this.step"
-              [discrete]="true"
-              [showTickMarks]="true"
+          <div style="display: flex; flex-direction: column; margin-top: 16px">
+            <button
+              type="button"
+              mat-raised-button
+              color="primary"
+              (click)="generateVariants()"
+              [disabled]="loading"
             >
-              <input matSliderThumb [(ngModel)]="duration" #slider />
-            </mat-slider>
+              Generate variants
+            </button>
+            <div style="margin-top: 4px">
+              <mat-label>Target duration:</mat-label>
+              <mat-slider
+                [max]="math.round(previewVideoElem.duration)"
+                [min]="10"
+                [step]="step"
+                [discrete]="true"
+                [showTickMarks]="true"
+              >
+                <input matSliderThumb [(ngModel)]="duration" #slider />
+              </mat-slider>
+            </div>
           </div>
+        </div>
+        <div class="row" style="margin-top: 0px">
+          <span class="notice-text"
+            >Segments selected by the LLM might not follow prompt instructions,
+            and the overall video variant might not follow the desired target
+            duration. It is recommended to review and potentially modify the
+            selection. Navigating between variants will clear any changes.
+          </span>
         </div>
       </ng-container>
     </mat-expansion-panel>
@@ -351,7 +371,14 @@ limitations under the License.
             </div>
           </div>
           <div>
-            <div class="variant-score" matTooltip="Score: {{ variant.score }}">
+            <div
+              class="variant-score{{
+                variant.userSelection ? '-modified' : ''
+              }}"
+              matTooltip="Score: {{ variant.score }}{{
+                variant.userSelection ? ' (modified)' : ''
+              }}"
+            >
               @for (_ of stars; track _; let i = $index) {
                 <mat-icon
                   fontIcon="{{
@@ -402,7 +429,7 @@ limitations under the License.
         </div>
       }
     </div>
-    <div class="row">
+    <div class="row" style="flex-direction: column">
       <button
         type="button"
         mat-raised-button
@@ -411,6 +438,11 @@ limitations under the License.
       >
         Render
       </button>
+      <br />
+      <span class="notice-text"
+        >Uploading a new video or selecting a previous one will clear the render
+        queue.
+      </span>
     </div>
   </mat-sidenav>
 </mat-sidenav-container>

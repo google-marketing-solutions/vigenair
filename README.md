@@ -123,7 +123,7 @@ The diagram below shows how Vigenair's components interact and communicate with 
 
 Vigenair supports different rendering settings for the audio of the generated videos. The image below describes the supported options and how they differ:
 
-<center><img src='./img/audio.png' width='640px' alt="Vigenair's audio rendering options" /></center>
+<center><img src='./img/audio.png' alt="Vigenair's audio rendering options" /></center>
 
 ## How to Contribute
 

@@ -22,7 +22,10 @@ limitations under the License.
     [ngClass]="segmentMode === 'preview' ? 'filmstrip-row' : 'row'"
     *ngFor="let segment of segmentList; index as i"
   >
-    <div style="display: flex; position: relative" (click)="toggleSegment(i, !segment.selected)">
+    <div
+      style="display: flex; position: relative"
+      (click)="toggleSegmentSelection(i)"
+    >
       <img
         attr.id="segment-{{ i }}"
         [class.filmstrip-img]="segmentMode === 'preview'"

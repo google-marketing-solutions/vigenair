@@ -149,6 +149,10 @@ mat-divider {
   color: #33691e;
 }
 
+.variant-score-modified {
+  color: #aaaaaa;
+}
+
 ::ng-deep #mat-badge-content-0 {
   right: 3px;
   top: 3px;
@@ -236,4 +240,9 @@ mat-divider {
 .format-icon {
   border-left: solid 1px var(--mat-standard-button-toggle-divider-color);
   padding: 4px;
+}
+
+.notice-text {
+  font-size: 14px;
+  color: #aaaaaa;
 }

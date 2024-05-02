@@ -35,7 +35,7 @@ import vertexai
 from vertexai.preview.generative_models import GenerativeModel
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(init=False)
 class VideoVariantRenderSettings:
   """Represents the settings for a video variant.
 
@@ -58,6 +58,12 @@ class VideoVariantRenderSettings:
   use_music_overlay: bool = False
   use_continuous_audio: bool = False
 
+  def __init__(self, **kwargs):
+    field_names = set([f.name for f in dataclasses.fields(self)])
+    for k, v in kwargs.items():
+      if k in field_names:
+        setattr(self, k, v)
+
   def __str__(self):
     return (
         f'VideoVariantRenderSettings(generate_image_assets={self.generate_image_assets}, '
@@ -68,7 +74,7 @@ class VideoVariantRenderSettings:
     )
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(init=False)
 class VideoVariantSegment:
   """Represents a segment of a video variant.
 
@@ -82,6 +88,12 @@ class VideoVariantSegment:
   start_s: float
   end_s: float
 
+  def __init__(self, **kwargs):
+    field_names = set([f.name for f in dataclasses.fields(self)])
+    for k, v in kwargs.items():
+      if k in field_names:
+        setattr(self, k, v)
+
   def __str__(self):
     return (
         f'VideoVariantSegment(av_segment_id={self.av_segment_id}, '
@@ -90,7 +102,7 @@ class VideoVariantSegment:
     )
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(init=False)
 class VideoVariant:
   """Represents a video variant.
 
@@ -111,6 +123,12 @@ class VideoVariant:
   score: float
   score_reasoning: str
   render_settings: VideoVariantRenderSettings
+
+  def __init__(self, **kwargs):
+    field_names = set([f.name for f in dataclasses.fields(self)])
+    for k, v in kwargs.items():
+      if k in field_names:
+        setattr(self, k, v)
 
   def __str__(self):
     return (
