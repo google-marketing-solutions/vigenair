@@ -100,6 +100,11 @@ class TriggerFile:
     self.file_name = file_path.name
     self.file_ext = file_ext[1:]
     self.gcs_folder = str(file_path.parents[0])
+    self.gcs_root_folder = (
+        str(file_path.parents[1])
+        if len(file_path.parents) > 2 else self.gcs_folder
+    )
+
     self.video_metadata = VideoMetadata(self.gcs_folder)
     self.full_gcs_path = filepath
     self.file_name_ext = f'{self.file_name}.{self.file_ext}'
@@ -109,6 +114,7 @@ class TriggerFile:
         f'TriggerFile(file_name_ext={self.file_name_ext}, '
         f'full_gcs_path={self.full_gcs_path}, '
         f'gcs_folder={self.gcs_folder}, '
+        f'gcs_root_folder={self.gcs_root_folder}, '
         f'video_metadata={self.video_metadata})'
     )
 

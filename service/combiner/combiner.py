@@ -272,7 +272,8 @@ class Combiner:
         file_path=combos_json_path,
         bucket_name=self.gcs_bucket_name,
         destination_file_name=os.path.join(
-            self.render_file.gcs_folder, ConfigService.OUTPUT_COMBINATIONS_FILE
+            self.render_file.gcs_root_folder,
+            ConfigService.OUTPUT_COMBINATIONS_FILE
         ),
         overwrite=True,
     )
