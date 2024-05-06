@@ -170,11 +170,9 @@ mat-divider {
 .variant-row {
   display: flex;
   flex-direction: row;
-  margin-top: 12px;
-  border: 1px solid #cccccc !important;
-  border-radius: 8px;
   padding: 12px;
   margin: 12px;
+  cursor: pointer;
 }
 
 .variant-img {

@@ -60,7 +60,10 @@ export class GenerationHelper {
     const duration = settings.duration;
     const expectedDurationRange =
       GenerationHelper.calculateExpectedDurationRange(duration);
-    const videoScript = GenerationHelper.createVideoScript(gcsFolder);
+    const videoScript = GenerationHelper.createVideoScript(
+      gcsFolder,
+      settings.duration
+    );
 
     const generationPrompt = CONFIG.vertexAi.generationPrompt
       .replace('{{userPrompt}}', settings.prompt)
@@ -100,45 +103,47 @@ export class GenerationHelper {
     return JSON.parse(avSegments) as AvSegment[];
   }
 
-  static createVideoScript(gcsFolder: string): string {
+  static createVideoScript(gcsFolder: string, duration: number): string {
     const avSegments = GenerationHelper.getAvSegments(gcsFolder);
     const videoScript: string[] = [];
 
     avSegments.forEach((avSegment, index) => {
-      videoScript.push(`Scene ${index + 1}`);
-      videoScript.push(`${avSegment.start_s} --> ${avSegment.end_s}`);
-      videoScript.push(
-        `Duration: ${(avSegment.end_s - avSegment.start_s).toFixed(2)}s`
-      );
-      const description = avSegment.description.trim();
-      if (description) {
-        videoScript.push(`Description: ${description}`);
-      }
-      videoScript.push(
-        `Number of visual shots: ${avSegment.visual_segment_ids.length}`
-      );
-      const transcript = avSegment.transcript;
-      const details = avSegment.labels.concat(avSegment.objects);
-      const text = avSegment.text.map((t: string) => `"${t}"`);
-      const logos = avSegment.logos;
-      const keywords = avSegment.keywords.trim();
+      if (avSegment.duration_s <= duration) {
+        videoScript.push(`Scene ${index + 1}`);
+        videoScript.push(`${avSegment.start_s} --> ${avSegment.end_s}`);
+        videoScript.push(
+          `Duration: ${(avSegment.end_s - avSegment.start_s).toFixed(2)}s`
+        );
+        const description = avSegment.description.trim();
+        if (description) {
+          videoScript.push(`Description: ${description}`);
+        }
+        videoScript.push(
+          `Number of visual shots: ${avSegment.visual_segment_ids.length}`
+        );
+        const transcript = avSegment.transcript;
+        const details = avSegment.labels.concat(avSegment.objects);
+        const text = avSegment.text.map((t: string) => `"${t}"`);
+        const logos = avSegment.logos;
+        const keywords = avSegment.keywords.trim();
 
-      if (transcript) {
-        videoScript.push(`Off-screen speech: "${transcript.join(' ')}"`);
+        if (transcript) {
+          videoScript.push(`Off-screen speech: "${transcript.join(' ')}"`);
+        }
+        if (details) {
+          videoScript.push(`On-screen details: ${details.join(', ')}`);
+        }
+        if (text) {
+          videoScript.push(`On-screen text: ${text.join(', ')}`);
+        }
+        if (logos) {
+          videoScript.push(`Logos: ${logos.join(', ')}`);
+        }
+        if (keywords) {
+          videoScript.push(`Keywords: ${keywords}`);
+        }
+        videoScript.push('');
       }
-      if (details) {
-        videoScript.push(`On-screen details: ${details.join(', ')}`);
-      }
-      if (text) {
-        videoScript.push(`On-screen text: ${text.join(', ')}`);
-      }
-      if (logos) {
-        videoScript.push(`Logos: ${logos.join(', ')}`);
-      }
-      if (keywords) {
-        videoScript.push(`Keywords: ${keywords}`);
-      }
-      videoScript.push('');
     });
     return videoScript.join('\n');
   }

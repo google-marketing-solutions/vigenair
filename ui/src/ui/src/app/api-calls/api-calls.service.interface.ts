@@ -55,6 +55,7 @@ export interface RenderSettings {
 }
 
 export interface RenderQueueVariant {
+  variant_id: number;
   av_segments: AvSegment[];
   title: string;
   description: string;

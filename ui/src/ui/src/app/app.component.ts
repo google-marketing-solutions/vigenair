@@ -14,47 +14,42 @@
  * limitations under the License.
  */
 
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
+import {
+  MatButtonToggleGroup,
+  MatButtonToggleModule,
+} from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import {
   MatExpansionModule,
   MatExpansionPanel,
 } from '@angular/material/expansion';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import {
   MatSlideToggle,
   MatSlideToggleModule,
 } from '@angular/material/slide-toggle';
+import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
-
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatBadgeModule } from '@angular/material/badge';
-import {
-  MatButtonToggleGroup,
-  MatButtonToggleModule,
-} from '@angular/material/button-toggle';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ApiCallsService } from './api-calls/api-calls.service';
-import { FileChooserComponent } from './file-chooser/file-chooser.component';
-import { SegmentsListComponent } from './segments-list/segments-list.component';
-import { VideoComboComponent } from './video-combo/video-combo.component';
-
-import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
-
-import { MatSliderModule } from '@angular/material/slider';
 
 import { CONFIG } from '../../../config';
 import { TimeUtil } from '../../../time-util';
+import { ApiCallsService } from './api-calls/api-calls.service';
 import {
   AvSegment,
   GenerateVariantsResponse,
@@ -62,6 +57,9 @@ import {
   RenderSettings,
   RenderedVariant,
 } from './api-calls/api-calls.service.interface';
+import { FileChooserComponent } from './file-chooser/file-chooser.component';
+import { SegmentsListComponent } from './segments-list/segments-list.component';
+import { VideoComboComponent } from './video-combo/video-combo.component';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
 
@@ -93,6 +91,7 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
     MatBadgeModule,
     MatSliderModule,
     MatSidenavModule,
+    MatCardModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -467,11 +466,12 @@ export class AppComponent {
       });
   }
 
-  setSelectedSegments() {
+  setSelectedSegments(segments?: number[]) {
     for (const segment of this.avSegments) {
       segment.selected = false;
     }
-    for (const segment of this.variants![this.selectedVariant].scenes) {
+    for (const segment of segments ||
+      this.variants![this.selectedVariant].scenes) {
       this.avSegments[segment - 1].selected = true;
     }
   }
@@ -510,6 +510,7 @@ export class AppComponent {
       )
     );
     const renderQueueVariant: RenderQueueVariant = {
+      variant_id: this.selectedVariant,
       av_segments: selectedSegments,
       title: variant.title,
       description: variant.description,
@@ -544,6 +545,24 @@ export class AppComponent {
     if (this.renderQueue.length === 0) {
       this.closeRenderQueueSidenav();
     }
+  }
+
+  loadVariant(index: number) {
+    const variant = this.renderQueue[index];
+    this.selectedVariant = variant.variant_id;
+    this.setSelectedSegments(
+      variant.av_segments.map((segment: AvSegment) => segment.av_segment_id)
+    );
+    this.renderAllFormats = variant.render_settings.render_all_formats;
+    this.demandGenAssets =
+      variant.render_settings.generate_text_assets &&
+      variant.render_settings.generate_image_assets;
+    this.audioSettings = variant.render_settings.use_music_overlay
+      ? 'music'
+      : variant.render_settings.use_continuous_audio
+        ? 'continuous'
+        : 'segment';
+    this.closeRenderQueueSidenav();
   }
 
   closeRenderQueueSidenav() {

@@ -43,15 +43,19 @@ limitations under the License.
     <source src="" />
   </video>
 </div>
-<div class="row" style="justify-content: start">Scenes: {{ combo.scenes }}</div>
+<div class="row" style="justify-content: start">
+  Segments: {{ combo.scenes }}
+</div>
 <div class="row" style="justify-content: start">
   {{ combo.description }}
 </div>
-<div style="font-size: 2.5em" [ngClass]="'score-' + combo.score" class="row">
-  Score: {{ combo.score }}
+<div *ngIf="displayMode === 'variant'">
+  <div style="font-size: 2.5em" [ngClass]="'score-' + combo.score" class="row">
+    Score: {{ combo.score }}
+  </div>
+  <div
+    class="row"
+    style="white-space: pre-line; margin-top: 0px"
+    [innerHTML]="marked.parse(combo.reasoning)"
+  ></div>
 </div>
-<div
-  class="row"
-  style="white-space: pre-line; margin-top: 0px"
-  [innerHTML]="marked.parse(combo.reasoning)"
-></div>

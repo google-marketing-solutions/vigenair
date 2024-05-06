@@ -58,7 +58,7 @@ limitations under the License.
   <mat-sidenav-content>
     <mat-expansion-panel #videoUploadPanel expanded>
       <mat-expansion-panel-header>
-        <mat-panel-title>Video upload</mat-panel-title>
+        <mat-panel-title>Video selection</mat-panel-title>
       </mat-expansion-panel-header>
       <file-chooser
         class="file-chooser"
@@ -342,7 +342,11 @@ limitations under the License.
   >
     <div style="margin-bottom: auto">
       @for (variant of renderQueue; track variant; let i = $index) {
-        <div class="variant-row mat-elevation-z4">
+        <mat-card
+          class="variant-row"
+          matTooltip="Load variant"
+          (click)="loadVariant(i)"
+        >
           <div style="display: flex; flex-direction: column">
             <img
               class="variant-img"
@@ -403,7 +407,7 @@ limitations under the License.
               <span *ngIf="variant.userSelection">(modified)</span>
             </div>
             <div class="variant-scenes">
-              <b>Scenes:</b> {{ variant.scenes }}
+              <b>Segments:</b> {{ variant.scenes }}
             </div>
             <div class="variant-duration">
               <b>Duration:</b> {{ variant.duration }}
@@ -432,7 +436,7 @@ limitations under the License.
               </mat-icon>
             </button>
           </span>
-        </div>
+        </mat-card>
       }
     </div>
     <div class="row" style="flex-direction: column">
