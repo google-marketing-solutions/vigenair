@@ -21,7 +21,8 @@
     "build": "tsc",
     "start": "npm install && npm run build && node dist/index.js",
     "deploy-ui": "cd ui && npm run deploy",
-    "deploy-service": "cd service && ./deploy.sh"
+    "deploy-service": "cd service && ./deploy.sh",
+    "postinstall": "cd ui && npm install"
   },
   "engines": {
     "node": ">=12"
