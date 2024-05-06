@@ -229,9 +229,8 @@ export class AppComponent {
     }
     const timestamp = this.previewVideoElem.nativeElement.currentTime;
     const currentSegment = this.avSegments.find(
-      (e: { start_s: number; end_s: number }) => {
-        return e.start_s <= timestamp && e.end_s >= timestamp;
-      }
+      (segment: AvSegment) =>
+        segment.start_s <= timestamp && segment.end_s >= timestamp
     );
     if (
       !currentSegment ||
@@ -425,7 +424,10 @@ export class AppComponent {
     this.previewVideoElem.nativeElement.onplaying = () => {
       this.frameInterval = window.setInterval(() => {
         this.drawFrame(this.videoObjects);
-        this.setCurrentSegmentId();
+        const skipped = this.skipSegment();
+        if (!skipped) {
+          this.setCurrentSegmentId();
+        }
       }, 50);
     };
     this.previewVideoElem.nativeElement.onpause = () => {
@@ -433,6 +435,9 @@ export class AppComponent {
         clearInterval(this.frameInterval);
         this.frameInterval = undefined;
       }
+    };
+    this.previewVideoElem.nativeElement.onended = () => {
+      this.resetVariantPreview();
     };
     this.videoUploadPanel.close();
     this.videoMagicPanel.open();
@@ -463,7 +468,31 @@ export class AppComponent {
         this.selectedVariant = 0;
         this.variants = variants;
         this.setSelectedSegments();
+        this.objectTrackingToggle.checked = false;
       });
+  }
+
+  skipSegment() {
+    if (!this.avSegments || !this.variants) {
+      return false;
+    }
+    const timestamp = this.previewVideoElem.nativeElement.currentTime;
+    const currentSegment = this.avSegments.find(
+      (segment: AvSegment) =>
+        segment.start_s <= timestamp && segment.end_s >= timestamp
+    );
+    if (!currentSegment) {
+      return false;
+    }
+    const nextSegment = this.avSegments
+      .filter((segment: AvSegment) => segment.selected)
+      .find((segment: AvSegment) => segment.start_s > timestamp);
+    if (!currentSegment.selected) {
+      this.previewVideoElem.nativeElement.currentTime = nextSegment
+        ? nextSegment.start_s
+        : this.previewVideoElem.nativeElement.duration;
+    }
+    return !currentSegment.selected;
   }
 
   setSelectedSegments(segments?: number[]) {
@@ -478,6 +507,16 @@ export class AppComponent {
 
   variantChanged() {
     this.setSelectedSegments();
+    this.resetVariantPreview();
+  }
+
+  resetVariantPreview() {
+    this.previewVideoElem.nativeElement.currentTime =
+      this.avSegments && this.variants
+        ? this.avSegments[this.variants[this.selectedVariant].scenes[0] - 1]
+            .start_s
+        : 0;
+    this.setCurrentSegmentId();
   }
 
   addToRenderQueue() {

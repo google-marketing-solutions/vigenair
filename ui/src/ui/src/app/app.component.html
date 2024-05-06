@@ -163,7 +163,13 @@ limitations under the License.
           [hidden]="segmentModeToggle.value !== 'preview'"
           class="video-container"
         >
-          <video class="mat-elevation-z8" #previewVideoElem autoplay controls>
+          <video
+            class="mat-elevation-z8"
+            #previewVideoElem
+            autoplay
+            controls
+            disablePictureInPicture
+          >
             <source src="" />
             <track
               label="Voice-over"
