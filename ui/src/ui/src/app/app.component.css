@@ -244,3 +244,11 @@ mat-divider {
   font-size: 14px;
   color: #aaaaaa;
 }
+
+.panel-title {
+  font-weight: 500;
+}
+
+.panel-icon {
+  margin-right: 4px;
+}

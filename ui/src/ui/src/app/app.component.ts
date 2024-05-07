@@ -301,11 +301,11 @@ export class AppComponent {
   getAvSegments(folder: string) {
     this.segmentsStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/data.json`, 'application/json', 10000, 30)
+      .getFromGcs(`${folder}/data.json`, 'application/json', 6000, 100)
       .subscribe({
         next: dataUrl => {
           const dataJson = JSON.parse(atob(dataUrl.split(',')[1]));
-          this.avSegments = dataJson.map((e: any) => {
+          this.avSegments = dataJson.map((e: AvSegment) => {
             e.selected = false;
             return e;
           });
@@ -316,10 +316,10 @@ export class AppComponent {
       });
   }
 
-  getMagicCombos(folder: string) {
+  getRenderedCombos(folder: string) {
     this.combinationStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/combos.json`, 'application/json', 10000, 30)
+      .getFromGcs(`${folder}/combos.json`, 'application/json', 6000, 100)
       .subscribe({
         next: dataUrl => {
           this.combosJson = JSON.parse(atob(dataUrl.split(',')[1]));
@@ -333,10 +333,10 @@ export class AppComponent {
       });
   }
 
-  getMagicAnalysis(folder: string) {
+  getVideoAnalysis(folder: string) {
     this.analysisStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/analysis.json`, 'application/json', 5000, 20)
+      .getFromGcs(`${folder}/analysis.json`, 'application/json', 6000, 100)
       .subscribe({
         next: dataUrl => {
           this.analysisJson = JSON.parse(atob(dataUrl.split(',')[1]));
@@ -348,15 +348,15 @@ export class AppComponent {
       });
   }
 
-  getMagicVoiceOver(folder: string) {
+  getSubtitlesTrack(folder: string) {
     this.transcriptStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/input.vtt`, 'text/vtt', 5000, 20)
+      .getFromGcs(`${folder}/input.vtt`, 'text/vtt', 6000, 100)
       .subscribe({
         next: dataUrl => {
           this.previewTrackElem.nativeElement.src = dataUrl;
           this.transcriptStatus = 'check_circle';
-          this.getMagicAnalysis(folder);
+          this.getVideoAnalysis(folder);
         },
         error: () => this.failHandler(folder),
       });
@@ -430,7 +430,7 @@ export class AppComponent {
     };
     this.videoUploadPanel.close();
     this.videoMagicPanel.open();
-    this.getMagicVoiceOver(folder);
+    this.getSubtitlesTrack(folder);
   }
 
   calculateVideoDefaultDuration(duration: number) {
@@ -610,7 +610,7 @@ export class AppComponent {
         this.renderQueue = [];
         this.renderQueueJsonArray = [];
         this.closeRenderQueueSidenav();
-        this.getMagicCombos(combosFolder);
+        this.getRenderedCombos(combosFolder);
       });
   }
 

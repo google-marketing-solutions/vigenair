@@ -214,10 +214,11 @@ class Extractor:
         f'gs://{self.gcs_bucket_name}/{self.video_file.gcs_folder}/'
         f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}'
     )
-    descriptions = []
-    keywords = []
-    cut_paths = []
-    screenshot_paths = []
+    size = len(optimised_av_segments)
+    descriptions = [None] * size
+    keywords = [None] * size
+    cut_paths = [None] * size
+    screenshot_paths = [None] * size
 
     with concurrent.futures.ThreadPoolExecutor() as thread_executor:
       futures_dict = {
@@ -240,18 +241,15 @@ class Extractor:
       for response in concurrent.futures.as_completed(futures_dict):
         index = futures_dict[response]
         description, keyword = response.result()
-        descriptions.insert(index, description)
-        keywords.insert(index, keyword)
+        descriptions[index] = description
+        keywords[index] = keyword
         resources_base_path = (
             f'{ConfigService.GCS_BASE_URL}/{self.gcs_bucket_name}/'
             f'{self.video_file.gcs_folder}/'
             f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/{index+1}'
         )
-        cut_paths.insert(
-            index, f'{resources_base_path}.{self.video_file.file_ext}'
-        )
-        screenshot_paths.insert(
-            index,
+        cut_paths[index] = f'{resources_base_path}.{self.video_file.file_ext}'
+        screenshot_paths[index] = (
             f'{resources_base_path}{ConfigService.SEGMENT_SCREENSHOT_EXT}'
         )
 

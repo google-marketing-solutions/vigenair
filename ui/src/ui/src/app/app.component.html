@@ -42,7 +42,7 @@ limitations under the License.
       matBadgeSize="small"
       (click)="toggleRenderQueueSidenav()"
     >
-      <mat-icon fontIcon="subscriptions">
+      <mat-icon fontIcon="queue_play_next">
         <span class="cdk-visually-hidden">
           Render queue with overlaid badge showing the number
           {{ renderQueue.length }}
@@ -58,7 +58,10 @@ limitations under the License.
   <mat-sidenav-content>
     <mat-expansion-panel #videoUploadPanel expanded>
       <mat-expansion-panel-header>
-        <mat-panel-title>Video selection</mat-panel-title>
+        <mat-panel-title class="panel-title"
+          ><mat-icon class="panel-icon">video_library</mat-icon>Video
+          selection</mat-panel-title
+        >
       </mat-expansion-panel-header>
       <file-chooser
         class="file-chooser"
@@ -86,7 +89,7 @@ limitations under the License.
         [disabled]="!selectedFile || loading"
         (click)="uploadVideo()"
       >
-        Upload video
+        <mat-icon>upload</mat-icon>Upload video
       </button>
       <mat-slide-toggle
         #videosFilterToggle="matSlideToggle"
@@ -124,7 +127,10 @@ limitations under the License.
 
     <mat-expansion-panel #videoMagicPanel>
       <mat-expansion-panel-header>
-        <mat-panel-title>✨ Magic editing ✨</mat-panel-title>
+        <mat-panel-title class="panel-title"
+          ><mat-icon class="panel-icon">auto_fix_high</mat-icon>Video
+          magic</mat-panel-title
+        >
       </mat-expansion-panel-header>
       <div class="row">
         <div style="margin-right: auto"></div>
@@ -233,7 +239,7 @@ limitations under the License.
             color="primary"
             (click)="addToRenderQueue()"
           >
-            Add to render queue
+            <mat-icon>add_to_queue</mat-icon>Add to render queue
           </button>
         </div>
       </ng-container>
@@ -311,7 +317,7 @@ limitations under the License.
               (click)="generateVariants()"
               [disabled]="loading"
             >
-              Generate variants
+              <mat-icon>auto_awesome</mat-icon>Generate variants
             </button>
           </div>
         </div>
@@ -328,7 +334,10 @@ limitations under the License.
 
     <mat-expansion-panel #videoCombosPanel [disabled]="!combosJson">
       <mat-expansion-panel-header>
-        <mat-panel-title>Magic combos</mat-panel-title>
+        <mat-panel-title class="panel-title"
+          ><mat-icon class="panel-icon">movie_filter</mat-icon>Rendered
+          videos</mat-panel-title
+        >
       </mat-expansion-panel-header>
       <mat-tab-group>
         <mat-tab
@@ -435,7 +444,7 @@ limitations under the License.
               matTooltip="Remove"
               (click)="removeRenderQueueVariant(i)"
             >
-              <mat-icon fontIcon="close">
+              <mat-icon fontIcon="remove_from_queue">
                 <span class="cdk-visually-hidden"
                   >Remove video variant from render queue</span
                 >
@@ -452,7 +461,7 @@ limitations under the License.
         color="primary"
         (click)="renderVariants()"
       >
-        Render
+        <mat-icon>rocket_launch</mat-icon>Render
       </button>
       <br />
       <span class="notice-text"
