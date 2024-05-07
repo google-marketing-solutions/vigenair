@@ -164,6 +164,7 @@ limitations under the License.
           [segmentMode]="segmentModeToggle.value"
           [allowSelection]="variants !== undefined"
           [currentSegmentId]="currentSegmentId || 0"
+          (seekToSegmentEvent)="seekToSegment($event)"
         ></segments-list>
         <div
           [hidden]="segmentModeToggle.value !== 'preview'"

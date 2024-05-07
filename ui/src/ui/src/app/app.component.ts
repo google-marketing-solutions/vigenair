@@ -392,6 +392,9 @@ export class AppComponent {
     this.renderQueue = [];
     this.renderQueueJsonArray = [];
     this.segmentModeToggle.value = 'preview';
+    this.videoMagicPanel.close();
+    this.videoCombosPanel.close();
+    this.videoUploadPanel.open();
   }
 
   processVideo(folder: string) {
@@ -417,7 +420,7 @@ export class AppComponent {
         if (!skipped) {
           this.setCurrentSegmentId();
         }
-      }, 50);
+      }, 10);
     };
     this.previewVideoElem.nativeElement.onpause = () => {
       if (this.frameInterval) {
@@ -482,6 +485,11 @@ export class AppComponent {
         : this.previewVideoElem.nativeElement.duration;
     }
     return !currentSegment.selected;
+  }
+
+  seekToSegment(index: number) {
+    const segment = this.avSegments![index];
+    this.previewVideoElem.nativeElement.currentTime = segment.start_s;
   }
 
   setSelectedSegments(segments?: number[]) {

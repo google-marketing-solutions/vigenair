@@ -23,8 +23,9 @@ limitations under the License.
     *ngFor="let segment of segmentList; index as i"
   >
     <div
-      style="display: flex; position: relative"
-      (click)="toggleSegmentSelection(i)"
+      style="display: flex; position: relative; cursor: pointer"
+      (click)="allowSelection ? toggleSegmentSelection(i) : seekToSegment(i)"
+      [matTooltip]="allowSelection ? 'Select segment' : 'Seek to segment'"
     >
       <img
         attr.id="segment-{{ i }}"
@@ -48,7 +49,8 @@ limitations under the License.
         {{ segment.description }}
       </span>
       <span class="duration"
-        ><strong>Duration: </strong>{{ segment.duration_s.toFixed(2) }} seconds</span
+        ><strong>Duration: </strong
+        >{{ segment.duration_s.toFixed(2) }} seconds</span
       >
       <span class="keywords">
         <strong>Keywords: </strong>

@@ -15,11 +15,12 @@
  */
 
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { CONFIG } from '../../../../config';
 
@@ -32,6 +33,7 @@ import { CONFIG } from '../../../../config';
     MatChipsModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatTooltipModule,
   ],
   templateUrl: './segments-list.component.html',
   styleUrl: './segments-list.component.css',
@@ -40,6 +42,8 @@ export class SegmentsListComponent {
   @Input({ required: true }) segmentList?: any[];
   @Input({ required: true }) segmentMode!: 'preview' | 'segments';
   @Input({ required: true }) allowSelection!: boolean;
+
+  @Output() seekToSegmentEvent = new EventEmitter<number>();
 
   CONFIG = CONFIG;
 
@@ -59,5 +63,9 @@ export class SegmentsListComponent {
 
   toggleSegmentSelection(i: number) {
     this.segmentList![i].selected = !this.segmentList![i].selected;
+  }
+
+  seekToSegment(i: number) {
+    this.seekToSegmentEvent.emit(i);
   }
 }

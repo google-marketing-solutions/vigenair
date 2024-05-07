@@ -139,12 +139,12 @@ The diagram below shows how Vigenair's components interact and communicate with 
     * Once the `data.json` is available, the extracted A/V Segments are displayed along with a set of user controls.
 4. Users are now ready for combination. They can view the A/V segments and generate / iterate on variants via a *preview* while modifying user controls, adding desired variants to the render queue.
     * A/V segments are displayed in two ways:
-        * In the *video preview* view: A single frame of each segment, cut mid-segment, is displayed in a filmstrip and scrolls into view while the user is previewing the video, indicating the segment that is *currently playing*.
+        * In the *video preview* view: A single frame of each segment, cut mid-segment, is displayed in a filmstrip and scrolls into view while the user is previewing the video, indicating the segment that is *currently playing*. Clicking on a segment will also automatically seek to it in the video preview.
         * A detailed *segments list* view: Which shows additional information per segment; the segment's duration, description and extracted keywords.
     * User Controls for video variant generation:
         * Users are presented with an optional prompt which they can use to steer the output towards focusing on certain aspects, like certain entities or topics in the input video, or target audience of the resulting video variant.
         * Users may also use the *Target duration* slider to set their desired target duration.
-        * Users can then click *Generate* to generate variants accordingly, which will query language models on Vertex AI (Gemini Pro) to generate potential variants that fulfill the optional user-provided prompt and target duration.
+        * Users can then click `Generate` to generate variants accordingly, which will query language models on Vertex AI (Gemini Pro) to generate potential variants that fulfill the optional user-provided prompt and target duration.
     * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments. Each variant has the following information:
         * A title which is displayed in the variant's tab.
         * A duration, which is also displayed in the variant's tab.
@@ -161,9 +161,9 @@ The diagram below shows how Vigenair's components interact and communicate with 
         * Each variant added to the render queue will be presented as a card in a sidebar that will open from the right-hand-side of the page. The card contains the thumbnail of the variant's first segment, along with the variant title, list of segments contained within it, its duration and chosen render settings (audio settings, Demand Gen assets choice and desired formats).
         * Variants where the user had manually modified the preselected segments will be displayed with the score greyed out and with the suffix `(modified)` appended to the variant's title.
         * Users cannot add the same variant with the *exact same segment selection and rendering settings* more than once to the render queue.
-        * Users can always remove variants from the render queue which they no longer desire via the dedicated `X` button per card.
+        * Users can always remove variants from the render queue which they no longer desire via the dedicated button per card.
         * Clicking on a variant in the render queue will *load* its settings into the *video preview* and *segments list* views, allowing users to preview the variant once more.
-5. Clicking on the `Render` button inside the render queue will render the variants in their desired formats and settings via the Combiner service Cloud Function (writing `render.json` to GCS, which serves as the input to the service, and the output is a `combos.json` file. Both files are stored in the same folder as the input video, while *rendered* variants will be placed in a `<timestamp>-combos` subfolder below the root video folder).
+5. Clicking on the `Render` button inside the render queue will render the variants in their desired formats and settings via the Combiner service Cloud Function (writing `render.json` to GCS, which serves as the input to the service, and the output is a `combos.json` file. Both files, along with the *rendered* variants, are stored in a `<timestamp>-combos` subfolder below the root video folder).
 6. The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos and all associated assets will be displayed. Users can also preview the final videos and select the ones they would like to upload into Google Ads / YouTube.
 
 ## How to Contribute
