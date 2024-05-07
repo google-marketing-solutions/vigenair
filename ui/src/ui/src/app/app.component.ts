@@ -172,7 +172,7 @@ export class AppComponent {
     this.selectedFile = file;
   }
 
-  failHandler() {
+  failHandler(folder: string) {
     this.loading = false;
     this.snackBar
       .open('An error occured.', 'Start over', {
@@ -183,9 +183,6 @@ export class AppComponent {
         this.videoUploadPanel.open();
         this.videoMagicPanel.close();
       });
-  }
-
-  cleanUpBrokenUpload(folder: string) {
     this.apiCallsService.deleteGcsFolder(folder);
     this.getPreviousRuns();
   }
@@ -315,10 +312,7 @@ export class AppComponent {
           this.segmentsStatus = 'check_circle';
           this.loading = false;
         },
-        error: () => {
-          this.failHandler();
-          this.cleanUpBrokenUpload(folder);
-        },
+        error: () => this.failHandler(folder),
       });
   }
 
@@ -335,7 +329,7 @@ export class AppComponent {
           this.videoMagicPanel.close();
           this.videoCombosPanel.open();
         },
-        error: () => this.failHandler(),
+        error: () => this.failHandler(folder),
       });
   }
 
@@ -350,10 +344,7 @@ export class AppComponent {
           this.parseAnalysis();
           this.getAvSegments(folder);
         },
-        error: () => {
-          this.failHandler();
-          this.cleanUpBrokenUpload(folder);
-        },
+        error: () => this.failHandler(folder),
       });
   }
 
@@ -367,10 +358,7 @@ export class AppComponent {
           this.transcriptStatus = 'check_circle';
           this.getMagicAnalysis(folder);
         },
-        error: () => {
-          this.failHandler();
-          this.cleanUpBrokenUpload(folder);
-        },
+        error: () => this.failHandler(folder),
       });
   }
 
@@ -403,6 +391,7 @@ export class AppComponent {
     this.previewTrackElem.nativeElement.src = '';
     this.renderQueue = [];
     this.renderQueueJsonArray = [];
+    this.segmentModeToggle.value = 'preview';
   }
 
   processVideo(folder: string) {
@@ -549,7 +538,7 @@ export class AppComponent {
       )
     );
     const renderQueueVariant: RenderQueueVariant = {
-      variant_id: this.selectedVariant,
+      original_variant_id: this.selectedVariant,
       av_segments: selectedSegments,
       title: variant.title,
       description: variant.description,
@@ -588,7 +577,7 @@ export class AppComponent {
 
   loadVariant(index: number) {
     const variant = this.renderQueue[index];
-    this.selectedVariant = variant.variant_id;
+    this.selectedVariant = variant.original_variant_id;
     this.setSelectedSegments(
       variant.av_segments.map((segment: AvSegment) => segment.av_segment_id)
     );
@@ -616,12 +605,12 @@ export class AppComponent {
     this.rendering = true;
     this.apiCallsService
       .renderVariants(this.folder, this.renderQueue)
-      .subscribe(() => {
+      .subscribe(combosFolder => {
         this.loading = false;
         this.renderQueue = [];
         this.renderQueueJsonArray = [];
         this.closeRenderQueueSidenav();
-        this.getMagicCombos(this.folder);
+        this.getMagicCombos(combosFolder);
       });
   }
 

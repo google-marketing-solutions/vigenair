@@ -74,16 +74,22 @@ function generateVariants(gcsFolder: string, settings: GenerationSettings) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function renderVariants(gcsFolder: string, renderQueue: RenderQueueVariant[]) {
+function renderVariants(
+  gcsFolder: string,
+  renderQueue: RenderQueueVariant[]
+): string {
   const encodedRenderQueueJson = Utilities.base64Encode(
-    JSON.stringify(renderQueue)
+    JSON.stringify(renderQueue),
+    Utilities.Charset.UTF_8
   );
+  const folder = `${gcsFolder}/${Date.now()}-combos`;
   StorageManager.uploadFile(
     encodedRenderQueueJson,
-    `${gcsFolder}/${Date.now()}-combos`,
+    folder,
     'render.json',
     'application/json'
   );
+  return folder;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

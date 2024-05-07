@@ -32,7 +32,11 @@ class VideoExtension(enum.Enum):
 
   MP4 = 'mp4'
   MOV = 'mov'
+  WMV = 'wmv'
   WEBM = 'webm'
+  AVI = 'avi'
+  MKV = 'mkv'
+  M4V = 'm4v'
 
   @classmethod
   def has_value(cls, ext: str) -> bool:

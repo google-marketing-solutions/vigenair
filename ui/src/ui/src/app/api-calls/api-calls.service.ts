@@ -120,14 +120,17 @@ export class ApiCallsService implements ApiCalls {
     });
   }
 
-  renderVariants(gcsFolder: string, renderQueue: RenderQueueVariant[]) {
-    return new Observable<void>(subscriber => {
+  renderVariants(
+    gcsFolder: string,
+    renderQueue: RenderQueueVariant[]
+  ): Observable<string> {
+    return new Observable<string>(subscriber => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       google.script.run
-        .withSuccessHandler(() => {
+        .withSuccessHandler((response: string) => {
           this.ngZone.run(() => {
-            subscriber.next();
+            subscriber.next(response);
             subscriber.complete();
           });
         })

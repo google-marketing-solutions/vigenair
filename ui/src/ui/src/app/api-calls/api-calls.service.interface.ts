@@ -55,7 +55,7 @@ export interface RenderSettings {
 }
 
 export interface RenderQueueVariant {
-  variant_id: number;
+  original_variant_id: number;
   av_segments: AvSegment[];
   title: string;
   description: string;
@@ -102,5 +102,5 @@ export interface ApiCalls {
   renderVariants(
     gcsFolder: string,
     renderQueue: RenderQueueVariant[]
-  ): Observable<void>;
+  ): Observable<string>;
 }

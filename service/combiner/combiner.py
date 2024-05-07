@@ -268,15 +268,6 @@ class Combiner:
         bucket_name=self.gcs_bucket_name,
         target_dir=self.render_file.gcs_folder,
     )
-    StorageService.upload_gcs_file(
-        file_path=combos_json_path,
-        bucket_name=self.gcs_bucket_name,
-        destination_file_name=os.path.join(
-            self.render_file.gcs_root_folder,
-            ConfigService.OUTPUT_COMBINATIONS_FILE
-        ),
-        overwrite=True,
-    )
     logging.info('COMBINER - Rendering completed successfully!')
 
 
