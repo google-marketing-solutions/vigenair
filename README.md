@@ -30,6 +30,8 @@ limitations under the License.
 
 ## Updates
 
+Update to the latest version by running `npm run update-app`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
+
 * [May 2024]: Launch! 🚀
 
 ## Overview
@@ -55,6 +57,10 @@ See [Solution Overview](#solution-overview) for more details on the different co
 ### UI Web App Access Settings
 
 By default, Vigenair runs only for the user that deployed it. This is controlled by the [Web App access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which is set to `MYSELF` by default. This setup works well for most cases, however if you are a Google Workspace user you may change this value to `DOMAIN` to allow other individuals within your organisation to run the app. The `npm start` command will prompt you for this as well if you opt to deploy the UI.
+
+### Managing Apps Script Deployments
+
+The installation script manages deployments for you; it always creates a new deployment (and archives older versions) whenever you run it, so that the version of the web app you use has the latest changes from this repository. If you would like to manually manage deployments, you may do so by navigating to the [Apps Script home page](https://script.google.com), locating and selecting the `ViGenAiR` project, then managing deployments via the *Deploy* button/drop-down in the top-right corner of the page.
 
 ### Requirements
 
@@ -145,7 +151,7 @@ The diagram below shows how Vigenair's components interact and communicate with 
         * Users are presented with an optional prompt which they can use to steer the output towards focusing on certain aspects, like certain entities or topics in the input video, or target audience of the resulting video variant.
         * Users may also use the *Target duration* slider to set their desired target duration.
         * Users can then click `Generate` to generate variants accordingly, which will query language models on Vertex AI (Gemini Pro) to generate potential variants that fulfill the optional user-provided prompt and target duration.
-    * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments. <center><img src='./img/variants.png' width="600px" alt="Vigenair UI: Variants preview" /></center>
+    * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments. <center><img src='./img/variants.png' width="600px" alt="Vigenair UI: Variants preview" /></center><br />
     Each variant has the following information:
         * A title which is displayed in the variant's tab.
         * A duration, which is also displayed in the variant's tab.
