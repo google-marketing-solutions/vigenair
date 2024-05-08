@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<img align="left" width="150" src="https://services.google.com/fh/files/misc/vigenair_logo.png" alt="ViGenAiR Logo" /><br>
+<img align="left" width="150px" src="https://services.google.com/fh/files/misc/vigenair_logo.png" alt="ViGenAiR Logo" /><br>
 
 # ViGenAiR - Recrafting Video Ads with Generative AI
 
-[![GitHub last commit](https://img.shields.io/github/last-commit/google-marketing-solutions/vigenair)](https://github.com/google-marketing-solutions/vigenair/commits)
+[![GitHub last commit](https://img.shields.io/github/last-commit/google/vigenair)](https://github.com/google/vigenair/commits)
 [![Code Style: Google](https://img.shields.io/badge/code%20style-google-blueviolet.svg)](https://github.com/google/gts)
 
 **Disclaimer: This is not an official Google product.**
@@ -119,7 +119,7 @@ The diagram below shows how Vigenair's components interact and communicate with 
 
 <center><img src='./img/architecture.png' alt="Vigenair's architecture" /></center>
 
-1. Users upload or select videos they have previously analysed via the UI's `Video selection` card (step #2 is skipped for already analysed videos).
+1. Users upload or select videos they have previously analysed via the UI's `Video selection` card (step #2 is skipped for already analysed videos). <center><img src='./img/upload.png' width="600px" alt="Vigenair UI: Upload or select a video" /></center>
     * The *Load existing video* dropdown pulls all processed videos from the associated GCS bucket when the page loads, and updates the list whenever users interact with the dropdown.
     * The *My videos only* toggle filters the list to only those videos uploaded by the current user - this is particularly relevant for Google Workspace users, where the associated GCP project and GCS bucket are shared among users within the same organisation.
     * The *Analyse voice-over* checkbox, which is checked by default, can be used to skip the process of transcribing and analysing any voice-over or speech in the video. **Uncheck** this checkbox for videos where there is only background music / song or effects.
@@ -133,42 +133,43 @@ The diagram below shows how Vigenair's components interact and communicate with 
     * Transcription is done via the [faster-whisper](https://github.com/SYSTRAN/faster-whisper) library, which uses OpenAI's Whisper model under the hood. By default, Vigenair uses the [small](https://github.com/openai/whisper#available-models-and-languages) multilingual model which provides the optimal quality-performance balance. If you find that it is not working well for your target language you may change the model used by the Cloud Function without having to redeploy it via the [update_config.sh](service/update_config.sh) script. The transcription output is stored in an `input.vtt` file, along with a `language.txt` file containing the video's primary language, in the same folder as the input video.
     * Video analysis is done via the Cloud [Video AI API](https://cloud.google.com/video-intelligence), where visual shots, detected objects - with tracking, labels, people and faces, and recognised logos and any on-screen text within the input video are extracted. The output is stored in an `analysis.json` file in the same folder as the input video.
     * Finally, *coherent* audio/video segments are created using the transcription and video intelligence outputs and then cut into individual video files and stored on GCS in an `av_segments_cuts` subfolder under the root video folder. These cuts are then and annotated via multimodal models on Vertex AI (Gemini Pro Vision), which provides a description and a set of associated keywords / topics per segment. The fully annotated segments (including all information from the Video AI API) are then compiled into a `data.json` file that is stored in the same folder as the input video.
-3. The UI continuously queries GCS for updates while showing a preview of the uploaded video.
+3. The UI continuously queries GCS for updates while showing a preview of the uploaded video. <center><img src='./img/preview-waiting.png' width="600px" alt="Vigenair UI: Video preview while waiting for analysis results" /></center>
     * Once the `input.vtt` is available, a transcription track is embedded onto the video preview.
     * Once the `analysis.json` is available, [object tracking](https://cloud.google.com/video-intelligence/docs/object-tracking) results are displayed as bounding boxes directly on the video preview. These can be toggled on/off via the *Object tracking* toggle - which is set to *on* by default.
     * Once the `data.json` is available, the extracted A/V Segments are displayed along with a set of user controls.
 4. Users are now ready for combination. They can view the A/V segments and generate / iterate on variants via a *preview* while modifying user controls, adding desired variants to the render queue.
     * A/V segments are displayed in two ways:
-        * In the *video preview* view: A single frame of each segment, cut mid-segment, is displayed in a filmstrip and scrolls into view while the user is previewing the video, indicating the segment that is *currently playing*. Clicking on a segment will also automatically seek to it in the video preview.
-        * A detailed *segments list* view: Which shows additional information per segment; the segment's duration, description and extracted keywords.
+        * In the *video preview* view: A single frame of each segment, cut mid-segment, is displayed in a filmstrip and scrolls into view while the user is previewing the video, indicating the segment that is *currently playing*. Clicking on a segment will also automatically seek to it in the video preview. <center><img src='./img/preview-complete.png' width="600px" alt="Vigenair UI: Segments in preview" /></center>
+        * A detailed *segments list* view: Which shows additional information per segment; the segment's duration, description and extracted keywords. <center><img src='./img/segments.png' width="600px" alt="Vigenair UI: Segments list" /></center>
     * User Controls for video variant generation:
         * Users are presented with an optional prompt which they can use to steer the output towards focusing on certain aspects, like certain entities or topics in the input video, or target audience of the resulting video variant.
         * Users may also use the *Target duration* slider to set their desired target duration.
         * Users can then click `Generate` to generate variants accordingly, which will query language models on Vertex AI (Gemini Pro) to generate potential variants that fulfill the optional user-provided prompt and target duration.
-    * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments. Each variant has the following information:
+    * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments. <center><img src='./img/variants.png' width="600px" alt="Vigenair UI: Variants preview" /></center>
+    Each variant has the following information:
         * A title which is displayed in the variant's tab.
         * A duration, which is also displayed in the variant's tab.
         * The list of A/V segments that make up the variant.
         * A description of the variant and what is happening in it.
         * An LLM-generated Score, from 1-5, representing how well the variant adheres to the input rules and guidelines, which default to a subset of [YouTubes ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/). Users are strongly encouraged to update this section of the generation prompt in [config.ts](ui/src/config.ts) to refer to their own brand voice and creative guidelines.
         * Reasoning for the provided score, with examples of adherence / inadherence.
-    * User Controls for video variant rendering:
-        * Vigenair supports different rendering settings for the audio of the generated videos. The image below describes the supported options and how they differ: <center><img src='./img/audio.png' width="400px" alt="Vigenair's audio rendering options" /></center>
+    * User Controls for video variant rendering: <center><img src='./img/render-settings.png' width="600px"  alt="Vigenair UI: Variants render settings" /></center>
+        * Vigenair supports different rendering settings for the audio of the generated videos. The image below describes the supported options and how they differ: <center><img src='./img/audio.png' width="350px" alt="Vigenair's audio rendering options" /></center>
         * Whether to generate [Demand Gen](https://support.google.com/google-ads/answer/13695777) campaign text and image assets alongside the variant or not. Defaults to generating Demand Gen assets.
         * Whether to render all formats (horizontal, vertical and square) assets or to only render horizontal assets. Defaults to rendering all formats.
         * Users can also select the individual scenes that each variant is comprised of. This selection is available in both the *video preview* and *segments list* views. Please note that switching between variant tabs will clear any changes to the selection.
-    * Desired variants can be added to the render queue along with the their associated render settings:
+    * Desired variants can be added to the render queue along with the their associated render settings: <center><img src='./img/render-queue.png' width="600px" alt="Vigenair UI: Variants in the render queue" /></center>
         * Each variant added to the render queue will be presented as a card in a sidebar that will open from the right-hand-side of the page. The card contains the thumbnail of the variant's first segment, along with the variant title, list of segments contained within it, its duration and chosen render settings (audio settings, Demand Gen assets choice and desired formats).
         * Variants where the user had manually modified the preselected segments will be displayed with the score greyed out and with the suffix `(modified)` appended to the variant's title.
         * Users cannot add the same variant with the *exact same segment selection and rendering settings* more than once to the render queue.
         * Users can always remove variants from the render queue which they no longer desire via the dedicated button per card.
         * Clicking on a variant in the render queue will *load* its settings into the *video preview* and *segments list* views, allowing users to preview the variant once more.
-5. Clicking on the `Render` button inside the render queue will render the variants in their desired formats and settings via the Combiner service Cloud Function (writing `render.json` to GCS, which serves as the input to the service, and the output is a `combos.json` file. Both files, along with the *rendered* variants, are stored in a `<timestamp>-combos` subfolder below the root video folder).
-6. The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos and all associated assets will be displayed. Users can also preview the final videos and select the ones they would like to upload into Google Ads / YouTube.
+5. Clicking on the `Render` button inside the render queue will render the variants in their desired formats and settings via the Combiner service Cloud Function (writing `render.json` to GCS, which serves as the input to the service, and the output is a `combos.json` file. Both files, along with the *rendered* variants, are stored in a `<timestamp>-combos` subfolder below the root video folder). <center><img src='./img/rendering.png' width="600px" alt="Vigenair UI: Rendering videos" /></center>
+6. The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos - in their different formats and along with all associated assets - will be displayed. Users can preview the final videos and select the ones they would like to upload into Google Ads / YouTube. <center><img src='./img/rendered.png' width="600px" alt="Vigenair UI: Rendered videos display" /></center>
 
 ### Pricing and Quotas
 
-Users are priced according to their usage of Google (Cloud and Workspace) services as detailed below. In summary, it would cost around **$7 to process 1 min of video and generate 5 variants**. Refer to this detailed [Cloud pricing calculator](https://cloud.google.com/products/calculator/?utm_source=google&utm_medium=cpc&utm_campaign=emea-none-all-en-dr-sitelink-all-all-trial-b-gcp-1011340&utm_content=text-ad-none-any-DEV_c-CRE_673543920391-ADGP_Hybrid%20%7C%20BKWS%20-%20BRO%20%7C%20Txt%20-%20GCP%20-%20General%20-%20v2-KWID_43700077892352719-kwd-12711412197-userloc_9068548&utm_term=KW_google%20cloud%20platform-ST_google%20cloud%20platform-NET_g-PLAC_&&gad_source=1&gclid=CjwKCAjwouexBhAuEiwAtW_ZxwQbAROMVhlyIBCDu236-qTgfz-nraDWn2-q8VjUMDPi7Notx-c4BRoC4aYQAvD_BwE&gclsrc=aw.ds&dl=CiRjNjc2YTkzMC1hOWE1LTRlNjAtYTgwZS0zNTg5OWY0NzYxNGIQEhokRjU1OTJDMUUtNURBRS00QkUwLTgzNUQtMjFFOUQ5RTc1QjU1) example for more information. The breakdown of the charges are:
+Users are priced according to their usage of Google (Cloud and Workspace) services as detailed below. In summary, it would cost around **$7 to process 1 min of video and generate 5 variants**. Refer to this detailed [Cloud pricing calculator](https://cloud.google.com/products/calculator/?dl=CiRjNjc2YTkzMC1hOWE1LTRlNjAtYTgwZS0zNTg5OWY0NzYxNGIQEhokRjU1OTJDMUUtNURBRS00QkUwLTgzNUQtMjFFOUQ5RTc1QjU1) example for more information. The breakdown of the charges are:
 
 * Apps Script (where the UI is hosted): **Free of charge**. Apps Script services have [daily quotas](https://developers.google.com/apps-script/guides/services/quotas) and the one for *URL Fetch calls* is relevant for Vigenair. Assuming a rule of thumb of *100 URL Fetch* calls per video, you would be able to process **200 videos per day** as a standard user, and **1000 videos per day** as a Workspace user.
 * Cloud Storage: The storage of input and generated videos, along with intermediate media files (voice-over, background music, segment thumbnails, different JSON files for the UI, etc.). Pricing varies depending on region and duration, and you can assume a rule of thumb of **100MB per 1 min of video**, which would fall within the Cloud **free** tier. Refer to the full [pricing guide](https://cloud.google.com/storage/pricing) for more information.
