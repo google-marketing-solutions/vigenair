@@ -128,8 +128,8 @@ limitations under the License.
     <mat-expansion-panel #videoMagicPanel>
       <mat-expansion-panel-header>
         <mat-panel-title class="panel-title"
-          ><mat-icon class="panel-icon">auto_fix_high</mat-icon>Video
-          magic</mat-panel-title
+          ><mat-icon class="panel-icon">auto_fix_high</mat-icon
+          ><span style="margin-top: 4px">Video magic</span></mat-panel-title
         >
       </mat-expansion-panel-header>
       <div class="row">
@@ -248,9 +248,12 @@ limitations under the License.
       <ng-container *ngIf="avSegments">
         <mat-divider></mat-divider>
         <div *ngIf="variants?.length">
-          <br />
-          <span style="font-size: 18px">Variant rendering settings</span>
-          <br /><br />
+          <span style="margin-top: 4px; margin-bottom: 8px; display: flex">
+            <mat-icon>video_settings</mat-icon
+            ><span style="font-size: 18px; margin-left: 8px; margin-top: 2px"
+              >Variant rendering settings</span
+            >
+          </span>
           <div style="margin-top: 8px">
             <mat-form-field subscriptSizing="dynamic">
               <mat-label>Variant audio:</mat-label>
