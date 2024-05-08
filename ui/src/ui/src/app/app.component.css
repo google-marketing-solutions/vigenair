@@ -128,25 +128,8 @@ mat-divider {
   display: none;
 }
 
-.score-1 {
-  color: #b71c1c;
-}
-
-.score-2 {
-  color: #e65100;
-}
-
-.score-3,
 .variant-score {
   color: #ffa000;
-}
-
-.score-4 {
-  color: #afb42b;
-}
-
-.score-5 {
-  color: #33691e;
 }
 
 .variant-score-modified {
@@ -154,8 +137,7 @@ mat-divider {
 }
 
 ::ng-deep #mat-badge-content-0 {
-  right: 3px;
-  top: 3px;
+  position: sticky;
   font-family: 'Roboto';
   font-size: 11px;
   font-weight: 500;

@@ -34,7 +34,7 @@ limitations under the License.
 
 ## Overview
 
-**ViGenAiR** *(pronounced vision-air)* uses state-of-the-art multimodal Generative AI on Google Cloud Platform (GCP) to automatically repurpose long-form Video Ads and generate several shorter variants, formats and storylines at scale. It generates horizontal, vertical and square assets to power [Demand Gen](https://support.google.com/google-ads/answer/13695777?hl=en) and [YouTube video campaigns](https://support.google.com/youtube/answer/2375497?hl=en), and leverages Google Ads' built-in A/B testing to automatically identify the best variants tailored to your target audiences. ViGenAiR is an acronym for <u>Vi</u>deo <u>Gen</u>eration via <u>A</u>ds <u>R</u>ecrafting, and is more colloquially referred to as *Vigenair*.
+**ViGenAiR** *(pronounced vision-air)* uses state-of-the-art multimodal Generative AI on Google Cloud Platform (GCP) to automatically repurpose long-form Video Ads and generate several shorter variants, formats and storylines. It generates horizontal, vertical and square assets to power [Demand Gen](https://support.google.com/google-ads/answer/13695777?hl=en) and [YouTube video campaigns](https://support.google.com/youtube/answer/2375497?hl=en), and leverages Google Ads' built-in A/B testing to automatically identify the best variants tailored to your target audiences. ViGenAiR is an acronym for <u>Vi</u>deo <u>Gen</u>eration via <u>A</u>ds <u>R</u>ecrafting, and is more colloquially referred to as *Vigenair*.
 
 ## Get Started
 
@@ -70,7 +70,7 @@ You need the following to use Vigenair:
 The Vigenair [setup and deployment script](#get-started) will create the following components:
 
 * A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
-* A Cloud Function (2nd gen) named `vigenair` that fulfills both the Extractor and Combiner services. Refer to [deploy.sh](./service/deploy.sh) for specs.
+* A Cloud Function (2nd gen) named `vigenair` that fulfills both the [Extractor and Combiner services](#solution-details). Refer to [deploy.sh](./service/deploy.sh) for specs.
 * An Apps Script deployment for the frontend web app.
 
 If you will also be deploying Vigenair, you need to have the following additional roles on the associated GCP project:
@@ -84,15 +84,15 @@ Current Video Ads creative solutions, both within YouTube / Google Ads as well a
 
 <center><img src='./img/creative.png' width='640px' alt='The importance of Creatives for effective adverising' /></center>
 
-Vigenair focuses on the *Creative* pillar to help potentially **unlock ~50% ROI** while solving a huge pain point for advertisers; the generation, trafficking and A/B testing of different Video Ad formats, at **scale**, powered by Google's multimodal Generative AI - Gemini.
+Vigenair focuses on the *Creative* pillar to help potentially **unlock ~50% ROI** while solving a huge pain point for most advertisers; the generation of high-quality video assets in different durations and Video Ad formats, powered by Google's multimodal Generative AI - Gemini.
 
 ### Benefits
 
-* **Inventory**: Horizontal, vertical and square Video assets in different durations allow advertisers to tap into virtually ALL Google-owned sources of inventory
-* **Campaigns**: Shorter more compelling Video Ads that still capture the meaning and storyline of their original ads - ideal for *Social* and *Awareness/Consideration* campaigns
-* **Creative Excellence**: Coherent Videos (e.g. dialogue doesn't get cut mid-scene, videos don't end abruptly, etc.) that follow Google's [best practices for effective video ads](https://www.youtube.com/ads/abcds-of-effective-video-ads/), including creative direction rules for camera angles and scene cutting
-* **User Control**: Users can steer the model towards generating their desired videos (via prompts and/or manual scene selection)
-* **Performance**: Built-in A/B testing provides a basis for automatically identifying the best variants tailored to the advertiser's target audiences
+* **Inventory**: Horizontal, vertical and square Video assets in different durations allow advertisers to tap into virtually ALL Google-owned sources of inventory.
+* **Campaigns**: Shorter more compelling Video Ads that still capture the meaning and storyline of their original ads - ideal for *Social* and *Awareness/Consideration* campaigns.
+* **Creative Excellence**: Coherent Videos (e.g. dialogue doesn't get cut mid-scene, videos don't end abruptly, etc.) that follow Google's [best practices for effective video ads](https://www.youtube.com/ads/abcds-of-effective-video-ads/), including (coming soon) creative direction rules for camera angles and scene cutting.
+* **User Control**: Users can steer the model towards generating their desired videos (via prompts and/or manual scene selection).
+* **Performance**: Built-in A/B testing provides a basis for automatically identifying the best variants tailored to the advertiser's target audiences.
 
 ## Solution Overview
 
@@ -150,7 +150,7 @@ The diagram below shows how Vigenair's components interact and communicate with 
         * A duration, which is also displayed in the variant's tab.
         * The list of A/V segments that make up the variant.
         * A description of the variant and what is happening in it.
-        * An LLM-generated Score, from 1-5, representing how well the variant adheres to the input rules and guidelines, which default to a subset of [YouTubes ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/). Users are strongly encouraged to update this section of the prompt in [config.ts](ui/src/config.ts) to refer to their own brand voice and creative guidelines.
+        * An LLM-generated Score, from 1-5, representing how well the variant adheres to the input rules and guidelines, which default to a subset of [YouTubes ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/). Users are strongly encouraged to update this section of the generation prompt in [config.ts](ui/src/config.ts) to refer to their own brand voice and creative guidelines.
         * Reasoning for the provided score, with examples of adherence / inadherence.
     * User Controls for video variant rendering:
         * Vigenair supports different rendering settings for the audio of the generated videos. The image below describes the supported options and how they differ: <center><img src='./img/audio.png' width="400px" alt="Vigenair's audio rendering options" /></center>
@@ -165,6 +165,17 @@ The diagram below shows how Vigenair's components interact and communicate with 
         * Clicking on a variant in the render queue will *load* its settings into the *video preview* and *segments list* views, allowing users to preview the variant once more.
 5. Clicking on the `Render` button inside the render queue will render the variants in their desired formats and settings via the Combiner service Cloud Function (writing `render.json` to GCS, which serves as the input to the service, and the output is a `combos.json` file. Both files, along with the *rendered* variants, are stored in a `<timestamp>-combos` subfolder below the root video folder).
 6. The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos and all associated assets will be displayed. Users can also preview the final videos and select the ones they would like to upload into Google Ads / YouTube.
+
+### Pricing and Quotas
+
+Users are priced according to their usage of Google (Cloud and Workspace) services as detailed below. In summary, it would cost around **$7 to process 1 min of video and generate 5 variants**. Refer to this detailed [Cloud pricing calculator](https://cloud.google.com/products/calculator/?utm_source=google&utm_medium=cpc&utm_campaign=emea-none-all-en-dr-sitelink-all-all-trial-b-gcp-1011340&utm_content=text-ad-none-any-DEV_c-CRE_673543920391-ADGP_Hybrid%20%7C%20BKWS%20-%20BRO%20%7C%20Txt%20-%20GCP%20-%20General%20-%20v2-KWID_43700077892352719-kwd-12711412197-userloc_9068548&utm_term=KW_google%20cloud%20platform-ST_google%20cloud%20platform-NET_g-PLAC_&&gad_source=1&gclid=CjwKCAjwouexBhAuEiwAtW_ZxwQbAROMVhlyIBCDu236-qTgfz-nraDWn2-q8VjUMDPi7Notx-c4BRoC4aYQAvD_BwE&gclsrc=aw.ds&dl=CiRjNjc2YTkzMC1hOWE1LTRlNjAtYTgwZS0zNTg5OWY0NzYxNGIQEhokRjU1OTJDMUUtNURBRS00QkUwLTgzNUQtMjFFOUQ5RTc1QjU1) example for more information. The breakdown of the charges are:
+
+* Apps Script (where the UI is hosted): **Free of charge**. Apps Script services have [daily quotas](https://developers.google.com/apps-script/guides/services/quotas) and the one for *URL Fetch calls* is relevant for Vigenair. Assuming a rule of thumb of *100 URL Fetch* calls per video, you would be able to process **200 videos per day** as a standard user, and **1000 videos per day** as a Workspace user.
+* Cloud Storage: The storage of input and generated videos, along with intermediate media files (voice-over, background music, segment thumbnails, different JSON files for the UI, etc.). Pricing varies depending on region and duration, and you can assume a rule of thumb of **100MB per 1 min of video**, which would fall within the Cloud **free** tier. Refer to the full [pricing guide](https://cloud.google.com/storage/pricing) for more information.
+* Cloud Functions (which includes Cloud Build, Eventarc and Aritfact Registry): The processing, or *up*, time only; idle-time won't be billed, unless [minimum instances](https://cloud.google.com/functions/docs/configuring/min-instances) are configured. Weigh the impact of [cold starts](https://cloud.google.com/functions/docs/concepts/execution-environment#cold-starts) vs. potential cost and decide whether to set `min-instances=1` in [deploy.sh](./service/deploy.sh) accordingly. Vigenair's cloud function is triggered for *any* file upload into the GCS bucket, and so you can assume a threshold of **max 100 invocations and 5 min of processing time per 1 min of video**, which would cost around **$1**. Refer to the full [pricing guide](https://cloud.google.com/functions/pricing) for more information.
+* Vertex AI generative models:
+  * Text: *Gemini Pro* is queried with the entire [generation prompt](ui/src/config.ts), which includes a script of the video covering all its segments and potentially a user-defined section. The output is a list containing one or more variants with all their information. This process is repeated in case of errors, and users can generate variants as often as they want. Assuming an average of **15 requests per video** - continuing with the assumption that the video is 1 min long - you would be charged around **$2**.
+  * Multimodal: *Gemini Pro Vision* is used to annotate every segment extracted from the video, and so the pricing varies significantly depending on the number and length of the extracted segments, which in turn vary heavily according to the content of the video; a 1 min video may produce 10 segments while another may produce 20. Assuming a threshold of **max 25 segments, avg. 2.5s each, per 1 min of video**, you would be charged around **$4**.
 
 ## How to Contribute
 
