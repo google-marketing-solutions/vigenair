@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
+import { provideHttpClient } from '@angular/common/http';
 import { ApplicationConfig } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideAnimations(), ...environment.providers],
+  providers: [
+    provideAnimations(),
+    provideHttpClient(),
+    ...environment.providers,
+  ],
 };

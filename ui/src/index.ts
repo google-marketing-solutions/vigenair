@@ -19,6 +19,7 @@
  * Do not rename without ensuring all references are updated.
  */
 
+import { CONFIG } from './config';
 import { GenerationHelper } from './generation';
 import { StorageManager } from './storage';
 import {
@@ -60,7 +61,8 @@ function uploadVideo(
 ) {
   const folder = `${uploadedFileName}--${analyseAudio ? '' : 'n--'}${Date.now()}--${getEncodedUserId()}`;
   StorageManager.uploadFile(dataUrl.split(',')[1], folder);
-  return folder;
+  const videoFilePath = `https://storage.mtls.cloud.google.com/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`;
+  return [folder, videoFilePath];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

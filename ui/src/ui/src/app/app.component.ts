@@ -47,7 +47,6 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
-import { CONFIG } from '../../../config';
 import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
 import {
@@ -101,7 +100,7 @@ export class AppComponent {
   generatingVariants = false;
   rendering = false;
   selectedFile?: File;
-  gcsVideoPath?: string;
+  videoPath?: string;
   analysisJson?: any;
   videoObjects?: any[];
   combosJson?: any;
@@ -298,13 +297,22 @@ export class AppComponent {
         });
   }
 
+  // https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
+  parseBase64EncodedContent(dataUrl: string) {
+    const encodedContent = dataUrl.split(',')[1];
+    const binaryString = atob(encodedContent);
+    return new TextDecoder().decode(
+      Uint8Array.from(binaryString, (m: any) => m.codePointAt(0))
+    );
+  }
+
   getAvSegments(folder: string) {
     this.segmentsStatus = 'pending';
     this.apiCallsService
       .getFromGcs(`${folder}/data.json`, 'application/json', 6000, 100)
       .subscribe({
         next: dataUrl => {
-          const dataJson = JSON.parse(atob(dataUrl.split(',')[1]));
+          const dataJson = JSON.parse(this.parseBase64EncodedContent(dataUrl));
           this.avSegments = dataJson.map((e: AvSegment) => {
             e.selected = false;
             return e;
@@ -322,7 +330,7 @@ export class AppComponent {
       .getFromGcs(`${folder}/combos.json`, 'application/json', 6000, 100)
       .subscribe({
         next: dataUrl => {
-          this.combosJson = JSON.parse(atob(dataUrl.split(',')[1]));
+          this.combosJson = JSON.parse(this.parseBase64EncodedContent(dataUrl));
           this.setCombos();
           this.combinationStatus = 'check_circle';
           this.loading = false;
@@ -339,7 +347,9 @@ export class AppComponent {
       .getFromGcs(`${folder}/analysis.json`, 'application/json', 6000, 100)
       .subscribe({
         next: dataUrl => {
-          this.analysisJson = JSON.parse(atob(dataUrl.split(',')[1]));
+          this.analysisJson = JSON.parse(
+            this.parseBase64EncodedContent(dataUrl)
+          );
           this.analysisStatus = 'check_circle';
           this.parseAnalysis();
           this.getAvSegments(folder);
@@ -364,15 +374,16 @@ export class AppComponent {
 
   loadPreviousRun(folder: string) {
     this.loading = true;
-    this.processVideo(folder);
+    const response = this.apiCallsService.loadPreviousRun(folder);
+    this.processVideo(response[0], response[1]);
   }
 
   uploadVideo() {
     this.loading = true;
     this.apiCallsService
       .uploadVideo(this.selectedFile!, this.analyseAudio)
-      .subscribe(folder => {
-        this.processVideo(folder);
+      .subscribe(response => {
+        this.processVideo(response[0], response[1]);
       });
   }
 
@@ -397,11 +408,11 @@ export class AppComponent {
     this.videoUploadPanel.open();
   }
 
-  processVideo(folder: string) {
+  processVideo(folder: string, videoFilePath: string) {
     this.resetState();
     this.folder = folder;
-    this.gcsVideoPath = `https://storage.mtls.cloud.google.com/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`;
-    this.previewVideoElem.nativeElement.src = this.gcsVideoPath;
+    this.videoPath = videoFilePath;
+    this.previewVideoElem.nativeElement.src = this.videoPath;
     this.previewVideoElem.nativeElement.onloadeddata = () => {
       this.magicCanvas.nativeElement.width =
         this.previewVideoElem.nativeElement.videoWidth;

@@ -86,7 +86,8 @@ export interface RenderedVariant {
 }
 
 export interface ApiCalls {
-  uploadVideo(file: Blob, analyseAudio: boolean): Observable<string>;
+  uploadVideo(file: Blob, analyseAudio: boolean): Observable<string[]>;
+  loadPreviousRun(folder: string): string[];
   deleteGcsFolder(folder: string): void;
   getFromGcs(
     url: string,

@@ -1,0 +1,72 @@
+[
+  {
+    "description": "This combination starts with the heartwarming and funny video calls, immediately grabbing the viewer's attention. The off-screen speech smoothly transitions into the Lufthansa ad, showcasing the beauty of travel and the world. The combination ends with the \"Say yes to the world\" tagline, leaving a lasting impression on the viewer.",
+    "av_segments": [
+      {
+        "start_s": 0,
+        "av_segment_id": 1,
+        "segment_screenshot_uri": "assets/av_segments_cuts/1.jpg",
+        "end_s": 17
+      },
+      {
+        "av_segment_id": 2,
+        "segment_screenshot_uri": "assets/av_segments_cuts/2.jpg",
+        "start_s": 17.04,
+        "end_s": 26.4
+      },
+      {
+        "end_s": 29.24,
+        "start_s": 27.28,
+        "segment_screenshot_uri": "assets/av_segments_cuts/4.jpg",
+        "av_segment_id": 4
+      },
+      {
+        "av_segment_id": 6,
+        "end_s": 44.96,
+        "segment_screenshot_uri": "assets/av_segments_cuts/6.jpg",
+        "start_s": 36.8
+      }
+    ],
+    "duration": "0:36",
+    "title": "Entdecke die Welt mit Lufthansa",
+    "reasoning": "* A: The combination starts strong with the video calls and has several visual shots within the first 5 seconds.\n* B: The Lufthansa logo and tagline are prominently displayed in the last 5 seconds.\n* C: The video calls feature close-ups of people's faces, creating a personal connection with the viewer.\n* D: The \"Say yes to the world\" tagline is a clear call to action that encourages viewers to travel with Lufthansa.",
+    "combo_id": 0,
+    "score": 5,
+    "scenes": [1, 2, 4, 6]
+  },
+  {
+    "description": "This combination focuses on the beauty and diversity of the world, showcasing stunning visuals of the flamingos, the pink lake, and various travel destinations. The off-screen speech about leaving our boxes and exploring the world reinforces the ad's message of adventure and discovery. The combination ends with the powerful tagline \"Say yes to the world,\" prompting viewers to take action and book their next adventure with Lufthansa.",
+    "av_segments": [
+      {
+        "av_segment_id": 2,
+        "segment_screenshot_uri": "assets/av_segments_cuts/2.jpg",
+        "start_s": 17.04,
+        "end_s": 26.4
+      },
+      {
+        "av_segment_id": 3,
+        "segment_screenshot_uri": "assets/av_segments_cuts/3.jpg",
+        "start_s": 26.44,
+        "end_s": 27.24
+      },
+      {
+        "end_s": 29.24,
+        "start_s": 27.28,
+        "segment_screenshot_uri": "assets/av_segments_cuts/4.jpg",
+        "av_segment_id": 4
+      },
+      {
+        "av_segment_id": 6,
+        "end_s": 44.96,
+        "segment_screenshot_uri": "assets/av_segments_cuts/6.jpg",
+        "start_s": 36.8
+      }
+    ],
+    "duration": "0:20",
+    "title": "Reise mit Lufthansa",
+    "reasoning": "* A: The combination starts with the couple's dinner scene and off-screen speech within the first 5 seconds.\n* B: The Lufthansa logo and tagline are prominently displayed throughout the ad.\n* C: The dinner scene features close-up shots of the couple's faces.\n* D: The ad ends with a clear call-to-action, \"Say yes to the world,\" encouraging viewers to visit the Lufthansa website or book a flight.",
+    "combo_id": 1,
+    "score": 5,
+    "scenes": [2, 3, 4, 6]
+  }
+]

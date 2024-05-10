@@ -16,6 +16,7 @@
 
 import { Injectable, NgZone } from '@angular/core';
 import { Observable, retry } from 'rxjs';
+import { CONFIG } from '../../../../config';
 import {
   ApiCalls,
   GenerateVariantsResponse,
@@ -40,15 +41,22 @@ export class ApiCallsService implements ApiCalls {
     });
   }
 
-  uploadVideo(file: File, analyseAudio: boolean): Observable<string> {
+  loadPreviousRun(folder: string): string[] {
+    return [
+      folder,
+      `https://storage.mtls.cloud.google.com/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`,
+    ];
+  }
+
+  uploadVideo(file: File, analyseAudio: boolean): Observable<string[]> {
     return new Observable(subscriber => {
       this.blobToDataURL(file).then(dataUrl => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         google.script.run
-          .withSuccessHandler((folder: string) => {
+          .withSuccessHandler((response: string[]) => {
             this.ngZone.run(() => {
-              subscriber.next(folder);
+              subscriber.next(response);
               subscriber.complete();
             });
           })

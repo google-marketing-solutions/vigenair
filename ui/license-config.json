@@ -6,7 +6,7 @@
     ".eslintignore",
     ".gitignore",
     "src/ui/.gitignore",
-    "src/ui/src/assets/.gitkeep",
+    "src/ui/src/assets/**/*",
     ".prettierignore",
     "*.txt",
     ".github",
