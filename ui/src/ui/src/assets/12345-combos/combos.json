@@ -68,6 +68,66 @@
       "horizontal": "assets/12345-combos/combo_0_h.mp4",
       "vertical": "assets/12345-combos/combo_0_v.mp4",
       "square": "assets/12345-combos/combo_0_s.mp4"
+    },
+    "texts": [
+      {
+        "headline": "Erweitern Sie Ihre Welt mit Lufthansa | Entdecken Sie neue Horizonte",
+        "description": "Erleben Sie die Sch\u00f6nheit der Welt mit Lufthansa. Buchen Sie jetzt Ihren Flug und erweitern Sie Ihren Horizont."
+      },
+      {
+        "headline": "Reisen Sie mit Lufthansa | Erleben Sie unvergessliche Momente",
+        "description": "Entdecken Sie die Welt mit Lufthansa und erleben Sie unvergessliche Momente. Buchen Sie jetzt Ihren Flug und starten Sie Ihr Abenteuer."
+      },
+      {
+        "headline": "Lufthansa | Mehr als nur Reisen | Entdecken Sie die Welt neu",
+        "description": "Lufthansa bietet Ihnen mehr als nur Reisen. Entdecken Sie die Welt neu und erleben Sie einzigartige Momente. Buchen Sie jetzt Ihren Flug."
+      },
+      {
+        "headline": "Lufthansa | Erleben Sie die Welt mit allen Sinnen | Buchen Sie jetzt",
+        "description": "Erleben Sie die Welt mit allen Sinnen mit Lufthansa. Buchen Sie jetzt Ihren Flug und entdecken Sie neue Kulturen und Abenteuer."
+      },
+      {
+        "headline": "Lufthansa | Entdecken Sie die Sch\u00f6nheit der Welt | Buchen Sie jetzt",
+        "description": "Entdecken Sie die Sch\u00f6nheit der Welt mit Lufthansa. Buchen Sie jetzt Ihren Flug und erleben Sie unvergessliche Momente."
+      }
+    ],
+    "images": {
+      "horizontal": [
+        "assets/12345-combos/combo_0/assets/horizontal/1.png",
+        "assets/12345-combos/combo_0/assets/horizontal/2.png",
+        "assets/12345-combos/combo_0/assets/horizontal/3.png",
+        "assets/12345-combos/combo_0/assets/horizontal/4.png",
+        "assets/12345-combos/combo_0/assets/horizontal/5.png",
+        "assets/12345-combos/combo_0/assets/horizontal/6.png",
+        "assets/12345-combos/combo_0/assets/horizontal/7.png",
+        "assets/12345-combos/combo_0/assets/horizontal/8.png",
+        "assets/12345-combos/combo_0/assets/horizontal/9.png",
+        "assets/12345-combos/combo_0/assets/horizontal/10.png"
+      ],
+      "vertical": [
+        "assets/12345-combos/combo_0/assets/vertical/1.png",
+        "assets/12345-combos/combo_0/assets/vertical/2.png",
+        "assets/12345-combos/combo_0/assets/vertical/3.png",
+        "assets/12345-combos/combo_0/assets/vertical/4.png",
+        "assets/12345-combos/combo_0/assets/vertical/5.png",
+        "assets/12345-combos/combo_0/assets/vertical/6.png",
+        "assets/12345-combos/combo_0/assets/vertical/7.png",
+        "assets/12345-combos/combo_0/assets/vertical/8.png",
+        "assets/12345-combos/combo_0/assets/vertical/9.png",
+        "assets/12345-combos/combo_0/assets/vertical/10.png"
+      ],
+      "square": [
+        "assets/12345-combos/combo_0/assets/square/1.png",
+        "assets/12345-combos/combo_0/assets/square/2.png",
+        "assets/12345-combos/combo_0/assets/square/3.png",
+        "assets/12345-combos/combo_0/assets/square/4.png",
+        "assets/12345-combos/combo_0/assets/square/5.png",
+        "assets/12345-combos/combo_0/assets/square/6.png",
+        "assets/12345-combos/combo_0/assets/square/7.png",
+        "assets/12345-combos/combo_0/assets/square/8.png",
+        "assets/12345-combos/combo_0/assets/square/9.png",
+        "assets/12345-combos/combo_0/assets/square/10.png"
+      ]
     }
   }
 }

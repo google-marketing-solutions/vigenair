@@ -643,7 +643,7 @@ export class AppComponent {
           0
         )
       );
-      return {
+      const renderedVariant: RenderedVariant = {
         variant_id: combo.variant_id,
         av_segments: combo.av_segments,
         title: combo.title,
@@ -654,6 +654,13 @@ export class AppComponent {
         duration: duration,
         scenes: Object.keys(combo.av_segments).join(', '),
       };
+      if (combo.images) {
+        renderedVariant.images = combo.images;
+      }
+      if (combo.texts) {
+        renderedVariant.texts = combo.texts;
+      }
+      return renderedVariant;
     });
   }
 }

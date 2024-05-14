@@ -29,6 +29,7 @@ import {
 } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatTableModule } from '@angular/material/table';
 import { ApiCallsService } from '../api-calls/api-calls.service';
 
 import { marked } from 'marked';
@@ -45,6 +46,7 @@ import {
     MatButtonToggleModule,
     MatIconModule,
     MatProgressBarModule,
+    MatTableModule,
   ],
   templateUrl: './video-combo.component.html',
   styleUrl: './video-combo.component.css',
@@ -58,12 +60,14 @@ export class VideoComboComponent implements AfterViewInit {
 
   loading = false;
   marked = marked;
+  images: string[] = [];
 
   constructor(private apiCallsService: ApiCallsService) {}
 
   loadVideo(format: 'horizontal' | 'vertical' | 'square') {
     if (this.displayMode === 'combo') {
       this.videoElem.nativeElement.src = this.combo.variants![format];
+      this.images = this.combo.images ? this.combo.images[format] : [];
     }
   }
 

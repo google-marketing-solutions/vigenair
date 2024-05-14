@@ -15,4 +15,4 @@
 
 # Update runtime environment variables without having to fully redeploy the cloud function.
 gcloud functions deploy vigenair \
---update-env-vars CONFIG_WHISPER_MODEL=large,CONFIG_TEXT_MODEL=gemini-pro
+--update-env-vars CONFIG_WHISPER_MODEL=large,CONFIG_TEXT_MODEL=gemini-1.0-pro,CONFIG_MULTIMODAL_ASSET_GENERATION='true'

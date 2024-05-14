@@ -24,15 +24,17 @@ import json
 import logging
 import os
 import pathlib
+import re
 import sys
 import tempfile
-from typing import Any, Dict, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import config as ConfigService
+import pandas as pd
 import storage as StorageService
 import utils as Utils
 import vertexai
-from vertexai.preview.generative_models import GenerativeModel
+from vertexai.preview.generative_models import GenerativeModel, Part
 
 
 @dataclasses.dataclass(init=False)
@@ -161,14 +163,13 @@ class Combiner:
         location=ConfigService.GCP_LOCATION,
     )
     self.text_model = GenerativeModel(ConfigService.CONFIG_TEXT_MODEL)
+    self.vision_model = GenerativeModel(ConfigService.CONFIG_VISION_MODEL)
 
   def render(self):
     """Renders videos based on the input rendering settings."""
     logging.info('COMBINER - Starting rendering...')
     tmp_dir = tempfile.mkdtemp()
-    root_video_folder = str(
-        pathlib.Path(self.render_file.full_gcs_path).parents[1]
-    )
+    root_video_folder = self.render_file.gcs_root_folder
     video_file_name = next(
         iter(
             StorageService.filter_video_files(
@@ -207,10 +208,32 @@ class Combiner:
         bucket_name=self.gcs_bucket_name,
     )
     logging.info('RENDERING - Music track path: %s', music_track_path)
+    video_language = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(
+                pathlib.
+                Path(root_video_folder, ConfigService.OUTPUT_LANGUAGE_FILE)
+            )
+        ),
+        output_dir=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+        fetch_contents=True,
+    ) or ConfigService.DEFAULT_VIDEO_LANGUAGE
+    logging.info('RENDERING - Video language: %s', video_language)
     render_file_contents = StorageService.download_gcs_file(
         file_path=self.render_file,
         bucket_name=self.gcs_bucket_name,
         fetch_contents=True,
+    )
+    av_segments_file_contents = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(pathlib.Path(root_video_folder, ConfigService.OUTPUT_DATA_FILE))
+        ),
+        bucket_name=self.gcs_bucket_name,
+        fetch_contents=True,
+    )
+    optimised_av_segments = (
+        json.loads(av_segments_file_contents.decode('utf-8'))
     )
     video_variants = list(
         map(
@@ -236,6 +259,10 @@ class Combiner:
               speech_track_path=speech_track_path,
               music_track_path=music_track_path,
               video_variant=video_variant,
+              vision_model=self.vision_model,
+              text_model=self.text_model,
+              video_language=video_language,
+              optimised_av_segments=optimised_av_segments,
           ): video_variant.variant_id
           for video_variant in video_variants
       }
@@ -250,7 +277,7 @@ class Combiner:
             key: vars(value)
             for key, value in variant.av_segments.items()
         }
-        combo['variants'] = rendered_variant_paths
+        combo.update(rendered_variant_paths)
         rendered_combos[str(variant_id)] = combo
 
     logging.info(
@@ -297,6 +324,10 @@ def _render_video_variant(
     speech_track_path: str,
     music_track_path: str,
     video_variant: VideoVariant,
+    vision_model: GenerativeModel,
+    text_model: GenerativeModel,
+    video_language: str,
+    optimised_av_segments: pd.DataFrame,
 ) -> Dict[str, str]:
   """Renders a video variant in all formats.
 
@@ -308,6 +339,10 @@ def _render_video_variant(
     speech_track_path: The path to the video's speech track.
     music_track_path: The path to the video's music track.
     video_variant: The video variant to be rendered.
+    vision_model: The vision model to use.
+    text_model: The text model to use.
+    video_language: The video language.
+    optimised_av_segments: The extracted AV segments of the video.
 
   Returns:
     The rendered paths keyed by the format type.
@@ -380,11 +415,22 @@ def _render_video_variant(
       cmds=' '.join(ffmpeg_cmds),
       shell=True,
       description=(
-          f'render horizontal variant with id {video_variant.variant_id} using'
-          ' ffmpeg'
+          'render horizontal variant with id '
+          f'{video_variant.variant_id} using ffmpeg'
       ),
   )
-  rendered_paths = {'horizontal': horizontal_combo_name}
+  rendered_paths = {'horizontal': {'path': horizontal_combo_name}}
+  if video_variant.render_settings.generate_image_assets:
+    assets = _generate_image_assets(
+        video_file_path=horizontal_combo_path,
+        gcs_bucket_name=gcs_bucket_name,
+        gcs_folder_path=gcs_folder_path,
+        output_path=output_dir,
+        variant_id=video_variant.variant_id,
+        format_type='horizontal',
+    )
+    if assets:
+      rendered_paths['horizontal']['images'] = assets
 
   if video_variant.render_settings.render_all_formats:
     formats_to_render = {
@@ -397,9 +443,14 @@ def _render_video_variant(
               _render_format,
               input_video_path=horizontal_combo_path,
               output_path=output_dir,
+              gcs_bucket_name=gcs_bucket_name,
+              gcs_folder_path=gcs_folder_path,
               variant_id=video_variant.variant_id,
               format_type=format_type,
               video_filter=video_filter,
+              generate_image_assets=(
+                  video_variant.render_settings.generate_image_assets
+              ),
           ): format_type
           for format_type, video_filter in formats_to_render.items()
       }
@@ -407,39 +458,69 @@ def _render_video_variant(
         format_type = futures_dict[response]
         rendered_paths[format_type] = response.result()
 
-  return {
-      format_type: (
-          f'{ConfigService.GCS_BASE_URL}/'
-          f'{pathlib.Path(gcs_bucket_name, gcs_folder_path, rendered_path)}'
-      )
-      for format_type, rendered_path in rendered_paths.items()
-  }
+  StorageService.upload_gcs_dir(
+      source_directory=output_dir,
+      bucket_name=gcs_bucket_name,
+      target_dir=gcs_folder_path,
+  )
+  result = {'variants': {}}
+  if video_variant.render_settings.generate_text_assets:
+    text_assets = _generate_text_assets(
+        vision_model=vision_model,
+        text_model=text_model,
+        gcs_video_path=(
+            f'gs://{gcs_bucket_name}/{gcs_folder_path}/{horizontal_combo_name}'
+        ),
+        video_language=video_language,
+        optimised_av_segments=optimised_av_segments,
+        video_variant=video_variant,
+    )
+    if text_assets:
+      result['texts'] = text_assets
+
+  for format_type, rendered_path in rendered_paths.items():
+    result['variants'][format_type] = (
+        f'{ConfigService.GCS_BASE_URL}/'
+        f'{pathlib.Path(gcs_bucket_name, gcs_folder_path, rendered_path["path"])}'
+    )
+    if 'images' in rendered_path:
+      if 'images' not in result:
+        result['images'] = {}
+      result['images'][format_type] = rendered_path['images']
+
+  return result
 
 
 def _render_format(
     input_video_path: str,
     output_path: str,
+    gcs_bucket_name: str,
+    gcs_folder_path: str,
     variant_id: int,
     format_type: str,
     video_filter: str,
-) -> str:
+    generate_image_assets: bool,
+) -> Dict[str, Union[str, Sequence[str]]]:
   """Renders a video variant in a specific format.
 
   Args:
     input_video_path: The path to the input video to render.
     output_path: The path to output to.
+    gcs_bucket_name: The name of the GCS bucket to upload to.
+    gcs_folder_path: The path to the GCS folder to upload to.
     variant_id: The id of the variant to render.
     format_type: The type of the output format (horizontal, vertical, square).
     video_filter: The ffmpeg video filter to use.
-
+    generate_image_assets: Whether to generate image assets for the variant.
   Returns:
-    The rendered video's name.
+    The rendered video's format name.
   """
   logging.info(
       'THREADING - Rendering variant %s format: %s', variant_id, format_type
   )
   _, video_ext = os.path.splitext(input_video_path)
   format_name = f'combo_{variant_id}_{format_type[0]}{video_ext}'
+  output_video_path = str(pathlib.Path(output_path, format_name))
   Utils.execute_subprocess_commands(
       cmds=' '.join([
           'ffmpeg',
@@ -448,14 +529,255 @@ def _render_format(
           input_video_path,
           '-vf',
           video_filter,
-          str(pathlib.Path(output_path, format_name)),
+          output_video_path,
       ]),
       shell=True,
       description=(
           f'render {format_type} variant with id {variant_id} using ffmpeg'
       ),
   )
-  return format_name
+  output = {
+      'path': format_name,
+  }
+  if generate_image_assets:
+    assets = _generate_image_assets(
+        video_file_path=output_video_path,
+        gcs_bucket_name=gcs_bucket_name,
+        gcs_folder_path=gcs_folder_path,
+        output_path=output_path,
+        variant_id=variant_id,
+        format_type=format_type,
+    )
+    if assets:
+      output['images'] = assets
+
+  return output
+
+
+def _generate_text_assets(
+    vision_model: GenerativeModel,
+    text_model: GenerativeModel,
+    gcs_video_path: str,
+    video_language: str,
+    optimised_av_segments: pd.DataFrame,
+    video_variant: VideoVariant,
+) -> Optional[Sequence[Dict[str, str]]]:
+  """Generates text ad assets for a video variant.
+
+  Args:
+    vision_model: The vision model to use for text generation.
+    text_model: The text model to use for text generation.
+    gcs_video_path: The path to the video to generate text assets for.
+    video_language: The language of the video.
+    optimised_av_segments: The optimised AV segments to use for text generation.
+    video_variant: The video variant to use for text generation.
+
+  Returns:
+    The generated text assets.
+  """
+  prompt = [
+      ConfigService.GENERATE_ASSETS_PROMPT.format(
+          prompt_prefix=(
+              ConfigService.GENERATE_ASSETS_PROMPT_MULTIMODAL_PART
+              if ConfigService.CONFIG_MULTIMODAL_ASSET_GENERATION else
+              ConfigService.GENERATE_ASSETS_PROMPT_TEXT_PART
+          ), video_language=video_language
+      )
+  ]
+  assets = None
+  try:
+    if ConfigService.CONFIG_MULTIMODAL_ASSET_GENERATION:
+      response = vision_model.generate_content(
+          [
+              Part.from_uri(gcs_video_path, mime_type='video/mp4'),
+              ''.join(prompt)
+          ],
+          generation_config=ConfigService.GENERATE_ASSETS_CONFIG,
+          safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
+      )
+    else:
+      prompt.append('\n\nScript:')
+      prompt.append(
+          _generate_video_script(
+              optimised_av_segments,
+              video_variant,
+          )
+      )
+      prompt.append('\n\n')
+      response = text_model.generate_content(
+          '\n'.join(prompt),
+          generation_config=ConfigService.GENERATE_ASSETS_CONFIG,
+          safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
+      )
+    if (
+        response.candidates and response.candidates[0].content.parts
+        and response.candidates[0].content.parts[0].text
+    ):
+      logging.info(
+          'ASSETS - Received response: %s',
+          response.candidates[0].content.parts[0].text
+      )
+      rows = []
+      results = list(
+          filter(
+              None, response.candidates[0].content.parts[0].text.strip().split(
+                  ConfigService.GENERATE_ASSETS_SEPARATOR
+              )
+          )
+      )
+      for result in results:
+        result = re.findall(
+            ConfigService.GENERATE_ASSETS_PATTERN, result, re.MULTILINE
+        )
+        rows.append([entry.strip() for entry in result[0]])
+      assets = pd.DataFrame(rows, columns=[
+          'headline',
+          'description',
+      ]).to_dict(orient='records')
+      logging.info(
+          'ASSETS - Generated text assets for variant %d: %r',
+          video_variant.variant_id,
+          assets,
+      )
+    else:
+      logging.warning(
+          'ASSETS - Could not generate text assets for variant %d!',
+          video_variant.variant_id
+      )
+  # Execution should continue regardless of the underlying exception
+  # pylint: disable=broad-exception-caught
+  except Exception:
+    logging.exception(
+        'Encountered error during generation of text assets for variant %d! '
+        'Continuing...', video_variant.variant_id
+    )
+  return assets
+
+
+def _generate_video_script(
+    optimised_av_segments: pd.DataFrame,
+    video_variant: VideoVariant,
+) -> str:
+  """Generates a video script for the given A/V segments.
+
+  Args:
+    optimised_av_segments: The optimised AV segments to use.
+    video_variant: The video variant to use.
+
+  Returns:
+    The generated video script.
+  """
+  video_script = []
+
+  for index, av_segment in enumerate(optimised_av_segments):
+    if str(av_segment['av_segment_id']) not in video_variant.av_segments.keys():
+      continue
+
+    video_script.append(f'Scene {index + 1}')
+    video_script.append(f"{av_segment['start_s']} --> {av_segment['end_s']}")
+    video_script.append(
+        f"Duration: {(av_segment['end_s'] - av_segment['start_s']):.2f}s"
+    )
+
+    description = av_segment['description'].strip()
+    if description:
+      video_script.append(description)
+
+    video_script.append(
+        f"Number of visual shots: {len(av_segment['visual_segment_ids'])}"
+    )
+    transcript = av_segment['transcript']
+    details = av_segment['labels'] + av_segment['objects']
+    text = [f'"{t}"' for t in av_segment['text']]
+    logos = av_segment['logos']
+    keywords = av_segment['keywords'].strip()
+
+    if transcript:
+      video_script.append(f"Off-screen speech: \"{' '.join(transcript)}\"")
+    if details:
+      video_script.append(f"On-screen details: {', '.join(details)}")
+    if text:
+      video_script.append(f"On-screen text: {', '.join(text)}")
+    if logos:
+      video_script.append(f"Logos: {', '.join(logos)}")
+    if keywords:
+      video_script.append(f'Keywords: {keywords}')
+
+    video_script.append('')
+
+  video_script = '\n'.join(video_script)
+  return video_script
+
+
+def _generate_image_assets(
+    video_file_path: str,
+    gcs_bucket_name: str,
+    gcs_folder_path: str,
+    output_path: str,
+    variant_id: int,
+    format_type: str,
+) -> Sequence[str]:
+  """Generates image ad assets for a video variant in a specific format.
+
+  Args:
+    video_file_path: The path to the input video to use.
+    gcs_bucket_name: The name of the GCS bucket to upload the assets to.
+    gcs_folder_path: The path to the GCS folder to upload the assets to.
+    output_path: The path to output to.
+    variant_id: The id of the variant to render.
+    format_type: The type of the output format (horizontal, vertical, square).
+
+  Returns:
+    The paths to the generated image assets.
+  """
+  variant_folder = f'combo_{variant_id}'
+  image_assets_path = pathlib.Path(
+      output_path,
+      variant_folder,
+      ConfigService.OUTPUT_COMBINATION_ASSETS_DIR,
+      format_type,
+  )
+  assets = []
+  try:
+    os.makedirs(image_assets_path, exist_ok=True)
+    Utils.execute_subprocess_commands(
+        cmds=' '.join([
+            'ffmpeg',
+            '-i',
+            video_file_path,
+            '-vf',
+            'thumbnail',
+            '-vsync',
+            'vfr',
+            str(pathlib.Path(image_assets_path, '%d.png')),
+        ]),
+        shell=True,
+        description=(
+            f'extract image assets for {format_type} type for '
+            f'variant with id {variant_id} using ffmpeg'
+        ),
+    )
+    assets = [
+        f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/{gcs_folder_path}/'
+        f'{variant_folder}/{ConfigService.OUTPUT_COMBINATION_ASSETS_DIR}/'
+        f'{format_type}/{image_asset}'
+        for image_asset in os.listdir(image_assets_path)
+        if image_asset.endswith('.png')
+    ]
+    logging.info(
+        'ASSETS - Generated %d image assets for variant %d in %s format',
+        len(assets),
+        variant_id,
+        format_type,
+    )
+  # Execution should continue regardless of the underlying exception
+  # pylint: disable=broad-exception-caught
+  except Exception:
+    logging.exception(
+        'Encountered error during generation of image assets for variant %d '
+        'in format %s! Continuing...', variant_id, format_type
+    )
+  return assets
 
 
 def _group_consecutive_segments(

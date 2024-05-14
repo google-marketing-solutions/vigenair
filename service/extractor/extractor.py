@@ -204,12 +204,6 @@ class Extractor:
     """
     cuts_path = str(pathlib.Path(tmp_dir, ConfigService.OUTPUT_AV_SEGMENTS_DIR))
     os.makedirs(cuts_path)
-    video_description_config = {
-        'max_output_tokens': 2048,
-        'temperature': 0.2,
-        'top_p': 1,
-        'top_k': 16,
-    }
     gcs_cuts_folder_path = (
         f'gs://{self.gcs_bucket_name}/{self.video_file.gcs_folder}/'
         f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}'
@@ -233,7 +227,6 @@ class Extractor:
                   f'{gcs_cuts_folder_path}/{index+1}.{self.video_file.file_ext}'
               ),
               bucket_name=self.gcs_bucket_name,
-              video_description_config=video_description_config,
           ): index
           for index, row in optimised_av_segments.iterrows()
       }
@@ -272,7 +265,6 @@ def _cut_and_annotate_av_segment(
     vision_model: GenerativeModel,
     gcs_cut_path: str,
     bucket_name: str,
-    video_description_config: Dict[str, Union[int, float]],
 ) -> Tuple[str, str]:
   """Cuts a single A/V segment with ffmpeg and annotates it with Gemini.
 
@@ -284,8 +276,6 @@ def _cut_and_annotate_av_segment(
     vision_model: The Gemini model to generate the A/V segment descriptions.
     gcs_cut_path: The path to store the A/V segment cut in GCS.
     bucket_name: The GCS bucket name to store the A/V segment cut.
-    video_description_config: The configuration for the Gemini model to generate
-      the A/V segment descriptions.
 
   Returns:
     A tuple of the A/V segment description and keywords.
@@ -350,7 +340,7 @@ def _cut_and_annotate_av_segment(
             Part.from_uri(gcs_cut_path, mime_type='video/mp4'),
             ConfigService.SEGMENT_ANNOTATIONS_PROMPT,
         ],
-        generation_config=video_description_config,
+        generation_config=ConfigService.SEGMENT_ANNOTATIONS_CONFIG,
         safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
     )
     if (

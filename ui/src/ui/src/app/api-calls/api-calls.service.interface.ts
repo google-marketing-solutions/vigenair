@@ -39,6 +39,8 @@ export interface GenerateVariantsResponse {
   reasoning: string;
   duration: string;
   variants?: VariantFormats;
+  images?: VariantImageAssets;
+  texts?: VariantTextAsset[];
 }
 
 export interface PreviousRunsResponse {
@@ -73,6 +75,17 @@ export interface VariantFormats {
   square: string;
 }
 
+export interface VariantImageAssets {
+  horizontal: string[];
+  vertical: string[];
+  square: string[];
+}
+
+export interface VariantTextAsset {
+  headline: string;
+  description: string;
+}
+
 export interface RenderedVariant {
   variant_id: number;
   av_segments: Record<string, AvSegment>;
@@ -83,6 +96,8 @@ export interface RenderedVariant {
   variants: VariantFormats;
   duration: string;
   scenes: string;
+  images?: VariantImageAssets;
+  texts?: VariantTextAsset[];
 }
 
 export interface ApiCalls {

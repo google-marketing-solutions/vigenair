@@ -25,6 +25,42 @@ else
   printf "\nINFO - Bucket '<gcs-bucket>' created successfully in location '<gcs-location>'!\n"
 fi
 
+printf "\nINFO - Enabling GCP APIs...\n"
+gcloud services enable \
+  aiplatform.googleapis.com \
+  artifactregistry.googleapis.com \
+  cloudbuild.googleapis.com \
+  cloudfunctions.googleapis.com \
+  compute.googleapis.com \
+  eventarc.googleapis.com \
+  logging.googleapis.com \
+  pubsub.googleapis.com \
+  run.googleapis.com \
+  storage.googleapis.com \
+  videointelligence.googleapis.com
+
+PROJECT_NUMBER=$(gcloud projects describe <gcp-project-id> --format="value(projectNumber)")
+CURRENT_USER=$(gcloud auth list --filter=status:ACTIVE --format="value(account)")
+STORAGE_SERVICE_ACCOUNT=$(gsutil kms serviceaccount -p ${PROJECT_NUMBER})
+COMPUTE_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+COMPUTE_SA_ROLES=(
+    "roles/eventarc.eventReceiver"
+    "roles/run.invoker"
+    "roles/cloudfunctions.invoker"
+    "roles/storage.objectUser"
+    "roles/aiplatform.user"
+)
+for COMPUTE_SA_ROLE in "${COMPUTE_SA_ROLES[@]}"; do
+    gcloud --no-user-output-enabled projects add-iam-policy-binding \
+        <gcp-project-id> \
+        --member="serviceAccount:${COMPUTE_SERVICE_ACCOUNT}" \
+        --role="${COMPUTE_SA_ROLE}"
+done
+gcloud --no-user-output-enabled projects add-iam-policy-binding \
+    <gcp-project-id> \
+    --member="serviceAccount:${STORAGE_SERVICE_ACCOUNT}" \
+    --role="roles/pubsub.publisher"
+
 printf "\nINFO - Deploying the 'vigenair' Cloud Function...\n"
 gcloud functions deploy vigenair \
 --env-vars-file .env.yaml \

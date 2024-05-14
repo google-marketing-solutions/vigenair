@@ -14,6 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+:host {
+  --filmstrip-size: 6px;
+}
+
 .row {
   display: flex;
   flex-direction: row;
@@ -47,4 +51,41 @@ video {
 
 .score-5 {
   color: #33691e;
+}
+
+.filmstrip {
+  --background: rgba(0, 0, 0);
+  background: conic-gradient(
+      at var(--filmstrip-size),
+      var(--background) 75%,
+      #0000 0
+    )
+    0 0 / calc(100% - var(--filmstrip-size)) calc(2 * var(--filmstrip-size))
+    padding-box;
+  border-left: var(--filmstrip-size) solid var(--background);
+  border-right: var(--filmstrip-size) solid var(--background);
+  padding-left: calc(var(--filmstrip-size) + 6px);
+  padding-right: calc(var(--filmstrip-size) + 6px);
+  flex: 1 1 0;
+  scrollbar-width: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.filmstrip-row {
+  display: flex;
+  justify-content: left;
+  background-color: black;
+  border-bottom: solid 16px black;
+}
+
+.filmstrip-img {
+  display: flex;
+  width: 256px;
+}
+
+.assets-header {
+  font-size: 18px;
+  margin-top: 8px;
+  margin-bottom: 8px;
 }

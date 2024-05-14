@@ -63,7 +63,7 @@ export const CONFIG = {
     Score: The score you assigned to this combination.
     ABCD: Reasoning for the score you assigned, with examples.
 
-    Seperate each combination you output by the value "## Combination".
+    Separate each combination you output by the value "## Combination".
 
 
     Script:
@@ -75,5 +75,6 @@ export const CONFIG = {
   maxRetries: 3,
   defaultVideoLanguage: 'English',
   defaultCacheExpiration: 60, // in seconds
+  defaultDuration: 30,
   debug: false,
 };
