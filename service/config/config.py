@@ -25,10 +25,8 @@ from vertexai.preview import generative_models
 
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', 'my-gcp-project')
 GCP_LOCATION = os.environ.get('GCP_LOCATION', 'us-central1')
-CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-1.0-pro')
-CONFIG_VISION_MODEL = os.environ.get(
-    'CONFIG_VISION_MODEL', 'gemini-1.0-pro-vision'
-)
+CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-1.5-flash')
+CONFIG_VISION_MODEL = os.environ.get('CONFIG_VISION_MODEL', 'gemini-1.5-flash')
 CONFIG_WHISPER_MODEL = os.environ.get('CONFIG_WHISPER_MODEL', 'small')
 CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD = float(
     os.environ.get('CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD', '0.7')

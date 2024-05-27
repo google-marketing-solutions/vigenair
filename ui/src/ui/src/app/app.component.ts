@@ -448,8 +448,7 @@ export class AppComponent {
   }
 
   calculateVideoDefaultDuration(duration: number) {
-    const durationInt = Math.round(duration) % 10;
-    const step = durationInt ? Math.min(10, durationInt) : 10;
+    const step = duration >= 60 ? 10 : 5;
     const halfDuration = Math.round(duration / 2);
 
     this.step = step;

@@ -24,8 +24,8 @@ limitations under the License.
 
 [Overview](#overview) •
 [Get started](#get-started) •
-[What it solves](#challenges) •
-[How it works](#solution-overview) •
+[What it solves](#why-use-vigenair) •
+[How it works](#how-vigenair-works) •
 [How to Contribute](#how-to-contribute)
 
 ## Updates
@@ -46,13 +46,14 @@ Please make sure you have fulfilled all prerequisites mentioned under [Requireme
 1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install).
 1. Make sure your system has an up-to-date installation of `git` and use it to clone this repository.
 1. Navigate to the directory where the source code lives.
-1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`.
 1. Run `npm start`.
 
 You will be asked to enter a GCP Project ID, and whether you would like to deploy GCP components, the UI, or both. If you opt to deploy GCP components, you will be asked to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
 The `npm start` command will then ask you to authenticate to both Google Workspace (via [clasp](https://github.com/google/clasp)) and Google Cloud, followed by creating a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), deploying the `vigenair` Cloud Function to your Cloud project, and finally deploying the Angular UI web app to a new Apps Script project. The URL of the web app will be output at the end of the deployment process, which you can use to run the app and start generating videos.
 
-See [Solution Overview](#solution-overview) for more details on the different components of the solution.
+See [How Vigenair Works](#how-vigenair-works) for more details on the different components of the solution.
+
+> Note: If using a completely new GCP project with no prior deployments of Cloud Run / Cloud Functions, you may receive [Eventarc permission denied errors](https://cloud.google.com/eventarc/docs/troubleshooting#trigger-error) when deploying the `vigenair` Cloud Function for the very first time. Please wait a few minutes ([up to seven](https://cloud.google.com/iam/docs/access-change-propagation)) for all necessary permissions to propagate before retrying the `npm start` command.
 
 ### UI Web App Access Settings
 
@@ -84,7 +85,7 @@ If you will also be deploying Vigenair, you need to have the following additiona
 * `Storage Admin` for the entire project OR `Storage Legacy Bucket Writer` on the <code>*<gcp_project_id>*-vigenair</code> bucket. See [IAM Roles for Cloud Storage](https://cloud.google.com/storage/docs/access-control/iam-roles) for more information.
 * `Cloud Functions Developer` to deploy and manage Cloud Functions. See [IAM Roles for Cloud Functions](https://cloud.google.com/functions/docs/reference/iam/roles) for more information.
 
-## Challenges
+## Why use Vigenair?
 
 Current Video Ads creative solutions, both within YouTube / Google Ads as well as open source, primarily focus on 4 of the [5 keys to effective advertising](https://info.ncsolutions.com/hubfs/2023%20Five%20Keys%20to%20Advertising%20Effectiveness/NCS_Five_Keys_to_Advertising_Effectiveness_E-Book_08-23.pdf) - Brand, Targeting, Reach and Recency. Those 4 pillars contribute to *only ~50%* of the potential marketing ROI, with the 5th pillar - **Creative** - capturing a *whopping ~50%* all on its own.
 
@@ -100,7 +101,7 @@ Vigenair focuses on the *Creative* pillar to help potentially **unlock ~50% ROI*
 * **User Control**: Users can steer the model towards generating their desired videos (via prompts and/or manual scene selection).
 * **Performance**: Built-in A/B testing provides a basis for automatically identifying the best variants tailored to the advertiser's target audiences.
 
-## Solution Overview
+## How Vigenair works
 
 Vigenair's frontend is an Angular Progressive Web App (PWA) hosted on Google Apps Script and accessible via a [web app deployment](https://developers.google.com/apps-script/guides/web). As with all Google Workspace apps, users must authenticate with a Google account in order to use the Vigenair web app. Backend services are hosted on [Cloud Functions 2nd gen](https://cloud.google.com/functions/docs/concepts/version-comparison), and are triggered via Cloud Storage (GCS). Decoupling the UI and core services via GCS significantly reduces authentication overhead and effectively implements separation of concerns between the frontend and backend layers.
 
@@ -175,7 +176,7 @@ The diagram below shows how Vigenair's components interact and communicate with 
 
 ### Pricing and Quotas
 
-Users are priced according to their usage of Google (Cloud and Workspace) services as detailed below. In summary, Processing *1 min of video and generating 5 variants* would cost around **$7 with `Gemini 1.0 Pro Vision`, $5.5 with `Gemini 1.5 Pro`, and $3.3 with `Gemini 1.5 Flash`**. Please note that currently (May 2024) Gemini 1.5 models are in preview, and so are subject to stricter [quota limits](https://cloud.google.com/vertex-ai/generative-ai/docs/quotas#quotas_by_region_and_model) than Gemini 1.0 models. You may define the multimodal and language models used by Vigenair by modifying the `CONFIG_VISION_MODEL` and `CONFIG_TEXT_MODEL` environment variables respectively for the Cloud Function in [deploy.sh](./service/deploy.sh), as well as the `CONFIG.vertexAi.model` property in [config.ts](ui/src/config.ts) for the frontend web app. The most cost-effective setup is using `Gemini 1.5 Flash` throughout (for both multimodal and text-only use cases).
+Users are priced according to their usage of Google (Cloud and Workspace) services as detailed below. In summary, Processing *1 min of video and generating 5 variants* would cost around **$7 with `Gemini 1.0 Pro Vision`, $5.5 with `Gemini 1.5 Pro`, and $3.3 with `Gemini 1.5 Flash`**. You may define the multimodal and language models used by Vigenair by modifying the `CONFIG_VISION_MODEL` and `CONFIG_TEXT_MODEL` environment variables respectively for the Cloud Function in [deploy.sh](./service/deploy.sh), as well as the `CONFIG.vertexAi.model` property in [config.ts](ui/src/config.ts) for the frontend web app. The most cost-effective setup is using `Gemini 1.5 Flash` throughout (for both multimodal and text-only use cases), also considering [quota limits](https://cloud.google.com/vertex-ai/generative-ai/docs/quotas#quotas_by_region_and_model) per model.
 
 For more information, refer to this detailed [Cloud pricing calculator](https://cloud.google.com/products/calculator/?dl=CiRjNjc2YTkzMC1hOWE1LTRlNjAtYTgwZS0zNTg5OWY0NzYxNGIQEhokRjU1OTJDMUUtNURBRS00QkUwLTgzNUQtMjFFOUQ5RTc1QjU1) example using `Gemini 1.0 Pro Vision`. The breakdown of the charges are:
 
@@ -200,7 +201,6 @@ Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), yo
 ### Build and Serve the Angular UI
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`.
 1. Navigate to the directory where the source code lives and run `cd ./ui`
 1. Run `npm install` to install dependencies.
 1. Run `npm run deploy` to build, test and deploy (via [clasp](https://github.com/google/clasp)) all UI and Apps Script code to the target spreadsheet / Apps Script project.

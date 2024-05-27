@@ -78,6 +78,7 @@ class ClaspManager {
     scriptRootDir: string,
     filesRootDir: string
   ) {
+    fs.ensureDirSync(scriptRootDir);
     const res = spawn.sync(
       "npx",
       [
@@ -115,9 +116,27 @@ export class GcpDeploymentHandler {
     const gcloudAuthExists = await fs.exists(
       path.join(os.homedir(), ".config", "gcloud", "credentials.db")
     );
+    const gcloudAppDefaultCredsExists = await fs.exists(
+      path.join(
+        os.homedir(),
+        ".config",
+        "gcloud",
+        "application_default_credentials.json"
+      )
+    );
     if (!gcloudAuthExists) {
       console.log("Logging in via gcloud...");
       spawn.sync("gcloud auth login", { stdio: "inherit", shell: true });
+      console.log();
+    }
+    if (!gcloudAppDefaultCredsExists) {
+      console.log(
+        "Setting Application Default Credentials (ADC) via gcloud..."
+      );
+      spawn.sync("gcloud auth application-default login", {
+        stdio: "inherit",
+        shell: true,
+      });
       console.log();
     }
   }
@@ -151,11 +170,14 @@ export class UiDeploymentHandler {
   static deployUi() {
     console.log("Deploying the UI Web App...");
     spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
-    const res = spawn.sync("cd ui && clasp undeploy -a && clasp deploy", {
-      stdio: "pipe",
-      shell: true,
-      encoding: "utf8",
-    });
+    const res = spawn.sync(
+      "cd ui && npx clasp undeploy -a && npx clasp deploy",
+      {
+        stdio: "pipe",
+        shell: true,
+        encoding: "utf8",
+      }
+    );
     const lastNonEmptyLine = res.output[1]
       .split("\n")
       .findLast((line: string) => line.trim().length > 0);

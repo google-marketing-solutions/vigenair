@@ -14,6 +14,8 @@
 # limitations under the License.
 
 gcloud config set project <gcp-project-id>
+gcloud services enable cloudresourcemanager.googleapis.com
+gcloud auth application-default set-quota-project <gcp-project-id>
 printf "\nINFO - GCP project set to '<gcp-project-id>' succesfully!\n"
 
 BUCKET_EXISTS=$(gcloud storage ls gs://<gcs-bucket> > /dev/null 2>&1 && echo "true" || echo "false")
@@ -41,7 +43,8 @@ gcloud services enable \
 
 PROJECT_NUMBER=$(gcloud projects describe <gcp-project-id> --format="value(projectNumber)")
 CURRENT_USER=$(gcloud auth list --filter=status:ACTIVE --format="value(account)")
-STORAGE_SERVICE_ACCOUNT=$(gsutil kms serviceaccount -p ${PROJECT_NUMBER})
+STORAGE_SERVICE_ACCOUNT="service-${PROJECT_NUMBER}@gs-project-accounts.iam.gserviceaccount.com"
+EVENTARC_SERVICE_ACCOUNT="service-${PROJECT_NUMBER}@gcp-sa-eventarc.iam.gserviceaccount.com"
 COMPUTE_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 COMPUTE_SA_ROLES=(
     "roles/eventarc.eventReceiver"
@@ -60,6 +63,10 @@ gcloud --no-user-output-enabled projects add-iam-policy-binding \
     <gcp-project-id> \
     --member="serviceAccount:${STORAGE_SERVICE_ACCOUNT}" \
     --role="roles/pubsub.publisher"
+gcloud --no-user-output-enabled projects add-iam-policy-binding \
+    <gcp-project-id> \
+    --member="serviceAccount:${EVENTARC_SERVICE_ACCOUNT}" \
+    --role="roles/eventarc.serviceAgent"
 
 printf "\nINFO - Deploying the 'vigenair' Cloud Function...\n"
 gcloud functions deploy vigenair \
