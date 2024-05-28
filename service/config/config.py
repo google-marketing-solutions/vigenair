@@ -37,16 +37,16 @@ CONFIG_MULTIMODAL_ASSET_GENERATION = os.environ.get(
 
 CONFIG_DEFAULT_SAFETY_CONFIG = {
     generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: (
-        generative_models.HarmBlockThreshold.BLOCK_NONE
+        generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH
     ),
     generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: (
-        generative_models.HarmBlockThreshold.BLOCK_NONE
+        generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH
     ),
     generative_models.HarmCategory.HARM_CATEGORY_HATE_SPEECH: (
-        generative_models.HarmBlockThreshold.BLOCK_NONE
+        generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH
     ),
     generative_models.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: (
-        generative_models.HarmBlockThreshold.BLOCK_NONE
+        generative_models.HarmBlockThreshold.BLOCK_ONLY_HIGH
     ),
 }
 

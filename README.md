@@ -30,7 +30,7 @@ limitations under the License.
 
 ## Updates
 
-Update to the latest version by running `npm run update-app`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
+Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
 * [May 2024]: Launch! 🚀
 

@@ -27,7 +27,7 @@ export const CONFIG = {
     quotaLimitDelay: 10 * 1000, // 10s,
     model: 'gemini-1.5-flash',
     modelParams: {
-      temperature: 0.4,
+      temperature: 0.94,
       topP: 1,
       topK: 32,
       maxOutputTokens: 2048,
