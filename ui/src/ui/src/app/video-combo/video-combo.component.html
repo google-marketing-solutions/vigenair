@@ -99,14 +99,19 @@ limitations under the License.
       </ng-container>
       <ng-container matColumnDef="headline">
         <mat-header-cell *matHeaderCellDef> Headline </mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          {{ element.headline }}
+        <mat-cell
+          *matCellDef="let element"
+          [innerHTML]="marked.parse(element.headline)"
+        >
         </mat-cell>
       </ng-container>
       <ng-container matColumnDef="description">
         <mat-header-cell *matHeaderCellDef> Description </mat-header-cell>
-        <mat-cell *matCellDef="let element">
-          {{ element.description }}
+        <mat-cell
+          *matCellDef="let element"
+          [innerHTML]="marked.parse(element.description)"
+          style="white-space: pre-line"
+        >
         </mat-cell>
       </ng-container>
       <mat-header-row
