@@ -99,6 +99,7 @@ export class AppComponent {
   loading = false;
   generatingVariants = false;
   rendering = false;
+  loadingVariant = false;
   selectedFile?: File;
   videoPath?: string;
   analysisJson?: any;
@@ -513,8 +514,10 @@ export class AppComponent {
   }
 
   variantChanged() {
-    this.setSelectedSegments();
-    this.resetVariantPreview();
+    if (!this.loadingVariant) {
+      this.setSelectedSegments();
+      this.resetVariantPreview();
+    }
   }
 
   resetVariantPreview() {
@@ -595,6 +598,7 @@ export class AppComponent {
 
   loadVariant(index: number) {
     const variant = this.renderQueue[index];
+    this.loadingVariant = true;
     this.selectedVariant = variant.original_variant_id;
     this.setSelectedSegments(
       variant.av_segments.map((segment: AvSegment) => segment.av_segment_id)
@@ -609,6 +613,9 @@ export class AppComponent {
         ? 'continuous'
         : 'segment';
     this.closeRenderQueueSidenav();
+    setTimeout(() => {
+      this.loadingVariant = false;
+    }, 1000);
   }
 
   closeRenderQueueSidenav() {

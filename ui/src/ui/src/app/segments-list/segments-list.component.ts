@@ -54,7 +54,11 @@ export class SegmentsListComponent {
     if (this.segmentMode === 'preview') {
       document
         .getElementById(`segment-${this._currentSegmentId}`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        ?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'end',
+          inline: 'nearest',
+        });
     }
   }
   get currentSegmentId() {
