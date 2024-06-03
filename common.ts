@@ -76,7 +76,7 @@ class ClaspManager {
   static async create(
     title: string,
     scriptRootDir: string,
-    filesRootDir = "ui"
+    filesRootDir: string
   ) {
     fs.ensureDirSync(path.join(filesRootDir, scriptRootDir));
     const res = spawn.sync(
@@ -161,7 +161,7 @@ export class UiDeploymentHandler {
     }
     console.log();
     console.log("Creating Apps Script Project...");
-    const res = await ClaspManager.create("ViGenAiR", "./dist");
+    const res = await ClaspManager.create("ViGenAiR", "./dist", "./ui");
     console.log();
     console.log("IMPORTANT -> Google Sheets Link:", res.sheetLink);
     console.log("IMPORTANT -> Apps Script Link:", res.scriptLink);
