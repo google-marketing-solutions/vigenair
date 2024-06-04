@@ -66,7 +66,15 @@ export class GenerationHelper {
     );
 
     const generationPrompt = CONFIG.vertexAi.generationPrompt
-      .replace('{{userPrompt}}', settings.prompt)
+      .replace(
+        '    {{userPromptPlaceholder}}\n',
+        settings.prompt
+          ? `${CONFIG.vertexAi.generationPromptUserInstructions.replace(
+              '{{userPrompt}}',
+              settings.prompt
+            )}\n`
+          : settings.prompt
+      )
       .replace('{{desiredDuration}}', String(duration))
       .replace('{{expectedDurationRange}}', expectedDurationRange)
       .replace('{{videoLanguage}}', videoLanguage)
@@ -172,7 +180,7 @@ export class GenerationHelper {
 
       const results = response.split('## Combination').filter(Boolean);
       const regex =
-        /.*Title:\**(?<title>.*)\n+\**Scenes:\**(?<scenes>.*)\n+\**Reasoning:\**(?<description>.*)\n+\**Score:\**(?<score>.*)\n+\**ABCD:\**\n+(?<reasoning>[\w\W\s\S\d\D]*)/ims;
+        /.*Title\s?:\**(?<title>.*)\n+\**Scenes\s?:\**(?<scenes>.*)\n+\**Reasoning\s?:\**(?<description>.*)\n+\**Score\s?:\**(?<score>.*)\n+\**ABCD\s?:\**\n+(?<reasoning>[\w\W\s\S\d\D]*)/ims;
 
       results.forEach((result, index) => {
         const matches = result.match(regex);
