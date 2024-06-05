@@ -91,17 +91,31 @@ FFMPEG_SQUARE_BLUR_FILTER = '"split[original][copy];[original]scale=ih:-1[scaled
 # pylint: disable=anomalous-backslash-in-string
 GENERATE_ASSETS_PATTERN = '.*Headline:\**\n?(.*)\n*\**Description:\**\n?(.*)'
 GENERATE_ASSETS_SEPARATOR = '## Ad'
-GENERATE_ASSETS_PROMPT = f"""You are a leading digital marketer and an expert at generating high-performing search ad headlines and descriptions that captivate users and influence a buying decision.
-{{prompt_prefix}}, generate 5 search ad headlines and accompanying descriptions that describe the brand, any products or information within the video.
-
-Output the following components per generated search ad EXACTLY as shown below:
-Headline: The generated headline in {{video_language}}. The headline should NOT be longer than 40 characters.
-Description: The accompanying description. The description should NOT be longer than 90 characters.
+GENERATE_ASSETS_PROMPT = f"""You are a leading digital marketer and an expert at crafting high-performing search ad headlines and descriptions that captivate users and drive conversions.
+Follow these instructions in order:
+1. **Analyze the Video**: Carefully analyze the video ad{{prompt_text_suffix}} to identify the brand, key products or services, unique selling points, and the core message conveyed.
+2. **Target Audience**: Consider the target audience of the video ad. What are their interests, needs, and pain points? How can the search ads resonate with them?
+3. **Craft Headlines and Descriptions**: Generate 5 compelling search ad headlines and descriptions based on your analysis. Adhere to these guidelines:
+    - **Headlines (Max 40 Characters)**:
+        - Include the brand name or a relevant keyword.
+        - Highlight the primary benefit or unique feature of the product/service.
+        - Create a sense of urgency or exclusivity.
+        - Use action words and power words to grab attention.
+        - Avoid overselling and nebulous claims.
+    - **Descriptions (Max 90 Characters)**:
+        - Expand on the headline, providing additional details or benefits.
+        - Include a strong call to action (e.g. "Shop now", "Learn more", "Sign up").
+        - Use keywords strategically for better targeting.
+        - Maintain a clear and concise message.
+        - Avoid overselling and nebulous claims.
+4. **Output Format**: For each generated search ad, output the following components in this exact format:
+Headline: The generated headline.
+Description: The accompanying description.
 
 Separate each search ad you output by the value "{GENERATE_ASSETS_SEPARATOR}".
+Output in {{video_language}}.
 """
-GENERATE_ASSETS_PROMPT_MULTIMODAL_PART = 'Given this video ad'
-GENERATE_ASSETS_PROMPT_TEXT_PART = 'Given the script of a video ad'
+GENERATE_ASSETS_PROMPT_TEXT_PART = ' script'
 GENERATE_ASSETS_CONFIG = {
     'max_output_tokens': 2048,
     'temperature': 0.2,

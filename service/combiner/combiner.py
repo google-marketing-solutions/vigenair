@@ -577,9 +577,8 @@ def _generate_text_assets(
   """
   prompt = [
       ConfigService.GENERATE_ASSETS_PROMPT.format(
-          prompt_prefix=(
-              ConfigService.GENERATE_ASSETS_PROMPT_MULTIMODAL_PART
-              if ConfigService.CONFIG_MULTIMODAL_ASSET_GENERATION else
+          prompt_text_suffix=(
+              '' if ConfigService.CONFIG_MULTIMODAL_ASSET_GENERATION else
               ConfigService.GENERATE_ASSETS_PROMPT_TEXT_PART
           ), video_language=video_language
       )
@@ -668,12 +667,12 @@ def _generate_video_script(
     The generated video script.
   """
   video_script = []
-
-  for index, av_segment in enumerate(optimised_av_segments):
+  index = 1
+  for av_segment in optimised_av_segments:
     if str(av_segment['av_segment_id']) not in video_variant.av_segments.keys():
       continue
 
-    video_script.append(f'Scene {index + 1}')
+    video_script.append(f'Scene {index}')
     video_script.append(f"{av_segment['start_s']} --> {av_segment['end_s']}")
     video_script.append(
         f"Duration: {(av_segment['end_s'] - av_segment['start_s']):.2f}s"
@@ -704,6 +703,7 @@ def _generate_video_script(
       video_script.append(f'Keywords: {keywords}')
 
     video_script.append('')
+    index += 1
 
   video_script = '\n'.join(video_script)
   return video_script

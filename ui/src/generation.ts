@@ -67,7 +67,7 @@ export class GenerationHelper {
 
     const generationPrompt = CONFIG.vertexAi.generationPrompt
       .replace(
-        '    {{userPromptPlaceholder}}\n',
+        '        {{userPromptPlaceholder}}\n',
         settings.prompt
           ? `${CONFIG.vertexAi.generationPromptUserInstructions.replace(
               '{{userPrompt}}',
