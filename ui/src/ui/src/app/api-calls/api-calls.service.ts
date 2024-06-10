@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { Observable, retry } from 'rxjs';
+import { Observable, of, retry, switchMap } from 'rxjs';
 import { CONFIG } from '../../../../config';
 import {
   ApiCalls,
@@ -29,40 +30,62 @@ import {
   providedIn: 'root',
 })
 export class ApiCallsService implements ApiCalls {
-  constructor(private ngZone: NgZone) {}
-
-  blobToDataURL(blob: Blob) {
-    return new Promise(resolve => {
-      const a = new FileReader();
-      a.onload = function (e) {
-        resolve(e.target!.result);
-      };
-      a.readAsDataURL(blob);
-    });
-  }
+  constructor(
+    private ngZone: NgZone,
+    private httpClient: HttpClient
+  ) {}
 
   loadPreviousRun(folder: string): string[] {
     return [
       folder,
-      `https://storage.mtls.cloud.google.com/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`,
+      `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`,
     ];
   }
 
-  uploadVideo(file: File, analyseAudio: boolean): Observable<string[]> {
-    return new Observable(subscriber => {
-      this.blobToDataURL(file).then(dataUrl => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        google.script.run
-          .withSuccessHandler((response: string[]) => {
-            this.ngZone.run(() => {
-              subscriber.next(response);
-              subscriber.complete();
-            });
-          })
-          .uploadVideo(dataUrl, file.name, analyseAudio);
-      });
+  getUserAuthToken(): Observable<string> {
+    return new Observable<string>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((userAuthToken: string) => {
+          this.ngZone.run(() => {
+            subscriber.next(userAuthToken);
+            subscriber.complete();
+          });
+        })
+        .getUserAuthToken();
     });
+  }
+
+  uploadVideo(
+    file: File,
+    analyseAudio: boolean,
+    encodedUserId: string,
+    filename = 'input.mp4',
+    contentType = 'video/mp4'
+  ): Observable<string[]> {
+    const folder = `${file.name}--${analyseAudio ? '' : 'n--'}${Date.now()}--${encodedUserId}`;
+    const fullName = encodeURIComponent(`${folder}/${filename}`);
+    const url = `${CONFIG.cloudStorage.uploadEndpointBase}/b/${CONFIG.cloudStorage.bucket}/o?uploadType=media&name=${fullName}`;
+
+    return this.getUserAuthToken().pipe(
+      switchMap(userAuthToken =>
+        this.httpClient
+          .post(url, file, {
+            headers: new HttpHeaders({
+              'Authorization': `Bearer ${userAuthToken}`,
+              'Content-Type': contentType,
+            }),
+          })
+          .pipe(
+            switchMap(response => {
+              console.log('Upload complete!', response);
+              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`;
+              return of([folder, videoFilePath]);
+            })
+          )
+      )
+    );
   }
 
   deleteGcsFolder(folder: string): void {

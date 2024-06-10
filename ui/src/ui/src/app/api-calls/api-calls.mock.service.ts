@@ -56,7 +56,11 @@ export class ApiCallsService implements ApiCalls {
   loadPreviousRun(folder: string): string[] {
     return ['assets', 'assets/input.mp4'];
   }
-  uploadVideo(file: Blob, analyseAudio: boolean): Observable<string[]> {
+  uploadVideo(
+    file: Blob,
+    analyseAudio: boolean,
+    encodedUserId: string
+  ): Observable<string[]> {
     return new Observable(subscriber => {
       setTimeout(() => {
         this.ngZone.run(() => {

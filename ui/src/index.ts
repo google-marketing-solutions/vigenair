@@ -19,8 +19,8 @@
  * Do not rename without ensuring all references are updated.
  */
 
-import { CONFIG } from './config';
 import { GenerationHelper } from './generation';
+import { ScriptUtil } from './script-util';
 import { StorageManager } from './storage';
 import {
   GenerationSettings,
@@ -54,15 +54,8 @@ function getFromGcs(filePath: string, mimeType: string): string | null {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function uploadVideo(
-  dataUrl: string,
-  uploadedFileName: string,
-  analyseAudio: boolean
-) {
-  const folder = `${uploadedFileName}--${analyseAudio ? '' : 'n--'}${Date.now()}--${getEncodedUserId()}`;
-  StorageManager.uploadFile(dataUrl.split(',')[1], folder);
-  const videoFilePath = `https://storage.mtls.cloud.google.com/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`;
-  return [folder, videoFilePath];
+function getUserAuthToken() {
+  return ScriptUtil.getOAuthToken();
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

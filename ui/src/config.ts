@@ -19,6 +19,7 @@ export const CONFIG = {
     bucket: '<gcs-bucket>',
     endpointBase: 'https://storage.googleapis.com/storage/v1',
     uploadEndpointBase: 'https://storage.googleapis.com/upload/storage/v1',
+    authenticatedEndpointBase: 'https://storage.mtls.cloud.google.com',
   },
   vertexAi: {
     endpoint: 'aiplatform.googleapis.com',

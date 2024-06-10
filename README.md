@@ -32,6 +32,10 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [June 2024]
+  * `frontend`: Enhanced file upload process to support >20MB files and up to browser-specific limits (~2-4GB).
+  * `frontend`: Improved variants generation prompt and enhanced its adherence to user instructions.
+  * `backend`: Improved Demand Gen text assets generation prompt. It is recommended to set the `CONFIG_MULTIMODAL_ASSET_GENERATION` environment variable to `'true'` for optimal asset quality.
 * [May 2024]: Launch! 🚀
 
 ## Overview
@@ -139,7 +143,7 @@ The diagram below shows how Vigenair's components interact and communicate with 
     * First, background music and voice-over (if available) are separated via the [spleeter](https://github.com/deezer/spleeter) library, and the voice-over is transcribed.
     * Transcription is done via the [faster-whisper](https://github.com/SYSTRAN/faster-whisper) library, which uses OpenAI's Whisper model under the hood. By default, Vigenair uses the [small](https://github.com/openai/whisper#available-models-and-languages) multilingual model which provides the optimal quality-performance balance. If you find that it is not working well for your target language you may change the model used by the Cloud Function by setting the `CONFIG_WHISPER_MODEL` variable in the [update_config.sh](service/update_config.sh) script, which can be used to update the function's runtime variables. The transcription output is stored in an `input.vtt` file, along with a `language.txt` file containing the video's primary language, in the same folder as the input video.
     * Video analysis is done via the Cloud [Video AI API](https://cloud.google.com/video-intelligence), where visual shots, detected objects - with tracking, labels, people and faces, and recognised logos and any on-screen text within the input video are extracted. The output is stored in an `analysis.json` file in the same folder as the input video.
-    * Finally, *coherent* audio/video segments are created using the transcription and video intelligence outputs and then cut into individual video files and stored on GCS in an `av_segments_cuts` subfolder under the root video folder. These cuts are then and annotated via multimodal models on Vertex AI, which provides a description and a set of associated keywords / topics per segment. The fully annotated segments (including all information from the Video AI API) are then compiled into a `data.json` file that is stored in the same folder as the input video.
+    * Finally, *coherent* audio/video segments are created using the transcription and video intelligence outputs and then cut into individual video files and stored on GCS in an `av_segments_cuts` subfolder under the root video folder. These cuts are then annotated via multimodal models on Vertex AI, which provide a description and a set of associated keywords / topics per segment. The fully annotated segments (including all information from the Video AI API) are then compiled into a `data.json` file that is stored in the same folder as the input video.
 3. The UI continuously queries GCS for updates while showing a preview of the uploaded video. <center><img src='./img/preview-waiting.png' width="600px" alt="Vigenair UI: Video preview while waiting for analysis results" /></center>
     * Once the `input.vtt` is available, a transcription track is embedded onto the video preview.
     * Once the `analysis.json` is available, [object tracking](https://cloud.google.com/video-intelligence/docs/object-tracking) results are displayed as bounding boxes directly on the video preview. These can be toggled on/off via the *Object tracking* toggle - which is set to *on* by default.

@@ -382,7 +382,7 @@ export class AppComponent {
   uploadVideo() {
     this.loading = true;
     this.apiCallsService
-      .uploadVideo(this.selectedFile!, this.analyseAudio)
+      .uploadVideo(this.selectedFile!, this.analyseAudio, this.encodedUserId!)
       .subscribe(response => {
         this.processVideo(response[0], response[1]);
       });

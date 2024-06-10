@@ -48,7 +48,7 @@ export class ScriptUtil {
       method: method,
       muteHttpExceptions: true,
       headers: {
-        Authorization: `Bearer ${ScriptApp.getOAuthToken()}`,
+        Authorization: `Bearer ${ScriptUtil.getOAuthToken()}`,
       },
     };
     const fullParams = Object.assign({}, baseParams, params || {});
@@ -58,5 +58,9 @@ export class ScriptUtil {
         fullParams as GoogleAppsScript.URL_Fetch.URLFetchRequestOptions
       )
     );
+  }
+
+  static getOAuthToken() {
+    return ScriptApp.getOAuthToken();
   }
 }
