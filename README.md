@@ -88,6 +88,7 @@ If you will also be deploying Vigenair, you need to have the following additiona
 
 * `Storage Admin` for the entire project OR `Storage Legacy Bucket Writer` on the <code>*<gcp_project_id>*-vigenair</code> bucket. See [IAM Roles for Cloud Storage](https://cloud.google.com/storage/docs/access-control/iam-roles) for more information.
 * `Cloud Functions Developer` to deploy and manage Cloud Functions. See [IAM Roles for Cloud Functions](https://cloud.google.com/functions/docs/reference/iam/roles) for more information.
+* `Project IAM Admin` to be able to run the commands that set up roles and policy bindings in the deployment script. See [IAM access control](https://cloud.google.com/resource-manager/docs/access-control-proj) for more information.
 
 ## Why use Vigenair?
 
