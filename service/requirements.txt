@@ -12,19 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-faster-whisper==1.*
+faster-whisper==1.0.2
+ffmpeg==1.4
 ffprobe==0.5
-ffmpeg==1.*
-functions-framework==3.*
-google-api-core==2.*
-google-auth==2.*
-google-cloud-aiplatform==1.*
-google-cloud-logging==3.*
-google-cloud-storage==2.*
-google-cloud-videointelligence==2.*
-iso-639
+functions-framework==3.7.0
+google-api-core==2.19.0
+google-auth==2.29.0
+google-cloud-aiplatform==1.53.0
+google-cloud-logging==3.10.0
+google-cloud-storage==2.16.0
+google-cloud-videointelligence==2.13.3
+iso-639==0.4.5
+numpy==1.26.4
 openai-whisper==20231117
-pandas<2.0.0
-spleeter==2.*
-torch==2.*
-Werkzeug==2.*
+pandas==1.5.3
+spleeter==2.4.0
+torch==2.3.1
+Werkzeug==2.3.8
