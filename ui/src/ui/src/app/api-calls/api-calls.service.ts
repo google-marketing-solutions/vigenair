@@ -38,7 +38,7 @@ export class ApiCallsService implements ApiCalls {
   loadPreviousRun(folder: string): string[] {
     return [
       folder,
-      `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`,
+      `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/input.mp4`,
     ];
   }
 
@@ -64,7 +64,7 @@ export class ApiCallsService implements ApiCalls {
     filename = 'input.mp4',
     contentType = 'video/mp4'
   ): Observable<string[]> {
-    const folder = `${file.name}--${analyseAudio ? '' : 'n--'}${Date.now()}--${encodedUserId}`;
+    const folder = `${file.name}${CONFIG.videoFolderNameSeparator}${analyseAudio ? '' : `${CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}`}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
     const fullName = encodeURIComponent(`${folder}/${filename}`);
     const url = `${CONFIG.cloudStorage.uploadEndpointBase}/b/${CONFIG.cloudStorage.bucket}/o?uploadType=media&name=${fullName}`;
 
@@ -80,7 +80,7 @@ export class ApiCallsService implements ApiCalls {
           .pipe(
             switchMap(response => {
               console.log('Upload complete!', response);
-              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${folder}/input.mp4`;
+              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/input.mp4`;
               return of([folder, videoFilePath]);
             })
           )

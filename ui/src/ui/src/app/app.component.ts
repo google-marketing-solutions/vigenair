@@ -47,6 +47,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { CONFIG } from '../../../config';
 import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
 import {
@@ -412,6 +413,9 @@ export class AppComponent {
   processVideo(folder: string, videoFilePath: string) {
     this.resetState();
     this.folder = folder;
+    this.analyseAudio = !folder.includes(
+      `${CONFIG.videoFolderNameSeparator}${CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}`
+    );
     this.videoPath = videoFilePath;
     this.previewVideoElem.nativeElement.src = this.videoPath;
     this.previewVideoElem.nativeElement.onloadeddata = () => {

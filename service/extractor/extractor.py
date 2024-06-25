@@ -24,7 +24,8 @@ import os
 import pathlib
 import re
 import tempfile
-from typing import Dict, Sequence, Tuple, Union
+from typing import Sequence, Tuple
+from urllib import parse
 
 import audio as AudioService
 import config as ConfigService
@@ -238,7 +239,7 @@ class Extractor:
         keywords[index] = keyword
         resources_base_path = (
             f'{ConfigService.GCS_BASE_URL}/{self.gcs_bucket_name}/'
-            f'{self.video_file.gcs_folder}/'
+            f'{parse.quote(self.video_file.gcs_folder)}/'
             f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/{index+1}'
         )
         cut_paths[index] = f'{resources_base_path}.{self.video_file.file_ext}'

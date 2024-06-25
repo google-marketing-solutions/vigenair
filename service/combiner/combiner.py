@@ -28,6 +28,7 @@ import re
 import sys
 import tempfile
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from urllib import parse
 
 import config as ConfigService
 import pandas as pd
@@ -481,7 +482,7 @@ def _render_video_variant(
   for format_type, rendered_path in rendered_paths.items():
     result['variants'][format_type] = (
         f'{ConfigService.GCS_BASE_URL}/'
-        f'{pathlib.Path(gcs_bucket_name, gcs_folder_path, rendered_path["path"])}'
+        f'{pathlib.Path(gcs_bucket_name, parse.quote(gcs_folder_path), rendered_path["path"])}'
     )
     if 'images' in rendered_path:
       if 'images' not in result:
@@ -758,7 +759,8 @@ def _generate_image_assets(
         ),
     )
     assets = [
-        f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/{gcs_folder_path}/'
+        f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/'
+        f'{parse.quote(gcs_folder_path)}/'
         f'{variant_folder}/{ConfigService.OUTPUT_COMBINATION_ASSETS_DIR}/'
         f'{format_type}/{image_asset}'
         for image_asset in os.listdir(image_assets_path)
