@@ -50,6 +50,7 @@ Please make sure you have fulfilled all prerequisites mentioned under [Requireme
 1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install).
 1. Make sure your system has an up-to-date installation of `git` and use it to clone this repository.
 1. Navigate to the directory where the source code lives.
+1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`.
 1. Run `npm start`.
 
 You will be asked to enter a GCP Project ID, and whether you would like to deploy GCP components, the UI, or both. If you opt to deploy GCP components, you will be asked to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
@@ -206,6 +207,7 @@ Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), yo
 ### Build and Serve the Angular UI
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
+1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`.
 1. Navigate to the directory where the source code lives and run `cd ./ui`
 1. Run `npm install` to install dependencies.
 1. Run `npm run deploy` to build, test and deploy (via [clasp](https://github.com/google/clasp)) all UI and Apps Script code to the target spreadsheet / Apps Script project.
