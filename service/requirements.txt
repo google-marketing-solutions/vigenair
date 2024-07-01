@@ -26,6 +26,7 @@ iso-639==0.4.5
 numpy==1.26.4
 openai-whisper==20231117
 pandas==1.5.3
+protobuf==3.19.6
 spleeter==2.4.0
 torch==2.3.1
 Werkzeug==2.3.8
