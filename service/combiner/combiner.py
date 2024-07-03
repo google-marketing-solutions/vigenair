@@ -413,8 +413,7 @@ def _render_video_variant(
   ffmpeg_cmds.append(horizontal_combo_path)
 
   Utils.execute_subprocess_commands(
-      cmds=' '.join(ffmpeg_cmds),
-      shell=True,
+      cmds=ffmpeg_cmds,
       description=(
           'render horizontal variant with id '
           f'{video_variant.variant_id} using ffmpeg'
@@ -523,7 +522,7 @@ def _render_format(
   format_name = f'combo_{variant_id}_{format_type[0]}{video_ext}'
   output_video_path = str(pathlib.Path(output_path, format_name))
   Utils.execute_subprocess_commands(
-      cmds=' '.join([
+      cmds=[
           'ffmpeg',
           '-y',
           '-i',
@@ -531,8 +530,7 @@ def _render_format(
           '-vf',
           video_filter,
           output_video_path,
-      ]),
-      shell=True,
+      ],
       description=(
           f'render {format_type} variant with id {variant_id} using ffmpeg'
       ),
@@ -742,7 +740,7 @@ def _generate_image_assets(
   try:
     os.makedirs(image_assets_path, exist_ok=True)
     Utils.execute_subprocess_commands(
-        cmds=' '.join([
+        cmds=[
             'ffmpeg',
             '-i',
             video_file_path,
@@ -751,8 +749,7 @@ def _generate_image_assets(
             '-vsync',
             'vfr',
             str(pathlib.Path(image_assets_path, '%d.png')),
-        ]),
-        shell=True,
+        ],
         description=(
             f'extract image assets for {format_type} type for '
             f'variant with id {variant_id} using ffmpeg'
@@ -838,10 +835,10 @@ def _build_ffmpeg_filters(
 
   ffmpeg_select_filter.append("'")
   video_select_filter = (
-      ["\"select='"] + ffmpeg_select_filter + [', setpts=N/FRAME_RATE/TB"']
+      ["select='"] + ffmpeg_select_filter + [', setpts=N/FRAME_RATE/TB']
   )
   full_audio_select_filter = (
-      ["\"aselect='"] + ffmpeg_select_filter + [', asetpts=N/SR/TB"']
+      ["aselect='"] + ffmpeg_select_filter + [', asetpts=N/SR/TB']
   )
   vocals_select_filter = (
       ["[1:a:0]aselect='"]
@@ -849,19 +846,19 @@ def _build_ffmpeg_filters(
       + [', asetpts=N/SR/TB[speech]']
   )
   music_select_filter = (
-      f"[2:a:0]aselect='between(t,{all_start},{all_start+duration})',"
-      ' asetpts=N/SR/TB[music]'
+      f"[2:a:0]aselect='between(t,{all_start},{all_start+duration})', "
+      'asetpts=N/SR/TB[music]'
   )
   continuous_audio_select_filter = (
-      f"\"aselect='between(t,{all_start},{all_start+duration})',"
-      ' asetpts=N/SR/TB"'
+      f"aselect='between(t,{all_start},{all_start+duration})', "
+      'asetpts=N/SR/TB'
   )
   video_select_filter = ''.join(video_select_filter)
   full_audio_select_filter = ''.join(full_audio_select_filter)
   vocals_select_filter = ''.join(vocals_select_filter)
   merged_audio_select_filter = (
-      f'"{vocals_select_filter};{music_select_filter};'
-      '[speech][music]amerge=inputs=2"'
+      f'{vocals_select_filter};{music_select_filter};'
+      '[speech][music]amerge=inputs=2'
   )
 
   return (
