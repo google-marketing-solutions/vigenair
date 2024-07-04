@@ -22,7 +22,7 @@ BUCKET_EXISTS=$(gcloud storage ls gs://<gcs-bucket> > /dev/null 2>&1 && echo "tr
 if "${BUCKET_EXISTS}"; then
   printf "\nWARN - Bucket '<gcs-bucket>' already exists. Skipping bucket creation...\n"
 else
-  gcloud storage buckets create gs://<gcs-bucket> --project=<gcp-project-id> --location=<gcs-location>
+  gcloud storage buckets create gs://<gcs-bucket> --project=<gcp-project-id> --location=<gcs-location> --uniform-bucket-level-access
   test $? -eq 0 || exit
   printf "\nINFO - Bucket '<gcs-bucket>' created successfully in location '<gcs-location>'!\n"
 fi
@@ -42,10 +42,15 @@ gcloud services enable \
   videointelligence.googleapis.com
 
 PROJECT_NUMBER=$(gcloud projects describe <gcp-project-id> --format="value(projectNumber)")
-CURRENT_USER=$(gcloud auth list --filter=status:ACTIVE --format="value(account)")
 STORAGE_SERVICE_ACCOUNT="service-${PROJECT_NUMBER}@gs-project-accounts.iam.gserviceaccount.com"
 EVENTARC_SERVICE_ACCOUNT="service-${PROJECT_NUMBER}@gcp-sa-eventarc.iam.gserviceaccount.com"
+VERTEXAI_SERVICE_ACCOUNT="service-${PROJECT_NUMBER}@gcp-sa-aiplatform.iam.gserviceaccount.com"
 COMPUTE_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+printf "\nINFO - Creating Service Agents and granting roles...\n"
+for SA in "aiplatform.googleapis.com" "storage.googleapis.com" "eventarc.googleapis.com"; do
+    gcloud --no-user-output-enabled beta services identity create --project=<gcp-project-id> \
+        --service="${SA}"
+done
 COMPUTE_SA_ROLES=(
     "roles/eventarc.eventReceiver"
     "roles/run.invoker"
@@ -67,7 +72,11 @@ gcloud --no-user-output-enabled projects add-iam-policy-binding \
     <gcp-project-id> \
     --member="serviceAccount:${EVENTARC_SERVICE_ACCOUNT}" \
     --role="roles/eventarc.serviceAgent"
-
+gcloud --no-user-output-enabled projects add-iam-policy-binding \
+    <gcp-project-id> \
+    --member="serviceAccount:${VERTEXAI_SERVICE_ACCOUNT}" \
+    --role="roles/storage.objectViewer"
+printf "Operation finished successfully!\n"
 printf "\nINFO - Deploying the 'vigenair' Cloud Function...\n"
 gcloud functions deploy vigenair \
 --env-vars-file .env.yaml \
