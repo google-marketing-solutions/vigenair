@@ -65,14 +65,14 @@ export class GenerationHelper {
       settings.duration
     );
 
+    const promptPart = settings.negativePrompt
+      ? CONFIG.vertexAi.generationPromptUserInstructionsNegation
+      : CONFIG.vertexAi.generationPromptUserInstructions;
     const generationPrompt = CONFIG.vertexAi.generationPrompt
       .replace(
         '        {{userPromptPlaceholder}}\n',
         settings.prompt
-          ? `${CONFIG.vertexAi.generationPromptUserInstructions.replace(
-              '{{userPrompt}}',
-              settings.prompt
-            )}\n`
+          ? `${promptPart.replace('{{userPrompt}}', settings.prompt)}\n`
           : settings.prompt
       )
       .replace('{{desiredDuration}}', String(duration))

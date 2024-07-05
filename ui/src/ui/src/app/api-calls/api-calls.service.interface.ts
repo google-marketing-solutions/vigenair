@@ -19,6 +19,7 @@ export interface GenerationSettings {
   prompt: string;
   duration: number;
   demandGenAssets: boolean;
+  negativePrompt: boolean;
 }
 
 export interface AvSegment {
