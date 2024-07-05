@@ -69,9 +69,9 @@ GCS_BASE_URL = 'https://storage.mtls.cloud.google.com'
 SEGMENT_SCREENSHOT_EXT = '.jpg'
 SEGMENT_ANNOTATIONS_PATTERN = '(.*Description:\n?)?(.*)\n*Keywords:\n?(.*)'
 SEGMENT_ANNOTATIONS_PROMPT = (
-    """Describe this video in one sentence. Include 5 keywords.
+    """Describe this video in as much detail as possible. Include 5 keywords.
 
-Take a deep breath, and output EXACTLY as follows:
+Output EXACTLY as follows:
 Description: the description.
 Keywords: the keywords, comma-separated.
 

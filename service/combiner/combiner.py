@@ -18,7 +18,6 @@ This module provides functionality to combine individual cuts of the input video
 based on user-specific rendering settings.
 """
 
-import concurrent.futures
 import dataclasses
 import json
 import logging
@@ -249,38 +248,29 @@ class Combiner:
     logging.info('RENDERING - Rendering video variants: %r...', video_variants)
     combos_dir = tempfile.mkdtemp()
     rendered_combos = {}
-    with concurrent.futures.ThreadPoolExecutor() as thread_executor:
-      futures_dict = {
-          thread_executor.submit(
-              _render_video_variant,
-              output_dir=combos_dir,
-              gcs_folder_path=self.render_file.gcs_folder,
-              gcs_bucket_name=self.gcs_bucket_name,
-              video_file_path=video_file_path,
-              speech_track_path=speech_track_path,
-              music_track_path=music_track_path,
-              video_variant=video_variant,
-              vision_model=self.vision_model,
-              text_model=self.text_model,
-              video_language=video_language,
-              optimised_av_segments=optimised_av_segments,
-          ): video_variant.variant_id
-          for video_variant in video_variants
+    for video_variant in video_variants:
+      rendered_variant_paths = _render_video_variant(
+          output_dir=combos_dir,
+          gcs_folder_path=self.render_file.gcs_folder,
+          gcs_bucket_name=self.gcs_bucket_name,
+          video_file_path=video_file_path,
+          speech_track_path=speech_track_path,
+          music_track_path=music_track_path,
+          video_variant=video_variant,
+          vision_model=self.vision_model,
+          text_model=self.text_model,
+          video_language=video_language,
+          optimised_av_segments=optimised_av_segments,
+      )
+      variant = video_variants_dict[video_variant.variant_id]
+      combo = vars(variant)
+      combo.pop('render_settings', None)
+      combo['av_segments'] = {
+          key: vars(value)
+          for key, value in variant.av_segments.items()
       }
-      for response in concurrent.futures.as_completed(futures_dict):
-        variant_id = futures_dict[response]
-        rendered_variant_paths = response.result()
-
-        variant = video_variants_dict[variant_id]
-        combo = vars(variant)
-        combo.pop('render_settings', None)
-        combo['av_segments'] = {
-            key: vars(value)
-            for key, value in variant.av_segments.items()
-        }
-        combo.update(rendered_variant_paths)
-        rendered_combos[str(variant_id)] = combo
-
+      combo.update(rendered_variant_paths)
+      rendered_combos[str(video_variant.variant_id)] = combo
     logging.info(
         'RENDERING - Rendered all variants as: %r',
         rendered_combos,
@@ -437,26 +427,19 @@ def _render_video_variant(
         'vertical': ConfigService.FFMPEG_VERTICAL_BLUR_FILTER,
         'square': ConfigService.FFMPEG_SQUARE_BLUR_FILTER,
     }
-    with concurrent.futures.ThreadPoolExecutor() as thread_executor:
-      futures_dict = {
-          thread_executor.submit(
-              _render_format,
-              input_video_path=horizontal_combo_path,
-              output_path=output_dir,
-              gcs_bucket_name=gcs_bucket_name,
-              gcs_folder_path=gcs_folder_path,
-              variant_id=video_variant.variant_id,
-              format_type=format_type,
-              video_filter=video_filter,
-              generate_image_assets=(
-                  video_variant.render_settings.generate_image_assets
-              ),
-          ): format_type
-          for format_type, video_filter in formats_to_render.items()
-      }
-      for response in concurrent.futures.as_completed(futures_dict):
-        format_type = futures_dict[response]
-        rendered_paths[format_type] = response.result()
+    for format_type, video_filter in formats_to_render.items():
+      rendered_paths[format_type] = _render_format(
+          input_video_path=horizontal_combo_path,
+          output_path=output_dir,
+          gcs_bucket_name=gcs_bucket_name,
+          gcs_folder_path=gcs_folder_path,
+          variant_id=video_variant.variant_id,
+          format_type=format_type,
+          video_filter=video_filter,
+          generate_image_assets=(
+              video_variant.render_settings.generate_image_assets
+          ),
+      )
 
   StorageService.upload_gcs_dir(
       source_directory=output_dir,

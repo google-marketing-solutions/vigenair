@@ -88,7 +88,10 @@ class Extractor:
         annotation_results,
         transcription_dataframe,
     )
-    logging.info('SEGMENTS - Optimised segments: %r', optimised_av_segments)
+    logging.info(
+        'SEGMENTS - Optimised segments: %r',
+        optimised_av_segments.to_json(orient='records')
+    )
 
     optimised_av_segments = self.cut_and_annotate_av_segments(
         tmp_dir,
@@ -97,7 +100,7 @@ class Extractor:
     )
     logging.info(
         'SEGMENTS - Final optimised segments: %r',
-        optimised_av_segments,
+        optimised_av_segments.to_json(orient='records'),
     )
 
     data_file_path = str(pathlib.Path(tmp_dir, ConfigService.OUTPUT_DATA_FILE))
@@ -168,6 +171,10 @@ class Extractor:
           case 'transcribe_audio':
             transcription_dataframe = future.result()
             logging.info('THREADING - transcribe_audio finished!')
+            logging.info(
+                'TRANSCRIPTION - Transcription dataframe: %r',
+                transcription_dataframe.to_json(orient='records')
+            )
             StorageService.upload_gcs_dir(
                 source_directory=tmp_dir,
                 bucket_name=self.gcs_bucket_name,
