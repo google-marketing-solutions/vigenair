@@ -23,7 +23,6 @@ import {
   ViewChild,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { ApiCallsService } from '../api-calls/api-calls.service';
 
 @Component({
   selector: 'file-chooser',
@@ -39,8 +38,6 @@ export class FileChooserComponent {
   @ViewChild('videoElem') videoElem!: ElementRef<HTMLVideoElement>;
   @ViewChild('trackElem') trackElem!: ElementRef<HTMLTrackElement>;
   @Output() file = new EventEmitter<File>();
-
-  constructor(private apiCallsService: ApiCallsService) {}
 
   onFileChange(event: Event) {
     const files = (event.target as HTMLInputElement).files;
