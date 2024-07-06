@@ -293,15 +293,32 @@ limitations under the License.
           </div>
         </div>
         <div class="row" style="gap: 16px">
-          <mat-form-field style="flex: 1" subscriptSizing="dynamic">
-            <mat-label>What should your video variants be about?</mat-label>
-            <textarea
-              matInput
-              [(ngModel)]="prompt"
-              placeholder="e.g. 'Discovering new experiences'"
-            ></textarea>
-          </mat-form-field>
-          <div style="display: flex; flex-direction: column; margin-top: -12px">
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              margin-right: auto;
+              flex: auto;
+            "
+          >
+            <mat-form-field style="flex: 1" subscriptSizing="dynamic">
+              <mat-label>What should your video variants be about?</mat-label>
+              <textarea
+                matInput
+                [(ngModel)]="prompt"
+                placeholder="e.g. 'Discovering new experiences'"
+              ></textarea>
+            </mat-form-field>
+            <mat-checkbox
+              style="align-self: flex-start"
+              color="primary"
+              [(ngModel)]="negativePrompt"
+              matTooltip="Prevent the content listed above from being included in your video variants"
+            >
+              Exclude from video variants
+            </mat-checkbox>
+          </div>
+          <div style="display: flex; flex-direction: column; margin-top: -50px">
             <div>
               <mat-label>Target duration:</mat-label>
               <mat-slider

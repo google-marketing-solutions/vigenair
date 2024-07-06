@@ -33,8 +33,10 @@ export const CONFIG = {
       topK: 32,
       maxOutputTokens: 2048,
     },
+    generationPromptUserInstructionsNegation:
+      '        - **Exclude Scenes / Topics**: {{userPrompt}}.',
     generationPromptUserInstructions:
-      '        - **Topic Focus**: {{userPrompt}}.',
+      '        - **Scene / Topic Focus**: {{userPrompt}}.',
     generationPrompt: `Follow these instructions in order:
 
     1. **Expert Script Writer**: You are an expert script writer for video ads with a focus on maximizing viewer engagement.

@@ -131,6 +131,7 @@ export class AppComponent {
   stars: number[] = new Array(5).fill(0);
   renderQueue: RenderQueueVariant[] = [];
   renderQueueJsonArray: string[] = [];
+  negativePrompt = false;
 
   @ViewChild('previewVideoElem')
   previewVideoElem!: ElementRef<HTMLVideoElement>;
@@ -468,6 +469,7 @@ export class AppComponent {
         prompt: this.prompt,
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,
+        negativePrompt: this.negativePrompt,
       })
       .subscribe(variants => {
         this.loading = false;
