@@ -31,12 +31,15 @@ class VideoExtension(enum.Enum):
   """Enum of supported video file extensions."""
 
   MP4 = 'mp4'
+  FLV = 'flv'
   MOV = 'mov'
-  WMV = 'wmv'
+  MPEG = 'mpeg'
+  M2P = 'm2p'
+  MPEGPS = 'ps'
+  MPG = 'mpg'
   WEBM = 'webm'
-  AVI = 'avi'
-  MKV = 'mkv'
-  M4V = 'm4v'
+  WMV = 'wmv'
+  TGPP = '3gp'
 
   @classmethod
   def has_value(cls, ext: str) -> bool:
