@@ -107,6 +107,7 @@ export class AppComponent {
   videoObjects?: any[];
   combosJson?: any;
   combos?: RenderedVariant[];
+  originalAvSegments?: any;
   avSegments?: any;
   variants?: GenerateVariantsResponse[];
   selectedVariant = 0;
@@ -147,6 +148,7 @@ export class AppComponent {
   @ViewChild('renderQueueSidenav') renderQueueSidenav!: MatSidenav;
   @ViewChild('renderQueueButtonSpan')
   renderQueueButtonSpan!: ElementRef<HTMLSpanElement>;
+  @ViewChild('reorderSegmentsToggle') reorderSegmentsToggle!: MatSlideToggle;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -247,7 +249,6 @@ export class AppComponent {
     width: number,
     height: number
   ) {
-    // console.log(`${text} at ${x} ${y} ${width}x${height}`);
     const context = this.canvas;
     if (context) {
       context.font = '20px Roboto';
@@ -320,6 +321,7 @@ export class AppComponent {
             e.selected = false;
             return e;
           });
+          this.originalAvSegments = structuredClone(this.avSegments);
           this.segmentsStatus = 'check_circle';
           this.loading = false;
         },
@@ -394,6 +396,7 @@ export class AppComponent {
     this.rendering = false;
     this.analysisJson = undefined;
     this.avSegments = undefined;
+    this.originalAvSegments = undefined;
     this.combosJson = undefined;
     this.combos = undefined;
     this.videoObjects = undefined;
@@ -493,15 +496,54 @@ export class AppComponent {
     if (!currentSegment) {
       return false;
     }
-    const nextSegment = this.avSegments
+    const allSelected = this.avSegments
       .filter((segment: AvSegment) => segment.selected)
-      .find((segment: AvSegment) => segment.start_s > timestamp);
-    if (!currentSegment.selected) {
-      this.previewVideoElem.nativeElement.currentTime = nextSegment
-        ? nextSegment.start_s
+      .map((segment: AvSegment) => segment.av_segment_id + 1);
+    const allPlayed = this.avSegments
+      .filter((segment: AvSegment) => segment.played)
+      .map((segment: AvSegment) => segment.av_segment_id + 1);
+
+    const lastSelectedSegmentToBePlayed = this.avSegments.findLast(
+      (segment: AvSegment) => segment.selected
+    );
+    const nextPlayableSegment = this.avSegments.find(
+      (segment: AvSegment) => segment.selected && !segment.played
+    );
+
+    const currentSegmentPlaying =
+      nextPlayableSegment &&
+      nextPlayableSegment.av_segment_id === currentSegment.av_segment_id;
+    const currentSegmentIsNotNext =
+      currentSegment.selected &&
+      !currentSegment.played &&
+      nextPlayableSegment &&
+      nextPlayableSegment.av_segment_id !== currentSegment.av_segment_id;
+    const allSegmentsPlayed =
+      JSON.stringify(allPlayed) === JSON.stringify(allSelected) &&
+      timestamp >= lastSelectedSegmentToBePlayed.end_s;
+    const currentSegmentAlreadyPlayed =
+      currentSegment.played &&
+      allPlayed.indexOf(currentSegment.av_segment_id + 1) !==
+        allPlayed.length - 1 &&
+      nextPlayableSegment &&
+      nextPlayableSegment.av_segment_id !== currentSegment.av_segment_id;
+    const skipSegment = !currentSegment.selected || currentSegmentAlreadyPlayed;
+
+    if (currentSegmentPlaying) {
+      currentSegment.played = true;
+    } else if (
+      currentSegmentIsNotNext ||
+      currentSegmentAlreadyPlayed ||
+      !currentSegment.selected
+    ) {
+      this.previewVideoElem.nativeElement.currentTime = nextPlayableSegment
+        ? nextPlayableSegment.start_s
         : this.previewVideoElem.nativeElement.duration;
+    } else if (allSegmentsPlayed) {
+      this.previewVideoElem.nativeElement.currentTime =
+        this.previewVideoElem.nativeElement.duration;
     }
-    return !currentSegment.selected;
+    return skipSegment;
   }
 
   seekToSegment(index: number) {
@@ -521,18 +563,37 @@ export class AppComponent {
 
   variantChanged() {
     if (!this.loadingVariant) {
+      this.avSegments = structuredClone(this.originalAvSegments);
       this.setSelectedSegments();
       this.resetVariantPreview();
     }
   }
 
   resetVariantPreview() {
-    this.previewVideoElem.nativeElement.currentTime =
+    const firstUnplayedSegment = this.avSegments?.find(
+      (segment: AvSegment) => segment.selected && !segment.played
+    );
+    const firstSelectedSegment =
       this.avSegments && this.variants
         ? this.avSegments[this.variants[this.selectedVariant].scenes[0] - 1]
-            .start_s
+        : null;
+    this.previewVideoElem.nativeElement.currentTime = firstUnplayedSegment
+      ? firstUnplayedSegment.start_s
+      : firstSelectedSegment
+        ? firstSelectedSegment.start_s
         : 0;
     this.setCurrentSegmentId();
+    if (
+      firstUnplayedSegment &&
+      firstSelectedSegment &&
+      firstUnplayedSegment.av_segment_id !== firstSelectedSegment.av_segment_id
+    ) {
+      this.previewVideoElem.nativeElement.play();
+    } else if (!firstUnplayedSegment) {
+      this.avSegments?.forEach((segment: AvSegment) => {
+        segment.played = false;
+      });
+    }
   }
 
   addToRenderQueue() {
@@ -674,5 +735,12 @@ export class AppComponent {
       }
       return renderedVariant;
     });
+  }
+
+  restoreSceneOrder() {
+    if (this.reorderSegmentsToggle && !this.reorderSegmentsToggle.checked) {
+      this.avSegments = structuredClone(this.originalAvSegments);
+      this.setSelectedSegments(this.variants![this.selectedVariant].scenes);
+    }
   }
 }

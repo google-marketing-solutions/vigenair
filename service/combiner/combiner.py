@@ -186,6 +186,18 @@ class Combiner:
         bucket_name=self.gcs_bucket_name,
     )
     logging.info('RENDERING - Video file path: %s', video_file_path)
+    has_audio = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(
+                pathlib.Path(
+                    root_video_folder, f'{ConfigService.INPUT_FILENAME}.wav'
+                )
+            )
+        ),
+        output_dir=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+    ) is not None
+    logging.info('RENDERING - Video has audio track? %s', has_audio)
     speech_track_path = StorageService.download_gcs_file(
         file_path=Utils.TriggerFile(
             str(
@@ -254,6 +266,7 @@ class Combiner:
           gcs_folder_path=self.render_file.gcs_folder,
           gcs_bucket_name=self.gcs_bucket_name,
           video_file_path=video_file_path,
+          has_audio=has_audio,
           speech_track_path=speech_track_path,
           music_track_path=music_track_path,
           video_variant=video_variant,
@@ -312,6 +325,7 @@ def _render_video_variant(
     gcs_folder_path: str,
     gcs_bucket_name: str,
     video_file_path: str,
+    has_audio: bool,
     speech_track_path: str,
     music_track_path: str,
     video_variant: VideoVariant,
@@ -327,6 +341,7 @@ def _render_video_variant(
     gcs_folder_path: The GCS folder path to use.
     gcs_bucket_name: The GCS bucket name to upload to.
     video_file_path: The path to the input video file.
+    has_audio: Whether the video has an audio track.
     speech_track_path: The path to the video's speech track.
     music_track_path: The path to the video's music track.
     video_variant: The video variant to be rendered.
@@ -353,22 +368,16 @@ def _render_video_variant(
       )
   )
   (
-      video_select_filter,
-      full_audio_select_filter,
-      merged_audio_select_filter,
+      full_av_select_filter,
+      music_overlay_select_filter,
       continuous_audio_select_filter,
-  ) = _build_ffmpeg_filters(shot_timestamps)
+  ) = _build_ffmpeg_filters(shot_timestamps, has_audio)
 
   ffmpeg_cmds = [
       'ffmpeg',
       '-i',
       video_file_path,
   ]
-  audio_filter = (
-      continuous_audio_select_filter
-      if video_variant.render_settings.use_continuous_audio else
-      full_audio_select_filter
-  )
   if (
       video_variant.render_settings.use_music_overlay
       and speech_track_path
@@ -379,23 +388,23 @@ def _render_video_variant(
         speech_track_path,
         '-i',
         music_track_path,
-        '-map',
-        '0:v:0',
-        '-map',
-        '1:a:0',
-        '-map',
-        '2:a:0',
-        '-vf',
-        video_select_filter,
-        '-filter_complex',
-        merged_audio_select_filter,
     ])
-  else:
+  ffmpeg_filter = full_av_select_filter
+  if has_audio:
+    if video_variant.render_settings.use_continuous_audio:
+      ffmpeg_filter = continuous_audio_select_filter
+    elif video_variant.render_settings.use_music_overlay:
+      ffmpeg_filter = music_overlay_select_filter
+  ffmpeg_cmds.extend([
+      '-filter_complex',
+      ffmpeg_filter,
+      '-map',
+      '[outv]',
+  ])
+  if has_audio:
     ffmpeg_cmds.extend([
-        '-vf',
-        video_select_filter,
-        '-af',
-        audio_filter,
+        '-map',
+        '[outa]',
     ])
 
   horizontal_combo_name = f'combo_{video_variant.variant_id}_h{video_ext}'
@@ -792,8 +801,8 @@ def _group_consecutive_segments(
 
 
 def _build_ffmpeg_filters(
-    shot_timestamps: Sequence[Tuple[float, float]]
-) -> Tuple[str, str, str, str]:
+    shot_timestamps: Sequence[Tuple[float, float]], has_audio: bool
+) -> Tuple[str, str, str]:
   """Builds the ffmpeg filters.
 
   Args:
@@ -801,52 +810,54 @@ def _build_ffmpeg_filters(
       and end timestamps of a shot.
 
   Returns:
-    A tuple containing the video, full audio, merged audio and continuous audio
+    A tuple containing the full audio/video, music overlay and continuous audio
     ffmpeg filters.
   """
-  ffmpeg_select_filter = []
+  video_select_filter = []
+  audio_select_filter = []
+  select_filter_concat = []
   idx = 0
   duration = 0
   all_start = sys.maxsize
   for start, end in shot_timestamps:
-    if idx > 0:
-      ffmpeg_select_filter.append('+')
-    ffmpeg_select_filter.append(f'between(t,{start},{end})')
+    selection_filter = f'between(t,{start},{end})'
+    video_select_filter.append(
+        f"[0:v]select='{selection_filter}',setpts=N/FRAME_RATE/TB[v{idx}];"
+    )
+    select_filter_concat.append(f'[v{idx}]')
+    if has_audio:
+      audio_select_filter.append(
+          f"[0:a]aselect='{selection_filter}',asetpts=N/SR/TB[a{idx}];"
+      )
+      select_filter_concat.append(f'[a{idx}]')
     duration += end - start
     all_start = min(all_start, start)
     idx += 1
 
-  ffmpeg_select_filter.append("'")
-  video_select_filter = (
-      ["select='"] + ffmpeg_select_filter + [', setpts=N/FRAME_RATE/TB']
+  full_av_select_filter = ''.join(
+      video_select_filter + audio_select_filter + select_filter_concat
+      + [f'concat=n={idx}:v=1:a=1[outv][outa]']
+  ) if has_audio else ''.join(
+      video_select_filter + select_filter_concat + [f'concat=n={idx}:v=1[outv]']
   )
-  full_audio_select_filter = (
-      ["aselect='"] + ffmpeg_select_filter + [', asetpts=N/SR/TB']
-  )
-  vocals_select_filter = (
-      ["[1:a:0]aselect='"]
-      + ffmpeg_select_filter
-      + [', asetpts=N/SR/TB[speech]']
-  )
-  music_select_filter = (
-      f"[2:a:0]aselect='between(t,{all_start},{all_start+duration})', "
-      'asetpts=N/SR/TB[music]'
-  )
-  continuous_audio_select_filter = (
-      f"aselect='between(t,{all_start},{all_start+duration})', "
-      'asetpts=N/SR/TB'
-  )
-  video_select_filter = ''.join(video_select_filter)
-  full_audio_select_filter = ''.join(full_audio_select_filter)
-  vocals_select_filter = ''.join(vocals_select_filter)
-  merged_audio_select_filter = (
-      f'{vocals_select_filter};{music_select_filter};'
-      '[speech][music]amerge=inputs=2'
-  )
+  music_overlay_select_filter = ''.join(
+      video_select_filter
+      + [entry.replace('0:a', '1:a') for entry in audio_select_filter] + [
+          f"[2:a]aselect='between(t,{all_start},{all_start+duration})'"
+          ',asetpts=N/SR/TB[music];'
+      ] + select_filter_concat + [f'concat=n={idx}:v=1:a=1[outv][tempa];']
+      + ['[tempa][music]amix=inputs=2[outa]']
+  ) if has_audio else ''
+  continuous_audio_select_filter = ''.join(
+      video_select_filter + [
+          f"[0:a]aselect='between(t,{all_start},{all_start+duration})'"
+          ',asetpts=N/SR/TB[outa];'
+      ] + [entry for entry in select_filter_concat if entry.startswith('[v')]
+      + [f'concat=n={idx}:v=1[outv]']
+  ) if has_audio else ''
 
   return (
-      video_select_filter,
-      full_audio_select_filter,
-      merged_audio_select_filter,
+      full_av_select_filter,
+      music_overlay_select_filter,
       continuous_audio_select_filter,
   )

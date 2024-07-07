@@ -38,6 +38,7 @@ gcloud services enable \
   logging.googleapis.com \
   pubsub.googleapis.com \
   run.googleapis.com \
+  serviceusage.googleapis.com \
   storage.googleapis.com \
   videointelligence.googleapis.com
 

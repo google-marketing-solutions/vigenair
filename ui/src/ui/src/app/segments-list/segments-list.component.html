@@ -17,51 +17,100 @@ limitations under the License.
 <div
   *ngIf="segmentList !== undefined"
   [ngClass]="segmentMode === 'preview' ? 'filmstrip' : 'content'"
+  cdkScrollable
 >
   <div
-    [ngClass]="segmentMode === 'preview' ? 'filmstrip-row' : 'row'"
-    *ngFor="let segment of segmentList; index as i"
+    cdkDropList
+    cdkDropListAutoScrollStep="50"
+    [cdkDropListDisabled]="
+      !this.draggable || this.segmentMode !== 'preview' || !this.allowSelection
+    "
+    [ngClass]="
+      segmentMode === 'preview' ? 'drag-list filmstrip-row' : 'segments-row'
+    "
+    style="height: 100%"
+    (cdkDropListDropped)="drop($event)"
   >
-    <div
-      style="display: flex; position: relative; cursor: pointer"
-      (click)="allowSelection ? toggleSegmentSelection(i) : seekToSegment(i)"
-      [matTooltip]="allowSelection ? 'Select segment' : 'Seek to segment'"
-    >
-      <img
-        attr.id="segment-{{ i }}"
-        [class.filmstrip-img]="segmentMode === 'preview'"
-        [class.current-segment]="
-          segmentMode === 'preview' && currentSegmentId === i
+    @for (segment of segmentList; track segment; let i = $index) {
+      <div
+        class="segment"
+        [class.active-segment]="
+          segmentMode === 'preview' &&
+          currentSegmentId === segment.av_segment_id
         "
-        src="{{ segment.segment_screenshot_uri }}"
-      />
-      <mat-icon *ngIf="allowSelection">
-        {{ segment.selected ? 'check_box' : 'check_box_outline_blank' }}
-      </mat-icon>
-    </div>
-    <div class="current-segment-info" *ngIf="segmentMode === 'segments'">
-      <span class="scene-number">
-        <strong>Scene:</strong>
-        {{ i + 1 }}
-      </span>
-      <span class="description">
-        <strong>Description:</strong>
-        {{ segment.description }}
-      </span>
-      <span class="duration"
-        ><strong>Duration: </strong
-        >{{ segment.duration_s.toFixed(2) }} seconds</span
+        [style.margin-bottom]="segmentMode !== 'preview' ? '16px' : ''"
       >
-      <span class="keywords">
-        <strong>Keywords: </strong>
-        <mat-chip-set>
-          <mat-chip
-            *ngFor="let keyword of segment.keywords.trim().split(', ')"
-            >{{ keyword }}</mat-chip
+        <div
+          [ngClass]="segmentMode === 'preview' ? 'drag-element' : ''"
+          style="display: flex"
+          [style.cursor]="
+            this.draggable &&
+            this.segmentMode === 'preview' &&
+            this.allowSelection
+              ? 'move'
+              : segmentMode === 'preview'
+                ? 'pointer'
+                : 'default'
+          "
+          (click)="
+            allowSelection
+              ? toggleSegmentSelection(i)
+              : segmentMode === 'preview'
+                ? seekToSegment(segment.av_segment_id)
+                : ''
+          "
+          [matTooltip]="
+            allowSelection
+              ? 'Select segment'
+              : segmentMode === 'preview'
+                ? 'Seek to segment'
+                : ''
+          "
+          cdkDrag
+          cdkDragLockAxis="y"
+          cdkDragBoundary=".filmstrip"
+          [cdkDragDisabled]="
+            !draggable || this.segmentMode !== 'preview' || !this.allowSelection
+          "
+        >
+          <img
+            attr.id="segment-{{ segment.av_segment_id }}"
+            [class.filmstrip-img]="segmentMode === 'preview'"
+            [class.current-segment]="
+              segmentMode === 'preview' &&
+              currentSegmentId === segment.av_segment_id
+            "
+            src="{{ segment.segment_screenshot_uri }}"
+          />
+          <mat-icon *ngIf="allowSelection">
+            {{ segment.selected ? 'check_box' : 'check_box_outline_blank' }}
+          </mat-icon>
+        </div>
+        <div class="current-segment-info" *ngIf="segmentMode === 'segments'">
+          <span class="scene-number">
+            <strong>Scene:</strong>
+            {{ segment.av_segment_id + 1 }}
+          </span>
+          <span class="description">
+            <strong>Description:</strong>
+            {{ segment.description }}
+          </span>
+          <span class="duration"
+            ><strong>Duration: </strong
+            >{{ segment.duration_s.toFixed(2) }} seconds</span
           >
-        </mat-chip-set>
-      </span>
-    </div>
+          <span class="keywords">
+            <strong>Keywords: </strong>
+            <mat-chip-set>
+              <mat-chip
+                *ngFor="let keyword of segment.keywords.trim().split(', ')"
+                >{{ keyword }}</mat-chip
+              >
+            </mat-chip-set>
+          </span>
+        </div>
+      </div>
+    }
   </div>
 </div>
 

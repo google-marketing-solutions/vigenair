@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDropList,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -34,6 +40,8 @@ import { CONFIG } from '../../../../config';
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    CdkDropList,
+    CdkDrag,
   ],
   templateUrl: './segments-list.component.html',
   styleUrl: './segments-list.component.css',
@@ -42,6 +50,7 @@ export class SegmentsListComponent {
   @Input({ required: true }) segmentList?: any[];
   @Input({ required: true }) segmentMode!: 'preview' | 'segments';
   @Input({ required: true }) allowSelection!: boolean;
+  @Input({ required: true }) draggable!: boolean;
 
   @Output() seekToSegmentEvent = new EventEmitter<number>();
 
@@ -56,7 +65,7 @@ export class SegmentsListComponent {
         .getElementById(`segment-${this._currentSegmentId}`)
         ?.scrollIntoView({
           behavior: 'smooth',
-          block: 'end',
+          block: 'nearest',
           inline: 'nearest',
         });
     }
@@ -71,5 +80,10 @@ export class SegmentsListComponent {
 
   seekToSegment(i: number) {
     this.seekToSegmentEvent.emit(i);
+  }
+
+  drop(event: CdkDragDrop<string[]>) {
+    moveItemInArray(this.segmentList!, event.previousIndex, event.currentIndex);
+    this.segmentList!.forEach(segment => (segment.played = false));
   }
 }

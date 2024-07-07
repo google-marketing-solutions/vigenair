@@ -133,8 +133,19 @@ limitations under the License.
         >
       </mat-expansion-panel-header>
       <div class="row">
-        <div style="margin-right: auto"></div>
-        <div style="padding-left: 440px">
+        <div style="margin-right: auto">
+          <mat-slide-toggle
+            #reorderSegmentsToggle="matSlideToggle"
+            color="primary"
+            style="display: block"
+            *ngIf="variants?.length"
+            [checked]="false"
+            matTooltip="Switch off to restore original scene order"
+            (change)="restoreSceneOrder()"
+            >Reorder scenes</mat-slide-toggle
+          >
+        </div>
+        <div [style.margin-left]="variants?.length ? '330px' : '485px'">
           <mat-button-toggle-group
             #segmentModeToggle="matButtonToggleGroup"
             value="preview"
@@ -164,6 +175,7 @@ limitations under the License.
           [segmentList]="avSegments"
           [segmentMode]="segmentModeToggle.value"
           [allowSelection]="variants !== undefined"
+          [draggable]="reorderSegmentsToggle && reorderSegmentsToggle.checked"
           [currentSegmentId]="currentSegmentId || 0"
           (seekToSegmentEvent)="seekToSegment($event)"
         ></segments-list>

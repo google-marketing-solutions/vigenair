@@ -27,6 +27,7 @@ export interface AvSegment {
   start_s: number;
   end_s: number;
   selected?: boolean;
+  played?: boolean;
   segment_screenshot_uri?: string;
 }
 
