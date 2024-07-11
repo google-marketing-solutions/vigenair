@@ -102,12 +102,14 @@ Follow these instructions in order:
         - Create a sense of urgency or exclusivity.
         - Use action words and power words to grab attention.
         - Avoid overselling and nebulous claims.
+        - Do not output any question marks or exclamation marks.
     - **Descriptions (Max 90 Characters)**:
         - Expand on the headline, providing additional details or benefits.
         - Include a strong call to action (e.g. "Shop now", "Learn more", "Sign up").
         - Use keywords strategically for better targeting.
         - Maintain a clear and concise message.
         - Avoid overselling and nebulous claims.
+        - Do not output more than one question mark or exclamation mark.
 4. **Output Format**: For each generated search ad, output the following components in this exact format:
 Headline: The generated headline.
 Description: The accompanying description.
