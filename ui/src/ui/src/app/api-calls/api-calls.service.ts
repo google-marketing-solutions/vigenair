@@ -20,10 +20,12 @@ import { Observable, of, retry, switchMap } from 'rxjs';
 import { CONFIG } from '../../../../config';
 import {
   ApiCalls,
+  GeneratePreviewsResponse,
   GenerateVariantsResponse,
   GenerationSettings,
+  PreviewSettings,
   PreviousRunsResponse,
-  RenderQueueVariant,
+  RenderQueue,
 } from './api-calls.service.interface';
 
 @Injectable({
@@ -136,6 +138,25 @@ export class ApiCallsService implements ApiCalls {
     });
   }
 
+  generatePreviews(
+    analysis: any,
+    segments: any,
+    settings: PreviewSettings
+  ): Observable<GeneratePreviewsResponse> {
+    return new Observable<GeneratePreviewsResponse>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((previews: GeneratePreviewsResponse) => {
+          this.ngZone.run(() => {
+            subscriber.next(previews);
+            subscriber.complete();
+          });
+        })
+        .generatePreviews(analysis, segments, settings);
+    });
+  }
+
   getRunsFromGcs(): Observable<PreviousRunsResponse> {
     return new Observable<PreviousRunsResponse>(subscriber => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -153,7 +174,7 @@ export class ApiCallsService implements ApiCalls {
 
   renderVariants(
     gcsFolder: string,
-    renderQueue: RenderQueueVariant[]
+    renderQueue: RenderQueue
   ): Observable<string> {
     return new Observable<string>(subscriber => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment

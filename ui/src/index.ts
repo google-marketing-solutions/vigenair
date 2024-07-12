@@ -19,12 +19,19 @@
  * Do not rename without ensuring all references are updated.
  */
 
-import { GenerationHelper } from './generation';
+import {
+  AvSegment,
+  GenerateVariantsResponse,
+  GenerationHelper,
+} from './generation';
+import { PreviewHelper, VideoIntelligence } from './preview';
 import { ScriptUtil } from './script-util';
 import { StorageManager } from './storage';
 import {
+  GeneratePreviewsResponse,
   GenerationSettings,
-  RenderQueueVariant,
+  PreviewSettings,
+  RenderQueue,
 } from './ui/src/app/api-calls/api-calls.service.interface';
 
 function getEncodedUserId() {
@@ -64,26 +71,93 @@ function deleteGcsFolder(folder: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function generateVariants(gcsFolder: string, settings: GenerationSettings) {
+function generateVariants(
+  gcsFolder: string,
+  settings: GenerationSettings
+): GenerateVariantsResponse[] {
   return GenerationHelper.generateVariants(gcsFolder, settings);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function renderVariants(
-  gcsFolder: string,
-  renderQueue: RenderQueueVariant[]
-): string {
+function generatePreviews(
+  analysis: VideoIntelligence,
+  segments: AvSegment[],
+  settings: PreviewSettings
+): GeneratePreviewsResponse {
+  const sourceDimensions = settings.sourceDimensions;
+  const squarePreview = PreviewHelper.createPreview(
+    segments,
+    analysis,
+    sourceDimensions,
+    { w: sourceDimensions.h, h: sourceDimensions.h },
+    settings.weights
+  );
+  const verticalPreview = PreviewHelper.createPreview(
+    segments,
+    analysis,
+    sourceDimensions,
+    {
+      w: sourceDimensions.h * (sourceDimensions.h / sourceDimensions.w),
+      h: sourceDimensions.h,
+    },
+    settings.weights
+  );
+  return {
+    square: JSON.stringify(squarePreview),
+    vertical: JSON.stringify(verticalPreview),
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
+  const folder = `${gcsFolder}/${Date.now()}-combos`;
+
   const encodedRenderQueueJson = Utilities.base64Encode(
-    JSON.stringify(renderQueue),
+    JSON.stringify(renderQueue.queue),
     Utilities.Charset.UTF_8
   );
-  const folder = `${gcsFolder}/${Date.now()}-combos`;
   StorageManager.uploadFile(
     encodedRenderQueueJson,
     folder,
     'render.json',
     'application/json'
   );
+
+  const encodedSquareCropCommands = Utilities.base64Encode(
+    PreviewHelper.generateCropCommands(
+      renderQueue.squareCropAnalysis,
+      renderQueue.sourceDimensions,
+      { w: renderQueue.sourceDimensions.h, h: renderQueue.sourceDimensions.h }
+    ),
+    Utilities.Charset.UTF_8
+  );
+  StorageManager.uploadFile(
+    encodedSquareCropCommands,
+    folder,
+    'square.txt',
+    'text/plain'
+  );
+
+  const encodedVerticalCropCommands = Utilities.base64Encode(
+    PreviewHelper.generateCropCommands(
+      renderQueue.verticalCropAnalysis,
+      renderQueue.sourceDimensions,
+      {
+        w:
+          renderQueue.sourceDimensions.h *
+          (renderQueue.sourceDimensions.h / renderQueue.sourceDimensions.w),
+        h: renderQueue.sourceDimensions.h,
+      }
+    ),
+    Utilities.Charset.UTF_8
+  );
+  StorageManager.uploadFile(
+    encodedVerticalCropCommands,
+    folder,
+    'vertical.txt',
+    'text/plain'
+  );
+
   return folder;
 }
 

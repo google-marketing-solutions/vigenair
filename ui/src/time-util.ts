@@ -13,6 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+export interface Timestamp {
+  seconds?: number;
+  nanos?: number;
+}
+
 export class TimeUtil {
   static timeStringToSeconds(timeString: string): number {
     const [minutes, seconds] = timeString.split(':');
@@ -28,5 +34,12 @@ export class TimeUtil {
       return timeString.substring(1);
     }
     return timeString;
+  }
+
+  static timestampToSeconds(timestamp: Timestamp) {
+    if (!timestamp) {
+      return 0;
+    }
+    return (timestamp.seconds || 0) + (timestamp.nanos || 0) / 1e9;
   }
 }

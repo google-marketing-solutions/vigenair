@@ -8,6 +8,7 @@
     "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
+    "experimentalDecorators": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,

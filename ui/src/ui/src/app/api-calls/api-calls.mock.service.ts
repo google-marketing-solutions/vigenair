@@ -19,10 +19,12 @@ import { Injectable, NgZone } from '@angular/core';
 import { Observable, lastValueFrom } from 'rxjs';
 import {
   ApiCalls,
+  GeneratePreviewsResponse,
   GenerateVariantsResponse,
   GenerationSettings,
+  PreviewSettings,
   PreviousRunsResponse,
-  RenderQueueVariant,
+  RenderQueue,
 } from './api-calls.service.interface';
 
 @Injectable({
@@ -126,6 +128,30 @@ export class ApiCallsService implements ApiCalls {
       }, 1000);
     });
   }
+  generatePreviews(
+    analysis: any,
+    segments: any,
+    settings: PreviewSettings
+  ): Observable<GeneratePreviewsResponse> {
+    return new Observable(subscriber => {
+      setTimeout(() => {
+        this.ngZone.run(async () => {
+          const square = await this.loadLocalFile(
+            'assets/square.json',
+            'application/json',
+            false
+          );
+          const vertical = await this.loadLocalFile(
+            'assets/vertical.json',
+            'application/json',
+            false
+          );
+          subscriber.next({ square, vertical });
+          subscriber.complete();
+        });
+      }, 1000);
+    });
+  }
   getRunsFromGcs(): Observable<PreviousRunsResponse> {
     return new Observable(subscriber => {
       setTimeout(() => {
@@ -144,7 +170,7 @@ export class ApiCallsService implements ApiCalls {
   }
   renderVariants(
     gcsFolder: string,
-    renderQueue: RenderQueueVariant[]
+    renderQueue: RenderQueue
   ): Observable<string> {
     return new Observable(subscriber => {
       setTimeout(() => {

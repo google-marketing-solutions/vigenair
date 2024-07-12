@@ -161,13 +161,45 @@ limitations under the License.
           </mat-button-toggle-group>
         </div>
         <div style="margin-left: auto">
-          <mat-slide-toggle
-            #objectTrackingToggle="matSlideToggle"
-            color="primary"
-            [checked]="true"
-            [disabled]="this.analysisStatus !== 'check_circle'"
-            >Object tracking</mat-slide-toggle
+          <mat-button-toggle-group
+            #previewToggleGroup="matButtonToggleGroup"
+            value="toggle"
+            [disabled]="!videoObjects || segmentModeToggle.value !== 'preview'"
+            hideSingleSelectionIndicator="true"
+            (click)="loadPreview()"
           >
+            <mat-button-toggle
+              value="toggle"
+              [matTooltip]="
+                displayObjectTracking ? 'Object tracking' : 'Preview off'
+              "
+            >
+              <mat-icon
+                >{{ displayObjectTracking ? 'select_all' : 'deselect' }}
+              </mat-icon>
+            </mat-button-toggle>
+            <mat-button-toggle
+              value="vertical"
+              matTooltip="Vertical format"
+              [disabled]="!verticalVideoObjects"
+            >
+              <mat-icon>smartphone</mat-icon>
+            </mat-button-toggle>
+            <mat-button-toggle
+              value="square"
+              matTooltip="Square format"
+              [disabled]="!squareVideoObjects"
+            >
+              <mat-icon>slideshow</mat-icon>
+            </mat-button-toggle>
+            <mat-button-toggle
+              value="settings"
+              matTooltip="Settings dialog"
+              [disabled]="!verticalVideoObjects && !squareVideoObjects"
+            >
+              <mat-icon>settings</mat-icon>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
         </div>
       </div>
       <div class="preview-video-row">
@@ -175,7 +207,7 @@ limitations under the License.
           [segmentList]="avSegments"
           [segmentMode]="segmentModeToggle.value"
           [allowSelection]="variants !== undefined"
-          [draggable]="reorderSegmentsToggle && reorderSegmentsToggle.checked"
+          [draggable]="reorderSegmentsToggle?.checked ?? false"
           [currentSegmentId]="currentSegmentId || 0"
           (seekToSegmentEvent)="seekToSegment($event)"
         ></segments-list>
@@ -334,13 +366,14 @@ limitations under the License.
             <div>
               <mat-label>Target duration:</mat-label>
               <mat-slider
+                discrete
+                showTickMarks
                 [max]="math.round(previewVideoElem.duration)"
                 [min]="step"
                 [step]="step"
-                [discrete]="true"
-                [showTickMarks]="true"
+                [disabled]="loading"
               >
-                <input matSliderThumb [(ngModel)]="duration" #slider />
+                <input matSliderThumb [(ngModel)]="duration" #durationSlider />
               </mat-slider>
             </div>
             <button

@@ -79,6 +79,7 @@ export const CONFIG = {
   defaultVideoLanguage: 'English',
   videoFolderNameSeparator: '--',
   videoFolderNoAudioSuffix: 'n',
+  videoIntelligenceConfidenceThreshold: 0.7,
   defaultCacheExpiration: 60, // in seconds
   defaultDuration: 30,
   debug: false,

@@ -15,7 +15,7 @@
  */
 
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,6 +26,7 @@ import {
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import {
   MatExpansionModule,
@@ -53,15 +54,21 @@ import { ApiCallsService } from './api-calls/api-calls.service';
 import {
   AvSegment,
   GenerateVariantsResponse,
+  RenderedVariant,
   RenderQueueVariant,
   RenderSettings,
-  RenderedVariant,
 } from './api-calls/api-calls.service.interface';
 import { FileChooserComponent } from './file-chooser/file-chooser.component';
+import { SmartFramingDialog } from './framing-dialog/framing-dialog.component';
 import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
+export type FramingDialogData = {
+  weightsPersonFaceIndex: number;
+  weightsTextIndex: number;
+  weightSteps: number[];
+};
 
 @Component({
   selector: 'app-root',
@@ -92,6 +99,7 @@ type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
     MatSliderModule,
     MatSidenavModule,
     MatCardModule,
+    MatDialogModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -101,10 +109,16 @@ export class AppComponent {
   generatingVariants = false;
   rendering = false;
   loadingVariant = false;
+  generatingPreviews = false;
   selectedFile?: File;
   videoPath?: string;
   analysisJson?: any;
+  squarePreviewAnalysis?: any;
+  verticalPreviewAnalysis?: any;
+  activeVideoObjects?: any[];
   videoObjects?: any[];
+  squareVideoObjects?: any[];
+  verticalVideoObjects?: any[];
   combosJson?: any;
   combos?: RenderedVariant[];
   originalAvSegments?: any;
@@ -133,7 +147,14 @@ export class AppComponent {
   renderQueue: RenderQueueVariant[] = [];
   renderQueueJsonArray: string[] = [];
   negativePrompt = false;
+  displayObjectTracking = true;
+  weightsTextIndex = 3;
+  weightsPersonFaceIndex = 1;
+  weightSteps = [0, 10, 100, 1000];
+  subtitlesTrack = '';
+  readonly framingDialog = inject(MatDialog);
 
+  @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
   previewVideoElem!: ElementRef<HTMLVideoElement>;
   @ViewChild('previewTrackElem')
@@ -144,11 +165,11 @@ export class AppComponent {
   @ViewChild('videoCombosPanel') videoCombosPanel!: MatExpansionPanel;
   @ViewChild('segmentModeToggle') segmentModeToggle!: MatButtonToggleGroup;
   @ViewChild('videosFilterToggle') videosFilterToggle!: MatSlideToggle;
-  @ViewChild('objectTrackingToggle') objectTrackingToggle!: MatSlideToggle;
   @ViewChild('renderQueueSidenav') renderQueueSidenav!: MatSidenav;
   @ViewChild('renderQueueButtonSpan')
   renderQueueButtonSpan!: ElementRef<HTMLSpanElement>;
-  @ViewChild('reorderSegmentsToggle') reorderSegmentsToggle!: MatSlideToggle;
+  @ViewChild('reorderSegmentsToggle') reorderSegmentsToggle?: MatSlideToggle;
+  @ViewChild('previewToggleGroup') previewToggleGroup!: MatButtonToggleGroup;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -185,6 +206,7 @@ export class AppComponent {
       .afterDismissed()
       .subscribe(() => {
         this.videoUploadPanel.open();
+        this.previewVideoElem.nativeElement.pause();
         this.videoMagicPanel.close();
       });
     this.apiCallsService.deleteGcsFolder(folder);
@@ -202,7 +224,7 @@ export class AppComponent {
       this.previewVideoElem.nativeElement.videoWidth,
       this.previewVideoElem.nativeElement.videoHeight
     );
-    if (this.objectTrackingToggle && this.objectTrackingToggle.checked) {
+    if (this.displayObjectTracking) {
       const timestamp = this.previewVideoElem.nativeElement.currentTime;
       entities.forEach(e => {
         if (e.start <= timestamp && e.end >= timestamp) {
@@ -264,41 +286,33 @@ export class AppComponent {
     }
   }
 
-  convertToSeconds(timestamp: any) {
-    if (!timestamp) {
-      return 0;
-    }
-    return (timestamp.seconds || 0) + (timestamp.nanos / 1e9 || 0);
-  }
-
-  parseAnalysis() {
+  parseAnalysis(objectsJson: any, filterCondition: (e: any) => boolean) {
     const vw = this.previewVideoElem.nativeElement.videoWidth;
     const vh = this.previewVideoElem.nativeElement.videoHeight;
-    this.videoObjects =
-      this.analysisJson.annotation_results[0].object_annotations
-        .filter((e: any) => e.confidence > 0.7)
-        .map((e: any) => {
-          return {
-            name: e.entity.description,
-            start: this.convertToSeconds(e.segment.start_time_offset),
-            end: this.convertToSeconds(e.segment.end_time_offset),
-            frames: e.frames.map((f: any) => {
-              return {
-                x: vw * (f.normalized_bounding_box.left || 0),
-                y: vh * (f.normalized_bounding_box.top || 0),
-                width:
-                  vw *
-                  ((f.normalized_bounding_box.right || 0) -
-                    (f.normalized_bounding_box.left || 0)),
-                height:
-                  vh *
-                  ((f.normalized_bounding_box.bottom || 0) -
-                    (f.normalized_bounding_box.top || 0)),
-                time: this.convertToSeconds(f.time_offset),
-              };
-            }),
-          };
-        });
+    return objectsJson.annotation_results[0].object_annotations
+      .filter(filterCondition)
+      .map((e: any) => {
+        return {
+          name: e.entity.description,
+          start: TimeUtil.timestampToSeconds(e.segment.start_time_offset),
+          end: TimeUtil.timestampToSeconds(e.segment.end_time_offset),
+          frames: e.frames.map((f: any) => {
+            return {
+              x: vw * (f.normalized_bounding_box.left || 0),
+              y: vh * (f.normalized_bounding_box.top || 0),
+              width:
+                vw *
+                ((f.normalized_bounding_box.right || 0) -
+                  (f.normalized_bounding_box.left || 0)),
+              height:
+                vh *
+                ((f.normalized_bounding_box.bottom || 0) -
+                  (f.normalized_bounding_box.top || 0)),
+              time: TimeUtil.timestampToSeconds(f.time_offset),
+            };
+          }),
+        };
+      });
   }
 
   // https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
@@ -324,6 +338,7 @@ export class AppComponent {
           this.originalAvSegments = structuredClone(this.avSegments);
           this.segmentsStatus = 'check_circle';
           this.loading = false;
+          this.generatePreviews();
         },
         error: () => this.failHandler(folder),
       });
@@ -339,6 +354,7 @@ export class AppComponent {
           this.setCombos();
           this.combinationStatus = 'check_circle';
           this.loading = false;
+          this.previewVideoElem.nativeElement.pause();
           this.videoMagicPanel.close();
           this.videoCombosPanel.open();
         },
@@ -356,7 +372,12 @@ export class AppComponent {
             this.parseBase64EncodedContent(dataUrl)
           );
           this.analysisStatus = 'check_circle';
-          this.parseAnalysis();
+          this.videoObjects = this.parseAnalysis(
+            this.analysisJson,
+            (e: any) =>
+              e.confidence > CONFIG.videoIntelligenceConfidenceThreshold
+          );
+          this.activeVideoObjects = this.videoObjects;
           this.getAvSegments(folder);
         },
         error: () => this.failHandler(folder),
@@ -370,6 +391,7 @@ export class AppComponent {
       .subscribe({
         next: dataUrl => {
           this.previewTrackElem.nativeElement.src = dataUrl;
+          this.subtitlesTrack = this.previewTrackElem.nativeElement.src;
           this.transcriptStatus = 'check_circle';
           this.getVideoAnalysis(folder);
         },
@@ -394,21 +416,32 @@ export class AppComponent {
 
   resetState() {
     this.rendering = false;
+    this.generatingPreviews = false;
     this.analysisJson = undefined;
     this.avSegments = undefined;
     this.originalAvSegments = undefined;
     this.combosJson = undefined;
     this.combos = undefined;
+    this.activeVideoObjects = undefined;
     this.videoObjects = undefined;
+    this.squareVideoObjects = undefined;
+    this.squarePreviewAnalysis = undefined;
+    this.verticalVideoObjects = undefined;
+    this.verticalPreviewAnalysis = undefined;
     this.variants = undefined;
     this.transcriptStatus = 'hourglass_top';
     this.analysisStatus = 'hourglass_top';
     this.combinationStatus = 'hourglass_top';
     this.segmentsStatus = 'hourglass_top';
-    this.previewTrackElem.nativeElement.src = '';
     this.renderQueue = [];
     this.renderQueueJsonArray = [];
     this.segmentModeToggle.value = 'preview';
+    this.previewToggleGroup.value = 'toggle';
+    this.displayObjectTracking = true;
+    this.previewTrackElem.nativeElement.src = '';
+    this.subtitlesTrack = '';
+    this.previewVideoElem.nativeElement.pause();
+    this.VideoComboComponent?.videoElem.nativeElement.pause();
     this.videoMagicPanel.close();
     this.videoCombosPanel.close();
     this.videoUploadPanel.open();
@@ -435,7 +468,7 @@ export class AppComponent {
     };
     this.previewVideoElem.nativeElement.onplaying = () => {
       this.frameInterval = window.setInterval(() => {
-        this.drawFrame(this.videoObjects);
+        this.drawFrame(this.activeVideoObjects);
         const skipped = this.skipSegment();
         if (!skipped) {
           this.setCurrentSegmentId();
@@ -480,7 +513,103 @@ export class AppComponent {
         this.selectedVariant = 0;
         this.variants = variants;
         this.setSelectedSegments();
-        this.objectTrackingToggle.checked = false;
+        this.displayObjectTracking = false;
+      });
+  }
+
+  generatePreviews(loading = false) {
+    this.loading = loading;
+    this.generatingPreviews = true;
+    this.squareVideoObjects =
+      this.squarePreviewAnalysis =
+      this.verticalVideoObjects =
+      this.verticalPreviewAnalysis =
+        undefined;
+    this.apiCallsService
+      .generatePreviews(this.analysisJson, this.avSegments, {
+        sourceDimensions: {
+          w: this.previewVideoElem.nativeElement.videoWidth,
+          h: this.previewVideoElem.nativeElement.videoHeight,
+        },
+        weights: {
+          text: this.weightSteps[this.weightsTextIndex],
+          face: this.weightSteps[this.weightsPersonFaceIndex],
+          objects: {
+            person: this.weightSteps[this.weightsPersonFaceIndex],
+          },
+        },
+      })
+      .subscribe(previews => {
+        this.generatingPreviews = false;
+        if (loading) {
+          this.loading = false;
+        }
+        const previewFilter = (e: any) => e.entity.description === 'crop-area';
+        this.squarePreviewAnalysis = JSON.parse(previews.square);
+        this.squareVideoObjects = this.parseAnalysis(
+          this.squarePreviewAnalysis,
+          previewFilter
+        );
+        this.verticalPreviewAnalysis = JSON.parse(previews.vertical);
+        this.verticalVideoObjects = this.parseAnalysis(
+          this.verticalPreviewAnalysis,
+          previewFilter
+        );
+      });
+  }
+
+  loadPreview() {
+    this.activeVideoObjects = this.videoObjects;
+    this.previewTrackElem.nativeElement.src = this.subtitlesTrack;
+    switch (this.previewToggleGroup.value) {
+      case 'square':
+        this.displayObjectTracking = true;
+        this.previewTrackElem.nativeElement.src = '';
+        this.activeVideoObjects = this.squareVideoObjects;
+        break;
+      case 'vertical':
+        this.displayObjectTracking = true;
+        this.previewTrackElem.nativeElement.src = '';
+        this.activeVideoObjects = this.verticalVideoObjects;
+        break;
+      case 'toggle':
+        this.displayObjectTracking = !this.displayObjectTracking;
+        break;
+      case 'settings':
+        this.openSmartFramingDialog();
+        break;
+    }
+  }
+
+  openSmartFramingDialog() {
+    const { bottom, left } =
+      this.previewToggleGroup._buttonToggles.last._buttonElement.nativeElement.getClientRects()[0];
+
+    const dialogRef = this.framingDialog.open(SmartFramingDialog, {
+      data: {
+        weightsPersonFaceIndex: this.weightsPersonFaceIndex,
+        weightsTextIndex: this.weightsTextIndex,
+        weightSteps: this.weightSteps,
+      },
+      position: {
+        top: `${bottom + 24}px`,
+        left: `${left - 100}px`,
+      },
+      height: '300px',
+    });
+
+    dialogRef
+      .afterClosed()
+      .subscribe((result: FramingDialogData | undefined) => {
+        if (
+          result &&
+          (this.weightsPersonFaceIndex !== result.weightsPersonFaceIndex ||
+            this.weightsTextIndex !== result.weightsTextIndex)
+        ) {
+          this.weightsPersonFaceIndex = result.weightsPersonFaceIndex;
+          this.weightsTextIndex = result.weightsTextIndex;
+          this.generatePreviews(true);
+        }
       });
   }
 
@@ -696,7 +825,15 @@ export class AppComponent {
     this.loading = true;
     this.rendering = true;
     this.apiCallsService
-      .renderVariants(this.folder, this.renderQueue)
+      .renderVariants(this.folder, {
+        queue: this.renderQueue,
+        squareCropAnalysis: this.squarePreviewAnalysis,
+        verticalCropAnalysis: this.verticalPreviewAnalysis,
+        sourceDimensions: {
+          w: this.previewVideoElem.nativeElement.videoWidth,
+          h: this.previewVideoElem.nativeElement.videoHeight,
+        },
+      })
       .subscribe(combosFolder => {
         this.loading = false;
         this.renderQueue = [];
@@ -738,7 +875,7 @@ export class AppComponent {
   }
 
   restoreSceneOrder() {
-    if (this.reorderSegmentsToggle && !this.reorderSegmentsToggle.checked) {
+    if (!this.reorderSegmentsToggle?.checked) {
       this.avSegments = structuredClone(this.originalAvSegments);
       this.setSelectedSegments(this.variants![this.selectedVariant].scenes);
     }

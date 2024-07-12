@@ -58,6 +58,13 @@ export interface RenderSettings {
   use_continuous_audio: boolean;
 }
 
+export interface RenderQueue {
+  queue: RenderQueueVariant[];
+  squareCropAnalysis: any;
+  verticalCropAnalysis: any;
+  sourceDimensions: { w: number; h: number };
+}
+
 export interface RenderQueueVariant {
   original_variant_id: number;
   av_segments: AvSegment[];
@@ -102,6 +109,24 @@ export interface RenderedVariant {
   texts?: VariantTextAsset[];
 }
 
+export interface GeneratePreviewsResponse {
+  square: string;
+  vertical: string;
+}
+
+export interface PreviewWeights {
+  text: number;
+  face: number;
+  objects: {
+    person: number;
+  };
+}
+
+export interface PreviewSettings {
+  sourceDimensions: { w: number; h: number };
+  weights: PreviewWeights;
+}
+
 export interface ApiCalls {
   uploadVideo(
     file: Blob,
@@ -120,9 +145,14 @@ export interface ApiCalls {
     gcsFolder: string,
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]>;
+  generatePreviews(
+    analysis: any,
+    segments: any,
+    settings: PreviewSettings
+  ): Observable<GeneratePreviewsResponse>;
   getRunsFromGcs(): Observable<PreviousRunsResponse>;
   renderVariants(
     gcsFolder: string,
-    renderQueue: RenderQueueVariant[]
+    renderQueue: RenderQueue
   ): Observable<string>;
 }

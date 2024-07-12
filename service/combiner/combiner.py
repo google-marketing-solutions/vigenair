@@ -68,7 +68,8 @@ class VideoVariantRenderSettings:
 
   def __str__(self):
     return (
-        f'VideoVariantRenderSettings(generate_image_assets={self.generate_image_assets}, '
+        'VideoVariantRenderSettings('
+        f'generate_image_assets={self.generate_image_assets}, '
         f'generate_text_assets={self.generate_text_assets}, '
         f'render_all_formats={self.render_all_formats}, '
         f'use_music_overlay={self.use_music_overlay}, '
@@ -232,6 +233,34 @@ class Combiner:
         fetch_contents=True,
     ) or ConfigService.DEFAULT_VIDEO_LANGUAGE
     logging.info('RENDERING - Video language: %s', video_language)
+    square_crop_file_path = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(
+                pathlib.Path(
+                    self.render_file.gcs_folder,
+                    ConfigService.INPUT_SQUARE_CROP_FILE
+                )
+            )
+        ),
+        output_dir=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+    )
+    logging.info('RENDERING - Square crop commands: %s', square_crop_file_path)
+    vertical_crop_file_path = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(
+                pathlib.Path(
+                    self.render_file.gcs_folder,
+                    ConfigService.INPUT_VERTICAL_CROP_FILE
+                )
+            )
+        ),
+        output_dir=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+    )
+    logging.info(
+        'RENDERING - Vertical crop commands: %s', vertical_crop_file_path
+    )
     render_file_contents = StorageService.download_gcs_file(
         file_path=self.render_file,
         bucket_name=self.gcs_bucket_name,
@@ -260,12 +289,21 @@ class Combiner:
     logging.info('RENDERING - Rendering video variants: %r...', video_variants)
     combos_dir = tempfile.mkdtemp()
     rendered_combos = {}
+    (square_video_file_path, vertical_video_file_path) = _create_cropped_videos(
+        video_variants=video_variants,
+        video_file_path=video_file_path,
+        square_crop_file_path=square_crop_file_path,
+        vertical_crop_file_path=vertical_crop_file_path,
+        output_dir=combos_dir,
+    )
     for video_variant in video_variants:
       rendered_variant_paths = _render_video_variant(
           output_dir=combos_dir,
           gcs_folder_path=self.render_file.gcs_folder,
           gcs_bucket_name=self.gcs_bucket_name,
           video_file_path=video_file_path,
+          square_video_file_path=square_video_file_path,
+          vertical_video_file_path=vertical_video_file_path,
           has_audio=has_audio,
           speech_track_path=speech_track_path,
           music_track_path=music_track_path,
@@ -320,14 +358,110 @@ def _video_variant_mapper(index_variant_dict_tuple: Tuple[int, Dict[str, Any]]):
   )
 
 
+def _create_cropped_videos(
+    video_variants: Sequence[VideoVariant],
+    video_file_path: str,
+    square_crop_file_path: Optional[str],
+    vertical_crop_file_path: Optional[str],
+    output_dir: str,
+) -> Tuple[Optional[str], Optional[str]]:
+  """Creates cropped videos for the given video variants.
+
+  Args:
+    video_variants: The video variants to create cropped videos for.
+    video_file_path: The path to the input video file.
+    square_crop_file_path: The square crop commands file, or None.
+    vertical_crop_file_path: The vertical crop commands file, or None.
+    output_dir: The output directory to use.
+
+  Returns:
+    The paths to the square and vertical cropped videos.
+  """
+  square_video_file_path = None
+  vertical_video_file_path = None
+
+  if len(
+      list(
+          filter(
+              lambda variant: variant.render_settings.render_all_formats,
+              video_variants
+          )
+      )
+  ) > 0:
+    _, video_ext = os.path.splitext(video_file_path)
+    square_video_file_path = _create_cropped_video(
+        video_file_path=video_file_path,
+        crop_file_path=square_crop_file_path,
+        output_dir=output_dir,
+        format_type='square',
+        video_ext=video_ext,
+    )
+    vertical_video_file_path = _create_cropped_video(
+        video_file_path=video_file_path,
+        crop_file_path=vertical_crop_file_path,
+        output_dir=output_dir,
+        format_type='vertical',
+        video_ext=video_ext,
+    )
+  return square_video_file_path, vertical_video_file_path
+
+
+def _create_cropped_video(
+    video_file_path: str,
+    crop_file_path: Optional[str],
+    output_dir: str,
+    format_type: str,
+    video_ext: str,
+) -> Optional[str]:
+  """Creates a cropped video for the given format.
+
+  Args:
+    video_file_path: The path to the input video file.
+    crop_file_path: The crop commands file, or None.
+    output_dir: The output directory to use.
+    format_type: The format to create a cropped video for.
+    video_ext: The extension of the video file.
+
+  Returns:
+    The paths to the cropped video, or None.
+  """
+  cropped_video_path = None
+  if crop_file_path:
+    with open(crop_file_path, mode='r', encoding='utf8') as f:
+      first_line = f.readline().strip()
+    matches = re.search(r'crop w (\d+), crop h (\d+);', first_line)
+
+    w = matches.group(1) if matches else None
+    h = matches.group(2) if matches else None
+
+    cropped_video_path = str(
+        pathlib.Path(output_dir, f'{format_type}{video_ext}')
+    )
+    Utils.execute_subprocess_commands(
+        cmds=[
+            'ffmpeg',
+            '-i',
+            video_file_path,
+            '-filter_complex',
+            f'[0:v]sendcmd=f={crop_file_path},crop[cropped];'
+            f'[cropped]crop={w}:{h}',
+            cropped_video_path,
+        ],
+        description=(f'render full {format_type} format using ffmpeg'),
+    )
+  return cropped_video_path
+
+
 def _render_video_variant(
     output_dir: str,
     gcs_folder_path: str,
     gcs_bucket_name: str,
     video_file_path: str,
+    square_video_file_path: str,
+    vertical_video_file_path: str,
     has_audio: bool,
-    speech_track_path: str,
-    music_track_path: str,
+    speech_track_path: Optional[str],
+    music_track_path: Optional[str],
     video_variant: VideoVariant,
     vision_model: GenerativeModel,
     text_model: GenerativeModel,
@@ -341,9 +475,12 @@ def _render_video_variant(
     gcs_folder_path: The GCS folder path to use.
     gcs_bucket_name: The GCS bucket name to upload to.
     video_file_path: The path to the input video file.
+    square_video_file_path: The path to the square crop of the input video file.
+    vertical_video_file_path: The path to the vertical crop of the input video
+      file.
     has_audio: Whether the video has an audio track.
-    speech_track_path: The path to the video's speech track.
-    music_track_path: The path to the video's music track.
+    speech_track_path: The path to the video's speech track, or None.
+    music_track_path: The path to the video's music track, or None.
     video_variant: The video variant to be rendered.
     vision_model: The vision model to use.
     text_model: The text model to use.
@@ -353,7 +490,7 @@ def _render_video_variant(
   Returns:
     The rendered paths keyed by the format type.
   """
-  logging.info('THREADING - Rendering video variant: %s', video_variant)
+  logging.info('RENDERING - Rendering video variant: %s', video_variant)
   _, video_ext = os.path.splitext(video_file_path)
   shot_groups = _group_consecutive_segments(
       list(video_variant.av_segments.keys())
@@ -433,10 +570,16 @@ def _render_video_variant(
 
   if video_variant.render_settings.render_all_formats:
     formats_to_render = {
-        'vertical': ConfigService.FFMPEG_VERTICAL_BLUR_FILTER,
-        'square': ConfigService.FFMPEG_SQUARE_BLUR_FILTER,
+        'square': {
+            'blur_filter': ConfigService.FFMPEG_SQUARE_BLUR_FILTER,
+            'crop_file_path': square_video_file_path
+        },
+        'vertical': {
+            'blur_filter': ConfigService.FFMPEG_VERTICAL_BLUR_FILTER,
+            'crop_file_path': vertical_video_file_path
+        },
     }
-    for format_type, video_filter in formats_to_render.items():
+    for format_type, format_instructions in formats_to_render.items():
       rendered_paths[format_type] = _render_format(
           input_video_path=horizontal_combo_path,
           output_path=output_dir,
@@ -444,10 +587,13 @@ def _render_video_variant(
           gcs_folder_path=gcs_folder_path,
           variant_id=video_variant.variant_id,
           format_type=format_type,
-          video_filter=video_filter,
           generate_image_assets=(
               video_variant.render_settings.generate_image_assets
           ),
+          video_filter=format_instructions['blur_filter'],
+          crop_file_path=format_instructions['crop_file_path'],
+          full_av_select_filter=full_av_select_filter,
+          has_audio=has_audio,
       )
 
   StorageService.upload_gcs_dir(
@@ -490,8 +636,11 @@ def _render_format(
     gcs_folder_path: str,
     variant_id: int,
     format_type: str,
-    video_filter: str,
     generate_image_assets: bool,
+    video_filter: str,
+    crop_file_path: Optional[str],
+    full_av_select_filter: str,
+    has_audio: bool,
 ) -> Dict[str, Union[str, Sequence[str]]]:
   """Renders a video variant in a specific format.
 
@@ -502,31 +651,60 @@ def _render_format(
     gcs_folder_path: The path to the GCS folder to upload to.
     variant_id: The id of the variant to render.
     format_type: The type of the output format (horizontal, vertical, square).
-    video_filter: The ffmpeg video filter to use.
     generate_image_assets: Whether to generate image assets for the variant.
+    video_filter: The ffmpeg video filter to use.
+    crop_file_path: The cropped version for this format, or None.
+    full_av_select_filter: The full AV select filter for this format.
+    has_audio: Whether the video has an audio track.
   Returns:
     The rendered video's format name.
   """
   logging.info(
-      'THREADING - Rendering variant %s format: %s', variant_id, format_type
+      'RENDERING - Rendering variant %s format: %s', variant_id, format_type
   )
   _, video_ext = os.path.splitext(input_video_path)
   format_name = f'combo_{variant_id}_{format_type[0]}{video_ext}'
   output_video_path = str(pathlib.Path(output_path, format_name))
-  Utils.execute_subprocess_commands(
-      cmds=[
-          'ffmpeg',
-          '-y',
-          '-i',
-          input_video_path,
-          '-vf',
-          video_filter,
-          output_video_path,
-      ],
-      description=(
-          f'render {format_type} variant with id {variant_id} using ffmpeg'
-      ),
-  )
+
+  if crop_file_path:
+    ffmpeg_cmds = [
+        'ffmpeg',
+        '-i',
+        crop_file_path,
+        '-filter_complex',
+        full_av_select_filter,
+        '-map',
+        '[outv]',
+    ]
+    if has_audio:
+      ffmpeg_cmds.extend([
+          '-map',
+          '[outa]',
+      ])
+    ffmpeg_cmds.append(output_video_path)
+    Utils.execute_subprocess_commands(
+        cmds=ffmpeg_cmds,
+        description=(
+            f'render {format_type} variant with id {variant_id} and '
+            f'{crop_file_path} using ffmpeg'
+        ),
+    )
+  else:
+    Utils.execute_subprocess_commands(
+        cmds=[
+            'ffmpeg',
+            '-y',
+            '-i',
+            input_video_path,
+            '-vf',
+            video_filter,
+            output_video_path,
+        ],
+        description=(
+            f'render {format_type} variant with id {variant_id} and '
+            'blur filter using ffmpeg'
+        ),
+    )
   output = {
       'path': format_name,
   }

@@ -1,0 +1,84 @@
+<!--
+Copyright 2024 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<div
+  style="
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+  "
+>
+  <mat-icon>tune</mat-icon
+  ><span cdkFocusInitial style="font-size: 20px; margin-left: 8px"
+    >Smart framing settings</span
+  >
+</div>
+<mat-dialog-content
+  style="
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    justify-content: center;
+  "
+>
+  <div>
+    <mat-label>Faces & people:</mat-label>
+    <mat-slider
+      discrete
+      showTickMarks
+      [max]="data.weightSteps.length - 1"
+      [min]="0"
+      [step]="1"
+      [displayWith]="formatWeightsLabel"
+    >
+      <input
+        #facesWeightSlider
+        matSliderThumb
+        [(ngModel)]="data.weightsPersonFaceIndex"
+        (valueChange)="weightsSliderChange($event, 'faces')"
+      />
+    </mat-slider>
+  </div>
+  <div style="margin-top: 8px">
+    <mat-label>Text:</mat-label>
+    <mat-slider
+      discrete
+      showTickMarks
+      [max]="data.weightSteps.length - 1"
+      [min]="0"
+      [step]="1"
+      [displayWith]="formatWeightsLabel"
+    >
+      <input
+        #textWeightSlider
+        matSliderThumb
+        [(ngModel)]="data.weightsTextIndex"
+        (valueChange)="weightsSliderChange($event, 'text')"
+      />
+    </mat-slider>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="center" style="margin-bottom: 16px">
+  <button
+    type="button"
+    mat-raised-button
+    color="primary"
+    [mat-dialog-close]="data"
+  >
+    <mat-icon>settings_overscan</mat-icon>Create format previews
+  </button>
+</mat-dialog-actions>
