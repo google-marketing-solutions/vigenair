@@ -152,7 +152,6 @@ export class AppComponent {
   weightsPersonFaceIndex = 1;
   weightSteps = [0, 10, 100, 1000];
   subtitlesTrack = '';
-  readonly framingDialog = inject(MatDialog);
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -173,7 +172,8 @@ export class AppComponent {
 
   constructor(
     private apiCallsService: ApiCallsService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private framingDialog: MatDialog
   ) {
     this.getPreviousRuns();
   }

@@ -337,7 +337,7 @@ export class PreviewHelper {
     const allObjects = PreviewHelper.getAllObjectFrames(intelligence);
     const allText = PreviewHelper.getAllTextFrames(intelligence);
 
-    const fakeAnnotation: ObjectAnnotation = {
+    const cropAreaAnnotation: ObjectAnnotation = {
       entity: {
         entity_id: '',
         description: 'crop-area',
@@ -437,7 +437,7 @@ export class PreviewHelper {
           bottom: 1,
         };
         for (let i = cog.start; i < cog.end; i += 0.04) {
-          fakeAnnotation.frames.push({
+          cropAreaAnnotation.frames.push({
             normalized_bounding_box: normalizedCogBounds,
             time_offset: { seconds: Math.trunc(i), nanos: (i % 1) * 1e9 },
           });
@@ -449,7 +449,7 @@ export class PreviewHelper {
       JSON.stringify(intelligence)
     ) as VideoIntelligence;
     intelligenceCopy.annotation_results[0].object_annotations?.unshift(
-      fakeAnnotation
+      cropAreaAnnotation
     );
     intelligenceCopy.annotation_results[0].object_annotations?.forEach(o => {
       o.confidence =
