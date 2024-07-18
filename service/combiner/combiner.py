@@ -429,7 +429,7 @@ def _create_cropped_video(
   if crop_file_path:
     with open(crop_file_path, mode='r', encoding='utf8') as f:
       first_line = f.readline().strip()
-    matches = re.search(r'crop w (\d+), crop h (\d+);', first_line)
+    matches = re.search(r'crop w (.*), crop h (.*);', first_line)
 
     w = matches.group(1) if matches else None
     h = matches.group(2) if matches else None
