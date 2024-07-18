@@ -56,8 +56,10 @@ COMPUTE_SA_ROLES=(
     "roles/eventarc.eventReceiver"
     "roles/run.invoker"
     "roles/cloudfunctions.invoker"
-    "roles/storage.objectUser"
+    "roles/storage.objectAdmin"
     "roles/aiplatform.user"
+    "roles/logging.logWriter"
+    "roles/artifactregistry.createOnPushWriter"
 )
 for COMPUTE_SA_ROLE in "${COMPUTE_SA_ROLES[@]}"; do
     gcloud --no-user-output-enabled projects add-iam-policy-binding \
