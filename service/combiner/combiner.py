@@ -526,15 +526,15 @@ def _render_video_variant(
         '-i',
         music_track_path,
     ])
-  ffmpeg_filter = full_av_select_filter
+  ffmpeg_filter = [full_av_select_filter]
   if has_audio:
     if video_variant.render_settings.use_continuous_audio:
-      ffmpeg_filter = continuous_audio_select_filter
+      ffmpeg_filter = [continuous_audio_select_filter]
     elif video_variant.render_settings.use_music_overlay:
-      ffmpeg_filter = music_overlay_select_filter
+      ffmpeg_filter = [music_overlay_select_filter, '-ac', '2']
   ffmpeg_cmds.extend([
       '-filter_complex',
-      ffmpeg_filter,
+  ] + ffmpeg_filter + [
       '-map',
       '[outv]',
   ])
@@ -1023,8 +1023,10 @@ def _build_ffmpeg_filters(
       + [entry.replace('0:a', '1:a') for entry in audio_select_filter] + [
           f"[2:a]aselect='between(t,{all_start},{all_start+duration})'"
           ',asetpts=N/SR/TB[music];'
-      ] + select_filter_concat + [f'concat=n={idx}:v=1:a=1[outv][tempa];']
-      + ['[tempa][music]amix=inputs=2[outa]']
+      ] + select_filter_concat + [
+          f'concat=n={idx}:v=1:a=1[outv][tempa];',
+          '[tempa][music]amerge=inputs=2[outa]',
+      ]
   ) if has_audio else ''
   continuous_audio_select_filter = ''.join(
       video_select_filter + [
