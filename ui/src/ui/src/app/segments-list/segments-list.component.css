@@ -107,6 +107,7 @@ mat-icon {
   color: rgba(0, 0, 0, 0.87);
   cursor: move;
   background: black;
+  height: 144px;
 }
 
 .cdk-drag-preview {

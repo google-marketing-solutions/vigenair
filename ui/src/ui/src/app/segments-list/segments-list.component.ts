@@ -20,6 +20,7 @@ import {
   CdkDropList,
   moveItemInArray,
 } from '@angular/cdk/drag-drop';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -42,6 +43,7 @@ import { CONFIG } from '../../../../config';
     MatTooltipModule,
     CdkDropList,
     CdkDrag,
+    ScrollingModule,
   ],
   templateUrl: './segments-list.component.html',
   styleUrl: './segments-list.component.css',

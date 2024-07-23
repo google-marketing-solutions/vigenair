@@ -28,7 +28,6 @@ limitations under the License.
     [ngClass]="
       segmentMode === 'preview' ? 'drag-list filmstrip-row' : 'segments-row'
     "
-    style="height: 100%"
     (cdkDropListDropped)="drop($event)"
   >
     @for (segment of segmentList; track segment; let i = $index) {

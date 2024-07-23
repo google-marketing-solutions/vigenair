@@ -15,7 +15,7 @@
  */
 
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, inject, ViewChild } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -173,7 +173,7 @@ export class AppComponent {
   constructor(
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar,
-    private framingDialog: MatDialog
+    private dialog: MatDialog
   ) {
     this.getPreviousRuns();
   }
@@ -585,7 +585,7 @@ export class AppComponent {
     const { bottom, left } =
       this.previewToggleGroup._buttonToggles.last._buttonElement.nativeElement.getClientRects()[0];
 
-    const dialogRef = this.framingDialog.open(SmartFramingDialog, {
+    const dialogRef = this.dialog.open(SmartFramingDialog, {
       data: {
         weightsPersonFaceIndex: this.weightsPersonFaceIndex,
         weightsTextIndex: this.weightsTextIndex,
@@ -875,7 +875,11 @@ export class AppComponent {
   }
 
   restoreSceneOrder() {
-    if (!this.reorderSegmentsToggle?.checked) {
+    if (
+      !this.reorderSegmentsToggle?.checked &&
+      JSON.stringify(this.avSegments) !==
+        JSON.stringify(this.originalAvSegments)
+    ) {
       this.avSegments = structuredClone(this.originalAvSegments);
       this.setSelectedSegments(this.variants![this.selectedVariant].scenes);
     }

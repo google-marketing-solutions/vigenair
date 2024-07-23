@@ -269,14 +269,15 @@ Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), yo
 
 1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install).
 1. Run `gcloud auth login` and complete the authentication flow.
-1. Navigate to the directory where the source code lives and run `cd ./service`
+1. Navigate to the directory where the source code lives and run `cd service`
 1. Run `./deploy.sh`.
 
 ### Build and Serve the Angular UI
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
 1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`.
-1. Navigate to the directory where the source code lives and run `cd ./ui`
+1. Navigate to the directory where the source code lives and run `cd ui`
 1. Run `npm install` to install dependencies.
 1. Run `npm run deploy` to build, test and deploy (via [clasp](https://github.com/google/clasp)) all UI and Apps Script code to the target spreadsheet / Apps Script project.
+1. Navigate to the directory where the Angular UI lives: `cd src/ui`
 1. Run `ng serve` to launch the Angular UI locally with Hot Module Replacement (HMR) during development.
