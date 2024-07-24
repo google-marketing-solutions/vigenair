@@ -61,7 +61,7 @@ export const CONFIG = {
         - **1 point**: Meets few or no ABCD criteria, or uses ALL scenes from the original ad.
     5. **Output Format**: For each combination, output the following components in this exact format:
     Title: A concise and descriptive title in {{videoLanguage}}.
-    Scenes: A list of the scene numbers included in the combination.
+    Scenes: A comma-separated list of the scene numbers included in the combination (no "Scene" prefix).
     Reasoning: A detailed explanation of why this combination is coherent, engaging, and effective.
     Score: The assigned score (1-5).
     ABCD: Detailed reasoning for the score, including specific examples from the combination that support your evaluation.

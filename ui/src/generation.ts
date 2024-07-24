@@ -193,12 +193,17 @@ export class GenerationHelper {
               score: string;
               reasoning: string;
             };
-          if (scenes.trim() !== allScenes) {
-            const outputScenes = String(scenes)
-              .trim()
+          const trimmedScenes = String(scenes)
+            .trim()
+            .split(', ')
+            .filter(Boolean)
+            .map(scene => scene.toLowerCase().replace('scene ', ''))
+            .join(', ');
+          if (trimmedScenes !== allScenes) {
+            const outputScenes = trimmedScenes
               .split(', ')
               .filter(Boolean)
-              .map(scene => Number(scene));
+              .map(Number);
             const variant: GenerateVariantsResponse = {
               combo_id: index + 1,
               title: String(title).trim(),

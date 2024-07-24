@@ -784,13 +784,14 @@ export class AppComponent {
     }
   }
 
-  removeRenderQueueVariant(index: number) {
+  removeRenderQueueVariant(event: Event, index: number) {
     this.renderQueueJsonArray.splice(index, 1);
     this.renderQueue.splice(index, 1);
 
     if (this.renderQueue.length === 0) {
       this.closeRenderQueueSidenav();
     }
+    event.stopPropagation();
   }
 
   loadVariant(index: number) {
