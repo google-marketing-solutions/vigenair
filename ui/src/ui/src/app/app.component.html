@@ -140,9 +140,9 @@ limitations under the License.
             style="display: block"
             *ngIf="variants?.length"
             [checked]="false"
-            matTooltip="Switch off to restore original scene order"
-            (change)="restoreSceneOrder()"
-            >Reorder scenes</mat-slide-toggle
+            matTooltip="Switch off to restore original segment order"
+            (change)="restoreSegmentOrder()"
+            >Reorder segments</mat-slide-toggle
           >
         </div>
         <div [style.margin-left]="variants?.length ? '330px' : '485px'">
@@ -487,7 +487,7 @@ limitations under the License.
               {{ variant.title }}
               <span *ngIf="variant.userSelection">(modified)</span>
             </div>
-            <div class="variant-scenes">
+            <div class="variant-segments">
               <b>Segments:</b> {{ variant.scenes }}
             </div>
             <div class="variant-duration">

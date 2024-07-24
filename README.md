@@ -34,7 +34,7 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 * [July 2024]
   * `frontend` + `backend`: We now render non-blurred vertical and square formats by dynamically framing the most prominent part of the video. Read more [here](#3-object-tacking-and-smart-framing)
-  * `frontend` + `backend`: You can now reorder scenes by dragging & dropping them during the variants preview. Read more [here](#42-user-controls-for-video-rendering)
+  * `frontend` + `backend`: You can now reorder segments by dragging & dropping them during the variants preview. Read more [here](#42-user-controls-for-video-rendering)
   * `frontend` + `backend`: The UI now supports upload and processing of all video MIME types [supported by Gemini](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/video-understanding#video_requirements).
   * `frontend`: You can now both focus on OR exclude (via a new checkbox) certain topics or elements of the input video during variants generation.
   * `backend`: The Demand Gen text assets generation prompt has been adjusted to better adhere to the ["Punctuation & Symbols" policy](https://support.google.com/adspolicy/answer/14847994).
@@ -219,10 +219,10 @@ Users are now ready for combination. They can view the A/V segments and generate
   <center><img src='./img/audio.png' width="350px" alt="Vigenair's audio rendering options" /></center>
 * Whether to generate [Demand Gen](https://support.google.com/google-ads/answer/13695777) campaign text and image assets alongside the variant or not. Defaults to generating Demand Gen assets using *language* models on Vertex AI, following the same approach used to generate the variants themselves; a detailed video script of the variant. To increase the quality of the generated assets, you may update the runtime configuration of the Combiner Cloud Function via the [update_config.sh](service/update_config.sh) to use *multimodal* models instead by setting the `CONFIG_MULTIMODAL_ASSET_GENERATION` variable to `'true'`. Note that using multimodal models incurs higher costs.
 * Whether to render all formats (horizontal, vertical and square) assets or to only render horizontal assets. Defaults to rendering all formats.
-* Users can also select the individual scenes that each variant is comprised of. This selection is available in both the *video preview* and *segments list* views. Please note that switching between variant tabs will clear any changes to the selection.
-* Users may also change the order of scenes via the *Reorder scenes* toggle, allowing the preview and rendering of more advanced and customised variations. Please note that reodering scenes will reset the variant playback, and switching the toggle *off* will restore the original scene order.
+* Users can also select the individual segments that each variant is comprised of. This selection is available in both the *video preview* and *segments list* views. Please note that switching between variant tabs will clear any changes to the selection.
+* Users may also change the order of segments via the *Reorder segments* toggle, allowing the preview and rendering of more advanced and customised variations. Please note that reodering segments will reset the variant playback, and switching the toggle *off* will restore the original order.
 
-  <center><img src='./img/reorder-scenes.gif' alt="Vigenair's scene reordering feature" /></center>
+  <center><img src='./img/reorder-segments.gif' alt="Vigenair's segment reordering feature" /></center>
 
 #### 4.3. Render Queue
 

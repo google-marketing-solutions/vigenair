@@ -864,7 +864,9 @@ export class AppComponent {
         reasoning: combo.score_reasoning,
         variants: combo.variants,
         duration: duration,
-        scenes: Object.keys(combo.av_segments).join(', '),
+        scenes: segments
+          .map((segment: AvSegment) => segment.av_segment_id)
+          .join(', '),
       };
       if (combo.images) {
         renderedVariant.images = combo.images;
@@ -876,7 +878,7 @@ export class AppComponent {
     });
   }
 
-  restoreSceneOrder() {
+  restoreSegmentOrder() {
     if (
       !this.reorderSegmentsToggle?.checked &&
       JSON.stringify(this.avSegments) !==
