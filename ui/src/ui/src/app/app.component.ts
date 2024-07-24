@@ -684,8 +684,9 @@ export class AppComponent {
     for (const segment of this.avSegments) {
       segment.selected = false;
     }
-    for (const segment of segments ||
-      this.variants![this.selectedVariant].scenes) {
+    const segmentsToSelect =
+      segments ?? this.variants?.[this.selectedVariant].scenes ?? [];
+    for (const segment of segmentsToSelect) {
       this.avSegments[segment - 1].selected = true;
     }
   }
