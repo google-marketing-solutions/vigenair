@@ -61,6 +61,7 @@ COMPUTE_SA_ROLES=(
     "roles/aiplatform.user"
     "roles/logging.logWriter"
     "roles/artifactregistry.createOnPushWriter"
+    "roles/cloudbuild.builds.builder"
 )
 for COMPUTE_SA_ROLE in "${COMPUTE_SA_ROLES[@]}"; do
     gcloud --no-user-output-enabled projects add-iam-policy-binding \

@@ -457,8 +457,8 @@ def _render_video_variant(
     gcs_folder_path: str,
     gcs_bucket_name: str,
     video_file_path: str,
-    square_video_file_path: str,
-    vertical_video_file_path: str,
+    square_video_file_path: Optional[str],
+    vertical_video_file_path: Optional[str],
     has_audio: bool,
     speech_track_path: Optional[str],
     music_track_path: Optional[str],
@@ -510,39 +510,17 @@ def _render_video_variant(
       continuous_audio_select_filter,
   ) = _build_ffmpeg_filters(shot_timestamps, has_audio)
 
-  ffmpeg_cmds = [
-      'ffmpeg',
-      '-i',
-      video_file_path,
-  ]
-  if (
-      video_variant.render_settings.use_music_overlay
-      and speech_track_path
-      and music_track_path
-  ):
-    ffmpeg_cmds.extend([
-        '-i',
-        speech_track_path,
-        '-i',
-        music_track_path,
-    ])
-  ffmpeg_filter = [full_av_select_filter]
-  if has_audio:
-    if video_variant.render_settings.use_continuous_audio:
-      ffmpeg_filter = [continuous_audio_select_filter]
-    elif video_variant.render_settings.use_music_overlay:
-      ffmpeg_filter = [music_overlay_select_filter, '-ac', '2']
-  ffmpeg_cmds.extend([
-      '-filter_complex',
-  ] + ffmpeg_filter + [
-      '-map',
-      '[outv]',
-  ])
-  if has_audio:
-    ffmpeg_cmds.extend([
-        '-map',
-        '[outa]',
-    ])
+  ffmpeg_cmds = _get_variant_ffmpeg_commands(
+      video_file_path=video_file_path,
+      speech_track_path=speech_track_path,
+      music_track_path=music_track_path,
+      has_audio=has_audio,
+      music_overlay=video_variant.render_settings.use_music_overlay,
+      continuous_audio=video_variant.render_settings.use_continuous_audio,
+      full_av_select_filter=full_av_select_filter,
+      music_overlay_select_filter=music_overlay_select_filter,
+      continuous_audio_select_filter=continuous_audio_select_filter,
+  )
 
   horizontal_combo_name = f'combo_{video_variant.variant_id}_h{video_ext}'
   horizontal_combo_path = str(pathlib.Path(output_dir, horizontal_combo_name))
@@ -580,6 +558,19 @@ def _render_video_variant(
         },
     }
     for format_type, format_instructions in formats_to_render.items():
+      format_ffmpeg_cmds = None
+      if format_instructions['crop_file_path']:
+        format_ffmpeg_cmds = _get_variant_ffmpeg_commands(
+            video_file_path=format_instructions['crop_file_path'],
+            speech_track_path=speech_track_path,
+            music_track_path=music_track_path,
+            has_audio=has_audio,
+            music_overlay=video_variant.render_settings.use_music_overlay,
+            continuous_audio=video_variant.render_settings.use_continuous_audio,
+            full_av_select_filter=full_av_select_filter,
+            music_overlay_select_filter=music_overlay_select_filter,
+            continuous_audio_select_filter=continuous_audio_select_filter,
+        )
       rendered_paths[format_type] = _render_format(
           input_video_path=horizontal_combo_path,
           output_path=output_dir,
@@ -591,9 +582,7 @@ def _render_video_variant(
               video_variant.render_settings.generate_image_assets
           ),
           video_filter=format_instructions['blur_filter'],
-          crop_file_path=format_instructions['crop_file_path'],
-          full_av_select_filter=full_av_select_filter,
-          has_audio=has_audio,
+          ffmpeg_cmds=format_ffmpeg_cmds,
       )
 
   StorageService.upload_gcs_dir(
@@ -629,6 +618,50 @@ def _render_video_variant(
   return result
 
 
+def _get_variant_ffmpeg_commands(
+    video_file_path: str,
+    speech_track_path: Optional[str],
+    music_track_path: Optional[str],
+    has_audio: bool,
+    music_overlay: bool,
+    continuous_audio: bool,
+    full_av_select_filter: str,
+    music_overlay_select_filter: str,
+    continuous_audio_select_filter: str,
+):
+  ffmpeg_cmds = [
+      'ffmpeg',
+      '-i',
+      video_file_path,
+  ]
+  if (music_overlay and speech_track_path and music_track_path):
+    ffmpeg_cmds.extend([
+        '-i',
+        speech_track_path,
+        '-i',
+        music_track_path,
+    ])
+  ffmpeg_filter = [full_av_select_filter]
+  if has_audio:
+    if continuous_audio:
+      ffmpeg_filter = [continuous_audio_select_filter]
+    elif music_overlay:
+      ffmpeg_filter = [music_overlay_select_filter, '-ac', '2']
+  ffmpeg_cmds.extend([
+      '-filter_complex',
+  ] + ffmpeg_filter + [
+      '-map',
+      '[outv]',
+  ])
+  if has_audio:
+    ffmpeg_cmds.extend([
+        '-map',
+        '[outa]',
+    ])
+
+  return ffmpeg_cmds
+
+
 def _render_format(
     input_video_path: str,
     output_path: str,
@@ -638,9 +671,7 @@ def _render_format(
     format_type: str,
     generate_image_assets: bool,
     video_filter: str,
-    crop_file_path: Optional[str],
-    full_av_select_filter: str,
-    has_audio: bool,
+    ffmpeg_cmds: Optional[Sequence[str]],
 ) -> Dict[str, Union[str, Sequence[str]]]:
   """Renders a video variant in a specific format.
 
@@ -653,9 +684,7 @@ def _render_format(
     format_type: The type of the output format (horizontal, vertical, square).
     generate_image_assets: Whether to generate image assets for the variant.
     video_filter: The ffmpeg video filter to use.
-    crop_file_path: The cropped version for this format, or None.
-    full_av_select_filter: The full AV select filter for this format.
-    has_audio: Whether the video has an audio track.
+    ffmpeg_cmds: The ffmpeg commands to use.
   Returns:
     The rendered video's format name.
   """
@@ -666,27 +695,12 @@ def _render_format(
   format_name = f'combo_{variant_id}_{format_type[0]}{video_ext}'
   output_video_path = str(pathlib.Path(output_path, format_name))
 
-  if crop_file_path:
-    ffmpeg_cmds = [
-        'ffmpeg',
-        '-i',
-        crop_file_path,
-        '-filter_complex',
-        full_av_select_filter,
-        '-map',
-        '[outv]',
-    ]
-    if has_audio:
-      ffmpeg_cmds.extend([
-          '-map',
-          '[outa]',
-      ])
+  if ffmpeg_cmds:
     ffmpeg_cmds.append(output_video_path)
     Utils.execute_subprocess_commands(
         cmds=ffmpeg_cmds,
         description=(
-            f'render {format_type} variant with id {variant_id} and '
-            f'{crop_file_path} using ffmpeg'
+            f'render {format_type} variant with id {variant_id} using ffmpeg'
         ),
     )
   else:
