@@ -22,7 +22,7 @@
     "start": "npm install && npm run build && node dist/index.js",
     "update-app": "npm run build && node dist/update.js",
     "deploy-ui": "cd ui && npm run deploy",
-    "deploy-service": "cd service && ./deploy.sh",
+    "deploy-service": "cd service && bash deploy.sh",
     "postinstall": "cd ui && npm install"
   },
   "engines": {

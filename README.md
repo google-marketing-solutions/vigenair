@@ -270,7 +270,7 @@ Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), yo
 1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install).
 1. Run `gcloud auth login` and complete the authentication flow.
 1. Navigate to the directory where the source code lives and run `cd service`
-1. Run `./deploy.sh`.
+1. Run `bash deploy.sh`.
 
 ### Build and Serve the Angular UI
 
