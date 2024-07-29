@@ -59,11 +59,9 @@ limitations under the License.
                 : ''
           "
           [matTooltip]="
-            allowSelection
-              ? 'Select segment'
-              : segmentMode === 'preview'
-                ? 'Seek to segment'
-                : ''
+            !allowSelection && segmentMode === 'preview'
+              ? 'Seek to segment'
+              : ''
           "
           cdkDrag
           cdkDragLockAxis="y"
@@ -84,6 +82,9 @@ limitations under the License.
           <mat-icon *ngIf="allowSelection">
             {{ segment.selected ? 'check_box' : 'check_box_outline_blank' }}
           </mat-icon>
+          <mat-chip *ngIf="segmentMode === 'preview'" class="duration-chip"
+            >{{ segment.duration_s.toFixed(2) }}s</mat-chip
+          >
         </div>
         <div class="current-segment-info" *ngIf="segmentMode === 'segments'">
           <span class="segment-number">

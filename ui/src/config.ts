@@ -20,6 +20,7 @@ export const CONFIG = {
     endpointBase: 'https://storage.googleapis.com/storage/v1',
     uploadEndpointBase: 'https://storage.googleapis.com/upload/storage/v1',
     authenticatedEndpointBase: 'https://storage.mtls.cloud.google.com',
+    browsingEndpointBase: 'https://console.cloud.google.com/storage/browser',
   },
   vertexAi: {
     endpoint: 'aiplatform.googleapis.com',
