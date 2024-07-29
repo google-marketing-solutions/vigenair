@@ -32,9 +32,11 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [August 2024]
+  * `frontend`: You can now share a page of the Web App containing your rendered videos and all associated image & text assets via a dedicated link. Read more [here](#6-output-videos).
 * [July 2024]
-  * `frontend` + `backend`: We now render non-blurred vertical and square formats by dynamically framing the most prominent part of the video. Read more [here](#3-object-tracking-and-smart-framing)
-  * `frontend` + `backend`: You can now reorder segments by dragging & dropping them during the variants preview. Read more [here](#42-user-controls-for-video-rendering)
+  * `frontend` + `backend`: We now render non-blurred vertical and square formats by dynamically framing the most prominent part of the video. Read more [here](#3-object-tracking-and-smart-framing).
+  * `frontend` + `backend`: You can now reorder segments by dragging & dropping them during the variants preview. Read more [here](#42-user-controls-for-video-rendering).
   * `frontend` + `backend`: The UI now supports upload and processing of all video MIME types [supported by Gemini](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/video-understanding#video_requirements).
   * `frontend`: You can now both focus on OR exclude (via a new checkbox) certain topics or elements of the input video during variants generation.
   * `backend`: The Demand Gen text assets generation prompt has been adjusted to better adhere to the ["Punctuation & Symbols" policy](https://support.google.com/adspolicy/answer/14847994).
@@ -179,6 +181,9 @@ The UI continuously queries GCS for updates while showing a preview of the uploa
   <center><img src='./img/preview-format-settings.png' width="600px" alt="Vigenair UI: Video format preview settings" /></center>
 
 * Once the `data.json` is available, the extracted A/V Segments are displayed along with a set of user controls.
+* Clicking on the link icon in the top-right corner of the "Video editing" panel will open the Cloud Storage browser UI and navigate to the associated video folder.
+
+  <center><img src='./img/gcsfolder.png' width="600px" alt="Vigenair UI: Open GCS folder link" /></center>
 
 #### 4.1. Variants Generation
 
@@ -244,9 +249,9 @@ Clicking on the `Render` button inside the render queue will render the variants
 
 #### 6. Output Videos
 
-The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos - in their different formats and along with all associated assets - will be displayed. Users can preview the final videos and select the ones they would like to upload into Google Ads / YouTube.
+The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos - in their different formats and along with all associated assets - will be displayed. Users can preview the final videos and select the ones they would like to upload into Google Ads / YouTube. Users may also share a page of the Web App containing the rendered videos and associated image & text assets via the dedicated "share" icon in the top-right corner of the "Rendered videos" panel.
 
-<center><img src='./img/rendered.png' width="600px" alt="Vigenair UI: Rendered videos display" /></center>
+<center><img src='./img/rendered.png' width="600px" alt="Vigenair UI: Rendered videos display with 'share' icon" /></center>
 
 ### Pricing and Quotas
 
