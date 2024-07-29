@@ -155,4 +155,6 @@ export interface ApiCalls {
     gcsFolder: string,
     renderQueue: RenderQueue
   ): Observable<string>;
+  getGcsFolderPath(folder: string): Observable<string>;
+  getWebAppUrl(): Observable<string>;
 }

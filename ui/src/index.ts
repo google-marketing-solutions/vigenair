@@ -162,13 +162,24 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function doGet() {
-  return HtmlService.createTemplateFromFile('ui')
+function getWebAppUrl(): string {
+  return ScriptApp.getService().getUrl();
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function doGet(e: GoogleAppsScript.Events.DoGet) {
+  const output = HtmlService.createTemplateFromFile('ui')
     .evaluate()
     .setTitle('ViGenAiR - Recrafting Video Ads with Generative AI')
     .setFaviconUrl(
       'https://services.google.com/fh/files/misc/vigenair_logo.png'
     );
+  if (e && e.parameter && e.parameter['inputCombosFolder']) {
+    output.append(
+      `<input id="input-combos-folder" type="hidden" value="${e.parameter['inputCombosFolder']}">`
+    );
+  }
+  return output;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

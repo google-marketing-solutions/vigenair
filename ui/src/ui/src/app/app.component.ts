@@ -48,6 +48,8 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ActivatedRoute } from '@angular/router';
 import { CONFIG } from '../../../config';
 import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
@@ -100,6 +102,7 @@ export type FramingDialogData = {
     MatSidenavModule,
     MatCardModule,
     MatDialogModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -142,6 +145,8 @@ export class AppComponent {
   previousRuns: string[] | undefined;
   encodedUserId: string | undefined;
   folder = '';
+  folderGcsPath = '';
+  combosFolder = '';
   math = Math;
   stars: number[] = new Array(5).fill(0);
   renderQueue: RenderQueueVariant[] = [];
@@ -152,6 +157,7 @@ export class AppComponent {
   weightsPersonFaceIndex = 1;
   weightSteps = [0, 10, 100, 1000];
   subtitlesTrack = '';
+  webAppUrl = '';
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -173,9 +179,37 @@ export class AppComponent {
   constructor(
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private activatedRoute: ActivatedRoute
   ) {
     this.getPreviousRuns();
+    this.getWebAppUrl();
+    this.activatedRoute.queryParams.subscribe(params => {
+      const inputCombosFolder = params['inputCombosFolder'];
+      if (inputCombosFolder) {
+        this.handleInputCombosFolder(inputCombosFolder);
+      }
+    });
+  }
+
+  ngAfterViewInit() {
+    const inputCombosFolder = document.querySelector(
+      '#input-combos-folder'
+    ) as HTMLInputElement;
+    if (inputCombosFolder && inputCombosFolder.value) {
+      this.handleInputCombosFolder(inputCombosFolder.value);
+    }
+  }
+
+  handleInputCombosFolder(inputCombosFolder: string) {
+    this.videoUploadPanel.close();
+    this.getRenderedCombos(inputCombosFolder);
+  }
+
+  getWebAppUrl() {
+    this.apiCallsService.getWebAppUrl().subscribe(url => {
+      this.webAppUrl = url;
+    });
   }
 
   getPreviousRuns() {
@@ -345,7 +379,12 @@ export class AppComponent {
   }
 
   getRenderedCombos(folder: string) {
+    this.combosFolder = folder;
+    this.loading = true;
     this.combinationStatus = 'pending';
+    this.previewVideoElem.nativeElement.pause();
+    this.videoMagicPanel.close();
+    this.videoCombosPanel.open();
     this.apiCallsService
       .getFromGcs(`${folder}/combos.json`, 'application/json', 6000, 100)
       .subscribe({
@@ -454,6 +493,7 @@ export class AppComponent {
       `${CONFIG.videoFolderNameSeparator}${CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}`
     );
     this.videoPath = videoFilePath;
+    this.getGcsFolderPath();
     this.previewVideoElem.nativeElement.src = this.videoPath;
     this.previewVideoElem.nativeElement.onloadeddata = () => {
       this.magicCanvas.nativeElement.width =
@@ -487,6 +527,14 @@ export class AppComponent {
     this.videoUploadPanel.close();
     this.videoMagicPanel.open();
     this.getSubtitlesTrack(folder);
+  }
+
+  getGcsFolderPath() {
+    this.apiCallsService
+      .getGcsFolderPath(this.folder)
+      .subscribe((path: string) => {
+        this.folderGcsPath = path;
+      });
   }
 
   calculateVideoDefaultDuration(duration: number) {
@@ -797,6 +845,9 @@ export class AppComponent {
   loadVariant(index: number) {
     const variant = this.renderQueue[index];
     this.loadingVariant = true;
+    this.avSegments?.forEach((segment: AvSegment) => {
+      segment.played = false;
+    });
     this.selectedVariant = variant.original_variant_id;
     this.setSelectedSegments(
       variant.av_segments.map((segment: AvSegment) => segment.av_segment_id)

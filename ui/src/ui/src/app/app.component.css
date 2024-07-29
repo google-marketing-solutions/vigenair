@@ -234,3 +234,7 @@ mat-divider {
 .panel-icon {
   margin-right: 4px;
 }
+
+.mat-expansion-panel-header-description a {
+  margin-left: auto;
+}

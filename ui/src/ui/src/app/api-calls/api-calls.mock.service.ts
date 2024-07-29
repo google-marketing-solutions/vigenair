@@ -16,7 +16,7 @@
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { Observable, lastValueFrom } from 'rxjs';
+import { Observable, lastValueFrom, of } from 'rxjs';
 import {
   ApiCalls,
   GeneratePreviewsResponse,
@@ -180,5 +180,11 @@ export class ApiCallsService implements ApiCalls {
         });
       }, 1000);
     });
+  }
+  getGcsFolderPath(folder: string): Observable<string> {
+    return of(folder);
+  }
+  getWebAppUrl(): Observable<string> {
+    return of('');
   }
 }

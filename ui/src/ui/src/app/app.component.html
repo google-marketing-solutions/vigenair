@@ -131,6 +131,16 @@ limitations under the License.
           ><mat-icon class="panel-icon">auto_fix_high</mat-icon
           ><span style="margin-top: 4px">Video editing</span></mat-panel-title
         >
+        <mat-panel-description>
+          <a
+            *ngIf="folderGcsPath"
+            [href]="folderGcsPath"
+            target="_blank"
+            (click)="$event.stopPropagation()"
+            matTooltip="Open GCS video folder"
+            ><mat-icon color="primary">link</mat-icon></a
+          >
+        </mat-panel-description>
       </mat-expansion-panel-header>
       <div class="row">
         <div style="margin-right: auto">
@@ -404,6 +414,16 @@ limitations under the License.
           ><mat-icon class="panel-icon">movie_filter</mat-icon>Rendered
           videos</mat-panel-title
         >
+        <mat-panel-description>
+          <a
+            *ngIf="combos"
+            href="{{ webAppUrl }}?inputCombosFolder={{ combosFolder }}"
+            target="_blank"
+            (click)="$event.stopPropagation()"
+            matTooltip="Share rendered videos"
+            ><mat-icon color="primary">share</mat-icon></a
+          >
+        </mat-panel-description>
       </mat-expansion-panel-header>
       <mat-tab-group>
         <mat-tab
@@ -413,6 +433,18 @@ limitations under the License.
           <video-combo [combo]="combo"></video-combo>
         </mat-tab>
       </mat-tab-group>
+      <div
+        *ngIf="!combos"
+        style="
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+        "
+      >
+        <mat-spinner style="margin-bottom: 16px"></mat-spinner>
+        Loading rendered videos
+      </div>
     </mat-expansion-panel>
   </mat-sidenav-content>
   <mat-sidenav

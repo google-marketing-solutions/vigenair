@@ -189,4 +189,25 @@ export class ApiCallsService implements ApiCalls {
         .renderVariants(gcsFolder, renderQueue);
     });
   }
+
+  getGcsFolderPath(folder: string): Observable<string> {
+    return of(
+      `${CONFIG.cloudStorage.browsingEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}`
+    );
+  }
+
+  getWebAppUrl(): Observable<string> {
+    return new Observable<string>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((response: string) => {
+          this.ngZone.run(() => {
+            subscriber.next(response);
+            subscriber.complete();
+          });
+        })
+        .getWebAppUrl();
+    });
+  }
 }
