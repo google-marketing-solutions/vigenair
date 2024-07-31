@@ -55,10 +55,10 @@ Update to the latest version by running `npm run update-app` after pulling the l
 Please make sure you have fulfilled all prerequisites mentioned under [Requirements](#requirements) first.
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install).
+1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`, then login via `clasp login`.
+1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install), then execute `gcloud auth login` followed by `gcloud auth application-default login`.
 1. Make sure your system has an up-to-date installation of `git` and use it to clone this repository.
 1. Navigate to the directory where the source code lives.
-1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`.
 1. Run `npm start`.
 
 You will be asked to enter a GCP Project ID, and whether you would like to deploy GCP components, the UI, or both. If you opt to deploy GCP components, you will be asked to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
