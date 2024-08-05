@@ -79,7 +79,7 @@ def analyse_video(
       }
   )
 
-  result = operation.result(timeout=600)
+  result = operation.result(timeout=3600)
   return result.annotation_results[0]
 
 
@@ -277,19 +277,16 @@ def get_logo_detection_data(
     entity = logo_recognition_annotation.entity
 
     label = entity.description
-    segments = [
+    segments = [(
         (
-            (
-                segment.start_time_offset.seconds
-                + segment.start_time_offset.microseconds / 1e6
-            ),
-            (
-                segment.end_time_offset.seconds
-                + segment.end_time_offset.microseconds / 1e6
-            ),
-        )
-        for segment in logo_recognition_annotation.segments
-    ]
+            segment.start_time_offset.seconds
+            + segment.start_time_offset.microseconds / 1e6
+        ),
+        (
+            segment.end_time_offset.seconds
+            + segment.end_time_offset.microseconds / 1e6
+        ),
+    ) for segment in logo_recognition_annotation.segments]
 
     for track in logo_recognition_annotation.tracks:
       start_time = (
@@ -305,20 +302,15 @@ def get_logo_detection_data(
       av_segment_ids = _identify_segments(
           start_time, end_time, optimised_av_segments, av_segment_id_key
       )
-      boxes = [
-          (
-              timestamped_object.normalized_bounding_box.left,
-              timestamped_object.normalized_bounding_box.top,
-              timestamped_object.normalized_bounding_box.right,
-              timestamped_object.normalized_bounding_box.bottom,
-          )
-          for timestamped_object in track.timestamped_objects
-      ]
-      attributes = [
-          (attribute.name, attribute.value, attribute.confidence)
-          for timestamped_object in track.timestamped_objects
-          for attribute in timestamped_object.attributes
-      ]
+      boxes = [(
+          timestamped_object.normalized_bounding_box.left,
+          timestamped_object.normalized_bounding_box.top,
+          timestamped_object.normalized_bounding_box.right,
+          timestamped_object.normalized_bounding_box.bottom,
+      ) for timestamped_object in track.timestamped_objects]
+      attributes = [(attribute.name, attribute.value, attribute.confidence)
+                    for timestamped_object in track.timestamped_objects
+                    for attribute in timestamped_object.attributes]
       track_attributes = [
           (attribute.name, attribute.value, attribute.confidence)
           for attribute in track.attributes
@@ -391,11 +383,9 @@ def get_text_detection_data(
       av_segment_ids = _identify_segments(
           start_time, end_time, optimised_av_segments, av_segment_id_key
       )
-      boxes = [
-          (vertex.x, vertex.y)
-          for frame in text_segment.frames
-          for vertex in frame.rotated_bounding_box.vertices
-      ]
+      boxes = [(vertex.x, vertex.y)
+               for frame in text_segment.frames
+               for vertex in frame.rotated_bounding_box.vertices]
       text_detection_data.append((
           text,
           av_segment_ids,
@@ -418,9 +408,7 @@ def get_text_detection_data(
           'box_vertices',
       ],
   )
-  text_detection_dataframe = text_detection_dataframe.sort_values(
-      by=['start_s']
-  )
+  text_detection_dataframe = text_detection_dataframe.sort_values(by=['start_s'])
 
   return text_detection_dataframe
 
@@ -449,11 +437,9 @@ def _identify_segments(
   if not data.empty:
     result = data[
         # Segments starting before and ending within or after the range
-        (data[start_key] <= start_time) & (data[end_key] > start_time)
-        |
+        (data[start_key] <= start_time) & (data[end_key] > start_time) |
         # Segments starting within the range
-        (data[start_key] >= start_time) & (data[start_key] < end_time)
-    ]
+        (data[start_key] >= start_time) & (data[start_key] < end_time)]
     if not result.empty:
       return result[key].tolist()
   return []

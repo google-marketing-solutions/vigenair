@@ -34,6 +34,7 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 * [August 2024]
   * `frontend`: You can now share a page of the Web App containing your rendered videos and all associated image & text assets via a dedicated link. Read more [here](#6-output-videos).
+  * `frontend` + `backend`: Performance improvements for processing videos that are 10 minutes or longer.
 * [July 2024]
   * `frontend` + `backend`: We now render non-blurred vertical and square formats by dynamically framing the most prominent part of the video. Read more [here](#3-object-tracking-and-smart-framing).
   * `frontend` + `backend`: You can now reorder segments by dragging & dropping them during the variants preview. Read more [here](#42-user-controls-for-video-rendering).

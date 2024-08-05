@@ -16,7 +16,7 @@
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { Observable, of, retry, switchMap } from 'rxjs';
+import { Observable, of, retry, switchMap, timer } from 'rxjs';
 import { CONFIG } from '../../../../config';
 import {
   ApiCalls,
@@ -96,28 +96,31 @@ export class ApiCallsService implements ApiCalls {
     google.script.run.deleteGcsFolder(folder);
   }
 
-  getFromGcs(
-    url: string,
-    mimeType: string,
-    retryDelay?: number,
-    maxRetries = 0
-  ): Observable<string> {
-    return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((dataUrl?: string) => {
-          if (!dataUrl) {
-            subscriber.error('404');
-          } else {
-            this.ngZone.run(() => {
-              subscriber.next(dataUrl);
-              subscriber.complete();
-            });
-          }
+  getFromGcs(url: string, retryDelay = 0, maxRetries = 0): Observable<string> {
+    const gcsUrl = `${CONFIG.cloudStorage.endpointBase}/b/${CONFIG.cloudStorage.bucket}/o/${encodeURIComponent(url)}?alt=media`;
+
+    return this.getUserAuthToken().pipe(
+      switchMap(userAuthToken =>
+        this.httpClient.get(gcsUrl, {
+          responseType: 'text',
+          headers: new HttpHeaders({
+            Authorization: `Bearer ${userAuthToken}`,
+          }),
         })
-        .getFromGcs(url, mimeType);
-    }).pipe(retry({ count: maxRetries, delay: retryDelay }));
+      ),
+      retry({
+        count: maxRetries,
+        delay: (error, retryCount) => {
+          if (
+            (error.status && error.status !== 404) ||
+            retryCount >= maxRetries
+          ) {
+            throw new Error(`Received an unexpected error: ${error}`);
+          }
+          return timer(retryDelay);
+        },
+      })
+    );
   }
 
   generateVariants(

@@ -51,16 +51,6 @@ function getRunsFromGcs() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getFromGcs(filePath: string, mimeType: string): string | null {
-  const result = StorageManager.loadFile(filePath) as GoogleAppsScript.Byte[];
-  if (!result) {
-    return null;
-  }
-  const dataUrl = `data:${mimeType};base64,${Utilities.base64Encode(result)}`;
-  return dataUrl;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getUserAuthToken() {
   return ScriptUtil.getOAuthToken();
 }

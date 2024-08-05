@@ -51,6 +51,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
 import { CONFIG } from '../../../config';
+import { StringUtil } from '../../../string-util';
 import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
 import {
@@ -349,22 +350,13 @@ export class AppComponent {
       });
   }
 
-  // https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
-  parseBase64EncodedContent(dataUrl: string) {
-    const encodedContent = dataUrl.split(',')[1];
-    const binaryString = atob(encodedContent);
-    return new TextDecoder().decode(
-      Uint8Array.from(binaryString, (m: any) => m.codePointAt(0))
-    );
-  }
-
   getAvSegments(folder: string) {
     this.segmentsStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/data.json`, 'application/json', 6000, 100)
+      .getFromGcs(`${folder}/data.json`, 6000, 100)
       .subscribe({
-        next: dataUrl => {
-          const dataJson = JSON.parse(this.parseBase64EncodedContent(dataUrl));
+        next: data => {
+          const dataJson = JSON.parse(data);
           this.avSegments = dataJson.map((e: AvSegment) => {
             e.selected = false;
             return e;
@@ -386,10 +378,10 @@ export class AppComponent {
     this.videoMagicPanel.close();
     this.videoCombosPanel.open();
     this.apiCallsService
-      .getFromGcs(`${folder}/combos.json`, 'application/json', 6000, 100)
+      .getFromGcs(`${folder}/combos.json`, 6000, 100)
       .subscribe({
-        next: dataUrl => {
-          this.combosJson = JSON.parse(this.parseBase64EncodedContent(dataUrl));
+        next: data => {
+          this.combosJson = JSON.parse(data);
           this.setCombos();
           this.combinationStatus = 'check_circle';
           this.loading = false;
@@ -404,12 +396,10 @@ export class AppComponent {
   getVideoAnalysis(folder: string) {
     this.analysisStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/analysis.json`, 'application/json', 6000, 100)
+      .getFromGcs(`${folder}/analysis.json`, 6000, 100)
       .subscribe({
-        next: dataUrl => {
-          this.analysisJson = JSON.parse(
-            this.parseBase64EncodedContent(dataUrl)
-          );
+        next: data => {
+          this.analysisJson = JSON.parse(data);
           this.analysisStatus = 'check_circle';
           this.videoObjects = this.parseAnalysis(
             this.analysisJson,
@@ -426,9 +416,10 @@ export class AppComponent {
   getSubtitlesTrack(folder: string) {
     this.transcriptStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/input.vtt`, 'text/vtt', 6000, 100)
+      .getFromGcs(`${folder}/input.vtt`, 6000, 100)
       .subscribe({
-        next: dataUrl => {
+        next: data => {
+          const dataUrl = `data:text/vtt;base64,${StringUtil.encode(data)}`;
           this.previewTrackElem.nativeElement.src = dataUrl;
           this.subtitlesTrack = this.previewTrackElem.nativeElement.src;
           this.transcriptStatus = 'check_circle';

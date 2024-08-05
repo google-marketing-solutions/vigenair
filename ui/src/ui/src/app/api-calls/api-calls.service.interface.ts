@@ -137,7 +137,6 @@ export interface ApiCalls {
   deleteGcsFolder(folder: string): void;
   getFromGcs(
     url: string,
-    mimeType: string,
     retryDelay?: number,
     maxRetries?: number
   ): Observable<string>;

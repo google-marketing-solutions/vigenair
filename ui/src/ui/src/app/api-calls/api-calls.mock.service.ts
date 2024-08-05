@@ -36,24 +36,11 @@ export class ApiCallsService implements ApiCalls {
     private httpClient: HttpClient
   ) {}
 
-  bytesToBase64(bytes: any) {
-    const binString = Array.from(bytes, (byte: any) =>
-      String.fromCodePoint(byte)
-    ).join('');
-    return btoa(binString);
-  }
-  async loadLocalFile(path: string, mimeType: string, convertToBase64 = true) {
+  async loadLocalFile(path: string) {
     const data = await lastValueFrom(
       this.httpClient.get(path, { responseType: 'text' })
     );
-    if (convertToBase64) {
-      const encodedDataString = this.bytesToBase64(
-        new TextEncoder().encode(data)
-      );
-      return `data:${mimeType};base64,${encodedDataString}`;
-    } else {
-      return data;
-    }
+    return data;
   }
   loadPreviousRun(folder: string): string[] {
     return ['assets', 'assets/input.mp4'];
@@ -73,35 +60,11 @@ export class ApiCallsService implements ApiCalls {
     });
   }
   deleteGcsFolder(folder: string): void {}
-  getFromGcs(url: string, mimeType: string): Observable<string> {
+  getFromGcs(url: string): Observable<string> {
     return new Observable(subscriber => {
       setTimeout(() => {
         this.ngZone.run(async () => {
-          if (mimeType === 'text/vtt') {
-            subscriber.next(
-              await this.loadLocalFile('assets/input.vtt', 'text/vtt')
-            );
-          } else if (mimeType === 'application/json') {
-            if (url.endsWith('/analysis.json')) {
-              subscriber.next(
-                await this.loadLocalFile(
-                  'assets/analysis.json',
-                  'application/json'
-                )
-              );
-            } else if (url.endsWith('/combos.json')) {
-              subscriber.next(
-                await this.loadLocalFile(
-                  'assets/12345-combos/combos.json',
-                  'application/json'
-                )
-              );
-            } else if (url.endsWith('/data.json')) {
-              subscriber.next(
-                await this.loadLocalFile('assets/data.json', 'application/json')
-              );
-            }
-          }
+          subscriber.next(await this.loadLocalFile(url));
           subscriber.complete();
         });
       }, 1000);
@@ -115,13 +78,7 @@ export class ApiCallsService implements ApiCalls {
       setTimeout(() => {
         this.ngZone.run(async () => {
           subscriber.next(
-            JSON.parse(
-              await this.loadLocalFile(
-                'assets/variants.json',
-                'application/json',
-                false
-              )
-            )
+            JSON.parse(await this.loadLocalFile('assets/variants.json'))
           );
           subscriber.complete();
         });
@@ -136,16 +93,8 @@ export class ApiCallsService implements ApiCalls {
     return new Observable(subscriber => {
       setTimeout(() => {
         this.ngZone.run(async () => {
-          const square = await this.loadLocalFile(
-            'assets/square.json',
-            'application/json',
-            false
-          );
-          const vertical = await this.loadLocalFile(
-            'assets/vertical.json',
-            'application/json',
-            false
-          );
+          const square = await this.loadLocalFile('assets/square.json');
+          const vertical = await this.loadLocalFile('assets/vertical.json');
           subscriber.next({ square, vertical });
           subscriber.complete();
         });
