@@ -255,6 +255,8 @@ The UI continuously queries GCS for updates. Once a `combos.json` is available, 
 
 <center><img src='./img/rendered.png' width="600px" alt="Vigenair UI: Rendered videos display with 'share' icon" /></center>
 
+> Note: Due to an [ongoing Apps Script issue](https://issuetracker.google.com/issues/170799249), users viewing the application via "share" links **must** be granted the `Editor` role on the underlying Google Sheet and Apps Script project. This can be done by navigating to the [Apps Script home page](https://script.google.com), locating the `ViGenAiR` script and using the [more vertical](https://fonts.google.com/icons?selected=Material+Symbols+Outlined:more_vert) icon to `Share Sheet + Script`.
+
 ### Pricing and Quotas
 
 Users are priced according to their usage of Google (Cloud and Workspace) services as detailed below. In summary, Processing *1 min of video and generating 5 variants* would cost around **$7 with `Gemini 1.0 Pro Vision`, $5.5 with `Gemini 1.5 Pro`, and $3.3 with `Gemini 1.5 Flash`**. You may define the multimodal and language models used by Vigenair by modifying the `CONFIG_VISION_MODEL` and `CONFIG_TEXT_MODEL` environment variables respectively for the Cloud Function in [deploy.sh](./service/deploy.sh), as well as the `CONFIG.vertexAi.model` property in [config.ts](ui/src/config.ts) for the frontend web app. The most cost-effective setup is using `Gemini 1.5 Flash` throughout (for both multimodal and text-only use cases), also considering [quota limits](https://cloud.google.com/vertex-ai/generative-ai/docs/quotas#quotas_by_region_and_model) per model.
