@@ -80,21 +80,29 @@ export interface RenderQueueVariant {
   scenes: string;
 }
 
+export type FormatType = 'horizontal' | 'vertical' | 'square';
+
+export interface EntityApproval {
+  entity: string;
+  approved: boolean;
+}
+
 export interface VariantFormats {
-  horizontal: string;
-  vertical: string;
-  square: string;
+  horizontal?: EntityApproval;
+  vertical?: EntityApproval;
+  square?: EntityApproval;
 }
 
 export interface VariantImageAssets {
-  horizontal: string[];
-  vertical: string[];
-  square: string[];
+  horizontal?: EntityApproval[];
+  vertical?: EntityApproval[];
+  square?: EntityApproval[];
 }
 
 export interface VariantTextAsset {
   headline: string;
   description: string;
+  approved: boolean;
 }
 
 export interface RenderedVariant {
@@ -104,7 +112,7 @@ export interface RenderedVariant {
   description: string;
   score: number;
   reasoning: string;
-  variants: VariantFormats;
+  variants?: VariantFormats;
   duration: string;
   scenes: string;
   render_settings: RenderSettings;
@@ -159,4 +167,8 @@ export interface ApiCalls {
   ): Observable<string>;
   getGcsFolderPath(folder: string): Observable<string>;
   getWebAppUrl(): Observable<string>;
+  storeApprovalStatus(
+    gcsFolder: string,
+    combos: RenderedVariant[]
+  ): Observable<boolean>;
 }

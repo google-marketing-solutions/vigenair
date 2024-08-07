@@ -91,38 +91,42 @@ limitations under the License.
       >
         <mat-icon>upload</mat-icon>Upload video
       </button>
-      <mat-slide-toggle
-        #videosFilterToggle="matSlideToggle"
-        color="primary"
-        style="display: block; margin-bottom: 10px"
-        *ngIf="previousRuns && previousRuns.length > 0"
-        [checked]="false"
-        [disabled]="loading"
-        >My videos only</mat-slide-toggle
-      >
-      <mat-form-field
-        style="width: 300px"
-        subscriptSizing="dynamic"
-        *ngIf="previousRuns && previousRuns.length > 0"
-      >
-        <mat-label>Load existing video</mat-label>
-        <mat-select
-          (selectionChange)="loadPreviousRun($event.value)"
+      @if (previousRuns && previousRuns.length > 0) {
+        <mat-slide-toggle
+          #videosFilterToggle="matSlideToggle"
+          color="primary"
+          style="display: block; margin-bottom: 10px"
+          [checked]="false"
           [disabled]="loading"
-          (click)="getPreviousRuns()"
+          >My videos only</mat-slide-toggle
         >
-          @for (run of previousRuns; track $index) {
-            <mat-option *ngIf="isCurrentUserRun(run)" [value]="run"
-              >{{ run.split('--')[0]
-              }}{{
-                run.split('--').length === 4 && run.split('--')[1] === 'n'
-                  ? ' (no voice-over)'
-                  : ''
-              }}</mat-option
-            >
-          }
-        </mat-select>
-      </mat-form-field>
+        <mat-form-field style="width: 300px" subscriptSizing="dynamic">
+          <mat-label>Load existing video</mat-label>
+          <mat-select
+            (selectionChange)="loadPreviousRun($event.value)"
+            [disabled]="loading"
+            (click)="getPreviousRuns()"
+          >
+            @for (run of previousRuns; track $index) {
+              <mat-option *ngIf="isCurrentUserRun(run)" [value]="run"
+                >{{ run.split('--')[0]
+                }}{{
+                  run.split('--').length === 4 && run.split('--')[1] === 'n'
+                    ? ' (no voice-over)'
+                    : ''
+                }}</mat-option
+              >
+            }
+          </mat-select>
+        </mat-form-field>
+      } @else if (!previousRuns) {
+        <div>
+          <mat-spinner
+            style="margin-bottom: 16px; margin-left: 4px"
+          ></mat-spinner>
+          Loading videos
+        </div>
+      }
     </mat-expansion-panel>
 
     <mat-expansion-panel #videoMagicPanel>
@@ -491,7 +495,10 @@ limitations under the License.
           *ngFor="let combo of combos"
           label="{{ combo.title }} -- {{ combo.duration }}"
         >
-          <video-combo [combo]="combo"></video-combo>
+          <video-combo
+            [combo]="combo"
+            [showApprovalStatus]="showApprovalStatus"
+          ></video-combo>
         </mat-tab>
       </mat-tab-group>
       <div
@@ -505,6 +512,32 @@ limitations under the License.
       >
         <mat-spinner style="margin-bottom: 16px"></mat-spinner>
         Loading rendered videos
+      </div>
+      <div
+        *ngIf="combos && showApprovalStatus"
+        class="row"
+        style="flex-direction: column"
+      >
+        <button
+          type="button"
+          mat-raised-button
+          color="primary"
+          style="margin-bottom: 16px"
+          [disabled]="
+            loading || json.stringify(combos) === json.stringify(originalCombos)
+          "
+          (click)="storeCombosApproval()"
+        >
+          <mat-icon fontIcon="save">
+            <span class="cdk-visually-hidden"
+              >Store variants approval status</span
+            > </mat-icon
+          >Save approval status
+        </button>
+        <span class="notice-text"
+          >Modify approval status for any rendered video variant or asset to
+          save changes.
+        </span>
       </div>
     </mat-expansion-panel>
   </mat-sidenav-content>

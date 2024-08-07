@@ -58,10 +58,12 @@ import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
 import {
   AvSegment,
+  FormatType,
   GenerateVariantsResponse,
   RenderedVariant,
   RenderQueueVariant,
   RenderSettings,
+  VariantTextAsset,
 } from './api-calls/api-calls.service.interface';
 import { FileChooserComponent } from './file-chooser/file-chooser.component';
 import { SmartFramingDialog } from './framing-dialog/framing-dialog.component';
@@ -126,6 +128,7 @@ export class AppComponent {
   verticalVideoObjects?: any[];
   combosJson?: any;
   combos?: RenderedVariant[];
+  originalCombos?: RenderedVariant[];
   originalAvSegments?: any;
   avSegments?: any;
   variants?: GenerateVariantsResponse[];
@@ -151,6 +154,7 @@ export class AppComponent {
   folderGcsPath = '';
   combosFolder = '';
   math = Math;
+  json = JSON;
   stars: number[] = new Array(5).fill(0);
   renderQueue: RenderQueueVariant[] = [];
   renderQueueJsonArray: string[] = [];
@@ -173,6 +177,7 @@ export class AppComponent {
     (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth);
   maxNonLandscapeHeight = CONFIG.defaultVideoHeight;
   maxRetries = CONFIG.maxRetries;
+  showApprovalStatus = false;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -431,6 +436,7 @@ export class AppComponent {
           this.previewVideoElem.nativeElement.pause();
           this.videoMagicPanel.close();
           this.videoCombosPanel.open();
+          this.storeCombosApproval(false);
         },
         error: err => this.failHandler(err, folder),
       });
@@ -498,6 +504,7 @@ export class AppComponent {
     this.originalAvSegments = undefined;
     this.combosJson = undefined;
     this.combos = undefined;
+    this.originalCombos = undefined;
     this.activeVideoObjects = undefined;
     this.videoObjects = undefined;
     this.squareVideoObjects = undefined;
@@ -527,8 +534,8 @@ export class AppComponent {
   resetVideoCanvas() {
     this.magicCanvas.nativeElement.style.removeProperty('width');
     this.magicCanvas.nativeElement.style.removeProperty('height');
-    this.videoWidth = 1280;
-    this.videoHeight = 720;
+    this.videoWidth = CONFIG.defaultVideoWidth;
+    this.videoHeight = CONFIG.defaultVideoHeight;
     const segmentsListElement = document.querySelector(
       'segments-list'
     )! as HTMLElement;
@@ -1110,21 +1117,37 @@ export class AppComponent {
         description: combo.description,
         score: combo.score,
         reasoning: combo.score_reasoning,
-        variants: combo.variants,
         duration: duration,
         scenes: segments
           .map((segment: AvSegment) => segment.av_segment_id)
           .join(', '),
         render_settings: combo.render_settings,
       };
+      renderedVariant.variants = {};
+      for (const format in combo.variants) {
+        renderedVariant.variants[format as FormatType] = {
+          entity: combo.variants[format],
+          approved: true,
+        };
+      }
       if (combo.images) {
-        renderedVariant.images = combo.images;
+        renderedVariant.images = {};
+        for (const format in combo.images) {
+          const images = combo.images[format].map((image: string) => {
+            return { entity: image, approved: true };
+          });
+          renderedVariant.images[format as FormatType] = images;
+        }
       }
       if (combo.texts) {
-        renderedVariant.texts = combo.texts;
+        renderedVariant.texts = combo.texts.map((text: VariantTextAsset) => {
+          text.approved = true;
+          return text;
+        });
       }
       return renderedVariant;
     });
+    this.originalCombos = structuredClone(this.combos);
   }
 
   restoreSegmentOrder() {
@@ -1135,6 +1158,35 @@ export class AppComponent {
     ) {
       this.avSegments = structuredClone(this.originalAvSegments);
       this.setSelectedSegments(this.variants![this.selectedVariant].scenes);
+    }
+  }
+
+  storeCombosApproval(loading = true) {
+    if (JSON.stringify(this.combos) !== JSON.stringify(this.originalCombos)) {
+      this.loading = loading;
+      this.apiCallsService
+        .storeApprovalStatus(this.combosFolder, this.combos!)
+        .subscribe((result: boolean) => {
+          if (result) {
+            this.originalCombos = structuredClone(this.combos);
+          }
+          this.loading = false;
+          this.snackBar
+            .open(
+              result
+                ? 'Saved successfully!'
+                : 'An error occurred! Please try again.',
+              'Dismiss',
+              {
+                horizontalPosition: 'center',
+                duration: 2500,
+              }
+            )
+            .onAction()
+            .subscribe(() => {
+              this.snackBar.dismiss();
+            });
+        });
     }
   }
 }

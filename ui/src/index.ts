@@ -32,6 +32,7 @@ import {
   GeneratePreviewsResponse,
   GenerationSettings,
   PreviewSettings,
+  RenderedVariant,
   RenderQueue,
 } from './ui/src/app/api-calls/api-calls.service.interface';
 
@@ -163,6 +164,24 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getWebAppUrl(): string {
   return ScriptApp.getService().getUrl();
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function storeApprovalStatus(
+  folder: string,
+  combos: RenderedVariant[]
+): boolean {
+  const encodedJson = Utilities.base64Encode(
+    JSON.stringify(combos),
+    Utilities.Charset.UTF_8
+  );
+  StorageManager.uploadFile(
+    encodedJson,
+    folder,
+    'approval.json',
+    'application/json'
+  );
+  return true;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

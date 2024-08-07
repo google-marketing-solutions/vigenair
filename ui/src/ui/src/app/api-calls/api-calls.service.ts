@@ -26,6 +26,7 @@ import {
   GenerationSettings,
   PreviewSettings,
   PreviousRunsResponse,
+  RenderedVariant,
   RenderQueue,
 } from './api-calls.service.interface';
 
@@ -264,5 +265,27 @@ export class ApiCallsService implements ApiCalls {
     }).pipe(
       retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
     );
+  }
+
+  storeApprovalStatus(
+    folder: string,
+    combos: RenderedVariant[]
+  ): Observable<boolean> {
+    return new Observable<boolean>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((response: boolean) => {
+          this.ngZone.run(() => {
+            subscriber.next(response);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error('Error while storing approval status! Error: ', error);
+          throw error;
+        })
+        .storeApprovalStatus(folder, combos);
+    });
   }
 }

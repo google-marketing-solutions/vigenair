@@ -18,12 +18,17 @@ limitations under the License.
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </div>
 <div *ngIf="displayMode === 'combo'" class="row">
+  @if (showApprovalStatus) {
+    <span class="approve-headline">Approval Status</span>
+  }
   <mat-button-toggle-group
     #variantGroup="matButtonToggleGroup"
     [disabled]="loading"
     (change)="onChangeVideo($event)"
     value="horizontal"
     hideSingleSelectionIndicator="true"
+    [style.margin-right]="showApprovalStatus ? 'auto' : ''"
+    [style.margin-left]="showApprovalStatus ? '-132px' : ''"
   >
     <mat-button-toggle
       value="horizontal"
@@ -39,8 +44,33 @@ limitations under the License.
     </mat-button-toggle>
   </mat-button-toggle-group>
 </div>
-<div *ngIf="displayMode === 'combo'" class="row">
-  <video class="mat-elevation-z8" #videoElem controls>
+<div *ngIf="displayMode === 'combo'" class="row" style="align-items: normal">
+  @if (showApprovalStatus) {
+    <div
+      class="approve-container"
+      (click)="toggleApprovalStatus(combo.variants![selectedFormat]!)"
+    >
+      <mat-icon
+        class="approve-icon"
+        [matTooltip]="
+          combo.variants![selectedFormat]!.approved
+            ? 'Remove approval'
+            : 'Approve video format'
+        "
+        >{{
+          combo.variants![selectedFormat]!.approved
+            ? 'check_box'
+            : 'check_box_outline_blank'
+        }}</mat-icon
+      >
+    </div>
+  }
+  <video
+    class="mat-elevation-z8"
+    [style.margin-right]="showApprovalStatus ? 'auto' : ''"
+    #videoElem
+    controls
+  >
     <source src="" />
   </video>
 </div>
@@ -92,7 +122,23 @@ limitations under the License.
       @for (image of images; track image; let i = $index) {
         <div class="filmstrip-row">
           <div style="display: flex; position: relative">
-            <img class="filmstrip-img" src="{{ image }}" />
+            @if (showApprovalStatus) {
+              <div (click)="toggleApprovalStatus(image)">
+                <mat-icon
+                  class="approve-icon shadow"
+                  [matTooltip]="
+                    image.approved ? 'Remove approval' : 'Approve image asset'
+                  "
+                  >{{
+                    image.approved ? 'check_box' : 'check_box_outline_blank'
+                  }}</mat-icon
+                >
+              </div>
+            }
+            <img
+              class="filmstrip-img {{ selectedFormat }}"
+              src="{{ image.entity }}"
+            />
           </div>
         </div>
       }
@@ -107,9 +153,25 @@ limitations under the License.
     <span class="assets-header">Text assets</span>
     <mat-table [dataSource]="combo.texts" class="mat-elevation-z8">
       <ng-container matColumnDef="position">
-        <mat-header-cell *matHeaderCellDef> No. </mat-header-cell>
+        <mat-header-cell *matHeaderCellDef>
+          {{ showApprovalStatus ? 'Approval Status' : 'No.' }}
+        </mat-header-cell>
         <mat-cell *matCellDef="let element; let i = index">
-          {{ i + 1 }}
+          @if (showApprovalStatus) {
+            <div (click)="toggleApprovalStatus(element)">
+              <mat-icon
+                class="approve-icon"
+                [matTooltip]="
+                  element.approved ? 'Remove approval' : 'Approve text asset'
+                "
+                >{{
+                  element.approved ? 'check_box' : 'check_box_outline_blank'
+                }}</mat-icon
+              >
+            </div>
+          } @else {
+            {{ i + 1 }}
+          }
         </mat-cell>
       </ng-container>
       <ng-container matColumnDef="headline">

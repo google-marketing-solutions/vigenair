@@ -84,8 +84,38 @@ video {
   width: 256px;
 }
 
+.filmstrip-img.square {
+  width: 200px;
+}
+
+.filmstrip-img.vertical {
+  width: 144px;
+}
+
 .assets-header {
   font-size: 18px;
   margin-top: 8px;
   margin-bottom: 8px;
+}
+
+.approve-container {
+  margin-right: auto;
+}
+
+.approve-icon {
+  color: #3f51b5;
+  width: 46px;
+  height: 46px;
+  font-size: 46px;
+}
+
+.approve-icon.shadow {
+  filter: drop-shadow(2px 2px 3px black);
+  position: absolute;
+}
+
+.approve-headline {
+  font-size: 18px;
+  font-weight: 500;
+  margin-right: auto;
 }

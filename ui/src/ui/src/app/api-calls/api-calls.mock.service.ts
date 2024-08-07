@@ -16,7 +16,7 @@
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { Observable, lastValueFrom, of } from 'rxjs';
+import { lastValueFrom, Observable, of } from 'rxjs';
 import {
   ApiCalls,
   GeneratePreviewsResponse,
@@ -24,6 +24,7 @@ import {
   GenerationSettings,
   PreviewSettings,
   PreviousRunsResponse,
+  RenderedVariant,
   RenderQueue,
 } from './api-calls.service.interface';
 
@@ -135,5 +136,18 @@ export class ApiCallsService implements ApiCalls {
   }
   getWebAppUrl(): Observable<string> {
     return of('');
+  }
+  storeApprovalStatus(
+    gcsFolder: string,
+    combos: RenderedVariant[]
+  ): Observable<boolean> {
+    return new Observable(subscriber => {
+      setTimeout(() => {
+        this.ngZone.run(() => {
+          subscriber.next(true);
+          subscriber.complete();
+        });
+      }, 1000);
+    });
   }
 }
