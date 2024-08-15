@@ -168,6 +168,23 @@ limitations under the License.
             <mat-button-toggle value="segments" matTooltip="Segments info">
               <mat-icon>theaters</mat-icon>
             </mat-button-toggle>
+            <mat-button-toggle
+              *ngIf="
+                (previewToggleGroup.value === 'square' ||
+                  previewToggleGroup.value === 'vertical') &&
+                previewVideoElem.paused &&
+                previewVideoElem.currentTime > 0 &&
+                segmentModeToggle.value === 'preview'
+              "
+              value="movecrop"
+              [matTooltip]="
+                moveCropArea ? 'Save adjusted crop-area' : 'Move crop-area'
+              "
+              [disabled]="!verticalVideoObjects || !squareVideoObjects"
+              (click)="toggleMoveCropArea()"
+            >
+              <mat-icon>{{ moveCropArea ? 'save' : 'open_with' }}</mat-icon>
+            </mat-button-toggle>
           </mat-button-toggle-group>
         </div>
         <div style="margin-left: auto">
@@ -241,6 +258,15 @@ limitations under the License.
             />
           </video>
           <canvas #magicCanvas></canvas>
+          <div
+            #canvasDragElement
+            class="canvas-drag-element"
+            cdkDrag
+            cdkDragLockAxis="x"
+            cdkDragBoundary=".video-container"
+            [cdkDragFreeDragPosition]="dragPosition"
+            style="visibility: hidden"
+          ></div>
         </div>
       </div>
       <div class="row">

@@ -80,6 +80,11 @@ segments-list {
   pointer-events: none;
 }
 
+.canvas-drag-element {
+  cursor: move;
+  overflow: hidden;
+}
+
 .hourglass_top {
   background-color: #e0e0e0 !important;
 }

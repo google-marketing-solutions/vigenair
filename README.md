@@ -33,6 +33,7 @@ limitations under the License.
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
 * [August 2024]
+  * `frontend`: You can now manually move the Smart Framing crop area to better capture the point of interest. Read more [here](#3-object-tracking-and-smart-framing).
   * `frontend`: You can now share a page of the Web App containing your rendered videos and all associated image & text assets via a dedicated link. Read more [here](#6-output-videos).
   * `frontend` + `backend`: Performance improvements for processing videos that are 10 minutes or longer.
 * [July 2024]
@@ -181,6 +182,20 @@ The UI continuously queries GCS for updates while showing a preview of the uploa
 * Smart framing is controlled via weights that can be modified via the fourth button of the toggle group to increase or decrease the prominence score of each element, and therefore skew the crop area towards it. You can regenerate the crop area previews via the button in the settings dialog as shown below.
 
   <center><img src='./img/preview-format-settings.png' width="600px" alt="Vigenair UI: Video format preview settings" /></center>
+
+* You can also manually move the crop area in case the smart framing weights were insufficient in capturing your desired point of interest. This is possible by doing the following:
+  * Select the desired format (square / vertical) from the toggle group and play the video.
+  * Pause the video at the point where you would like to manually move the crop area.
+  * Click on the "Move crop area" button that will appear above the video once paused.
+
+    <center><img src='./img/preview-format-move.png' width="700px" alt="Vigenair UI: Move crop area" /></center>
+
+  * Drag the crop area left or right as desired.
+  * Save the new position of the crop area by clicking on the "Save adjusted crop area" button.
+
+    <center><img src='./img/preview-format-save.png' width="700px" alt="Vigenair UI: Move crop area" /></center>
+
+The crop area will be adjusted automatically for all preceding and subsequent video frames that had the same undesired position.
 
 * Once the `data.json` is available, the extracted A/V Segments are displayed along with a set of user controls.
 * Clicking on the link icon in the top-right corner of the "Video editing" panel will open the Cloud Storage browser UI and navigate to the associated video folder.

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { CdkDrag } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -104,6 +105,7 @@ export type FramingDialogData = {
     MatCardModule,
     MatDialogModule,
     MatProgressSpinnerModule,
+    CdkDrag,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -117,8 +119,6 @@ export class AppComponent {
   selectedFile?: File;
   videoPath?: string;
   analysisJson?: any;
-  squarePreviewAnalysis?: any;
-  verticalPreviewAnalysis?: any;
   activeVideoObjects?: any[];
   videoObjects?: any[];
   squareVideoObjects?: any[];
@@ -154,11 +154,14 @@ export class AppComponent {
   renderQueueJsonArray: string[] = [];
   negativePrompt = false;
   displayObjectTracking = true;
+  moveCropArea = false;
   weightsTextIndex = 3;
   weightsPersonFaceIndex = 1;
   weightSteps = [0, 10, 100, 1000];
   subtitlesTrack = '';
   webAppUrl = '';
+  dragPosition = { x: 0, y: 0 };
+  cropAreaRect?: DOMRect;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -176,6 +179,8 @@ export class AppComponent {
   renderQueueButtonSpan!: ElementRef<HTMLSpanElement>;
   @ViewChild('reorderSegmentsToggle') reorderSegmentsToggle?: MatSlideToggle;
   @ViewChild('previewToggleGroup') previewToggleGroup!: MatButtonToggleGroup;
+  @ViewChild('canvasDragElement')
+  canvasDragElement?: ElementRef<HTMLDivElement>;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -246,6 +251,21 @@ export class AppComponent {
       });
     this.apiCallsService.deleteGcsFolder(folder);
     this.getPreviousRuns();
+  }
+
+  getCurrentCropAreaFrame(entities: any[]):
+    | {
+        currentFrame: { x: number; width: number; height: number };
+        idx: number;
+      }
+    | undefined {
+    const timestamp = this.previewVideoElem.nativeElement.currentTime;
+    for (let i = 0; i < entities[0].frames.length; i++) {
+      if (entities[0].frames[i].time >= timestamp) {
+        return { currentFrame: entities[0].frames[i], idx: i };
+      }
+    }
+    return;
   }
 
   drawFrame(entities?: any[]) {
@@ -455,9 +475,7 @@ export class AppComponent {
     this.activeVideoObjects = undefined;
     this.videoObjects = undefined;
     this.squareVideoObjects = undefined;
-    this.squarePreviewAnalysis = undefined;
     this.verticalVideoObjects = undefined;
-    this.verticalPreviewAnalysis = undefined;
     this.variants = undefined;
     this.transcriptStatus = 'hourglass_top';
     this.analysisStatus = 'hourglass_top';
@@ -468,8 +486,10 @@ export class AppComponent {
     this.segmentModeToggle.value = 'preview';
     this.previewToggleGroup.value = 'toggle';
     this.displayObjectTracking = true;
+    this.moveCropArea = false;
     this.previewTrackElem.nativeElement.src = '';
     this.subtitlesTrack = '';
+    this.cropAreaRect = undefined;
     this.previewVideoElem.nativeElement.pause();
     this.VideoComboComponent?.videoElem.nativeElement.pause();
     this.videoMagicPanel.close();
@@ -559,11 +579,7 @@ export class AppComponent {
   generatePreviews(loading = false) {
     this.loading = loading;
     this.generatingPreviews = true;
-    this.squareVideoObjects =
-      this.squarePreviewAnalysis =
-      this.verticalVideoObjects =
-      this.verticalPreviewAnalysis =
-        undefined;
+    this.squareVideoObjects = this.verticalVideoObjects = undefined;
     this.apiCallsService
       .generatePreviews(this.analysisJson, this.avSegments, {
         sourceDimensions: {
@@ -584,17 +600,113 @@ export class AppComponent {
           this.loading = false;
         }
         const previewFilter = (e: any) => e.entity.description === 'crop-area';
-        this.squarePreviewAnalysis = JSON.parse(previews.square);
+        const squarePreviewAnalysis = JSON.parse(previews.square);
         this.squareVideoObjects = this.parseAnalysis(
-          this.squarePreviewAnalysis,
+          squarePreviewAnalysis,
           previewFilter
         );
-        this.verticalPreviewAnalysis = JSON.parse(previews.vertical);
+        const verticalPreviewAnalysis = JSON.parse(previews.vertical);
         this.verticalVideoObjects = this.parseAnalysis(
-          this.verticalPreviewAnalysis,
+          verticalPreviewAnalysis,
           previewFilter
         );
       });
+  }
+
+  toggleMoveCropArea() {
+    this.segmentModeToggle.value = 'preview';
+    this.moveCropArea = !this.moveCropArea;
+    const { currentFrame, idx } = this.getCurrentCropAreaFrame(
+      this.activeVideoObjects!
+    )!;
+
+    if (this.moveCropArea) {
+      while (this.canvasDragElement?.nativeElement.firstChild) {
+        this.canvasDragElement?.nativeElement.removeChild(
+          this.canvasDragElement?.nativeElement.firstChild
+        );
+      }
+      const canvasViewWidth = this.magicCanvas?.nativeElement.scrollWidth;
+      const canvasViewHeight = this.magicCanvas?.nativeElement.scrollHeight;
+
+      const outputX =
+        (currentFrame.x * canvasViewWidth) /
+        this.previewVideoElem.nativeElement.videoWidth;
+      const outputWidth =
+        (currentFrame.width * canvasViewWidth) /
+        this.previewVideoElem.nativeElement.videoWidth;
+      const outputHeight =
+        (currentFrame.height * canvasViewHeight) /
+        this.previewVideoElem.nativeElement.videoHeight;
+
+      const img = document.createElement('img');
+      img.src = this.magicCanvas?.nativeElement.toDataURL('image/png');
+      img.setAttribute(
+        'style',
+        `object-position: -${outputX}px; clip-path: rect(0px ${outputWidth}px ${outputHeight}px 0px); width: ${canvasViewWidth}px; height: ${canvasViewHeight}px;`
+      );
+      this.canvasDragElement?.nativeElement.appendChild(img);
+      this.canvasDragElement?.nativeElement.setAttribute(
+        'style',
+        `position: absolute; display: block; left: ${outputX}px; width: ${outputWidth}px; height: ${outputHeight}px`
+      );
+      this.canvas!.clearRect(
+        0,
+        0,
+        this.previewVideoElem.nativeElement.videoWidth,
+        this.previewVideoElem.nativeElement.videoHeight
+      );
+      this.previewVideoElem.nativeElement.controls = false;
+      this.cropAreaRect = img.getBoundingClientRect();
+    } else {
+      const imgElement = this.canvasDragElement?.nativeElement
+        .firstChild as HTMLImageElement;
+      const newX =
+        currentFrame.x +
+        imgElement.getBoundingClientRect().x -
+        this.cropAreaRect!.x;
+      this.updateVideoObjects(currentFrame.x, newX, idx);
+
+      this.dragPosition = { x: 0, y: 0 };
+      this.canvasDragElement?.nativeElement.setAttribute(
+        'style',
+        'display: none'
+      );
+      this.previewVideoElem.nativeElement.controls = true;
+    }
+  }
+
+  updateVideoObjects(currentX: number, newX: number, idx: number) {
+    const cropArea = this.activeVideoObjects![0];
+    const [startIdx, endIdx] = this.getMatchingCropAreaIndexRange(
+      currentX,
+      idx
+    );
+    for (let i = startIdx; i < endIdx; i++) {
+      if (cropArea.frames[i].x === currentX) {
+        cropArea.frames[i].x = newX;
+      }
+    }
+  }
+
+  getMatchingCropAreaIndexRange(currentX: number, idx: number) {
+    const cropArea = this.activeVideoObjects![0];
+    let startIdx = 0,
+      endIdx = cropArea.frames.length;
+
+    for (let i = idx; i < cropArea.frames.length; i++) {
+      if (cropArea.frames[i].x !== currentX) {
+        endIdx = i;
+        break;
+      }
+    }
+    for (let i = idx; i >= 0; i--) {
+      if (cropArea.frames[i].x !== currentX) {
+        startIdx = i + 1;
+        break;
+      }
+    }
+    return [startIdx, endIdx];
   }
 
   loadPreview() {
@@ -871,8 +983,8 @@ export class AppComponent {
     this.apiCallsService
       .renderVariants(this.folder, {
         queue: this.renderQueue,
-        squareCropAnalysis: this.squarePreviewAnalysis,
-        verticalCropAnalysis: this.verticalPreviewAnalysis,
+        squareCropAnalysis: this.squareVideoObjects,
+        verticalCropAnalysis: this.verticalVideoObjects,
         sourceDimensions: {
           w: this.previewVideoElem.nativeElement.videoWidth,
           h: this.previewVideoElem.nativeElement.videoHeight,

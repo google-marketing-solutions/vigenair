@@ -459,24 +459,21 @@ export class PreviewHelper {
   }
 
   static generateCropCommands(
-    cropAnalysis: VideoIntelligence,
-    sourceDimensions: { w: number; h: number },
+    cropAnalysis: any,
     targetDimensions: { w: number; h: number }
   ) {
-    const lines =
-      cropAnalysis.annotation_results[0].object_annotations![0].frames.map(
-        (frame, index) => {
-          const time =
-            frame.time_offset!.seconds! + frame.time_offset!.nanos! / 1e9;
-          const x = frame.normalized_bounding_box!.left! * sourceDimensions.w;
-          const y = 0;
-          const w = targetDimensions.w;
-          const h = targetDimensions.h;
-          return index === 0
-            ? `${time} crop x ${x}, crop y ${y}, crop w ${w}, crop h ${h};`
-            : `${time} crop x ${x};`;
-        }
-      );
+    const lines = cropAnalysis[0].frames.map(
+      (frame: { time: number; x: number }, index: number) => {
+        const time = frame.time;
+        const x = frame.x;
+        const y = 0;
+        const w = targetDimensions.w;
+        const h = targetDimensions.h;
+        return index === 0
+          ? `${time} crop x ${x}, crop y ${y}, crop w ${w}, crop h ${h};`
+          : `${time} crop x ${x};`;
+      }
+    );
     return lines.join('\n');
   }
 }
