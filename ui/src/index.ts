@@ -114,10 +114,14 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
   );
 
   const encodedSquareCropCommands = Utilities.base64Encode(
-    PreviewHelper.generateCropCommands(renderQueue.squareCropAnalysis, {
-      w: renderQueue.sourceDimensions.h,
-      h: renderQueue.sourceDimensions.h,
-    }),
+    PreviewHelper.generateCropCommands(
+      renderQueue.squareCropAnalysis,
+      {
+        w: renderQueue.sourceDimensions.h,
+        h: renderQueue.sourceDimensions.h,
+      },
+      720
+    ),
     Utilities.Charset.UTF_8
   );
   StorageManager.uploadFile(
@@ -128,12 +132,16 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
   );
 
   const encodedVerticalCropCommands = Utilities.base64Encode(
-    PreviewHelper.generateCropCommands(renderQueue.verticalCropAnalysis, {
-      w:
-        renderQueue.sourceDimensions.h *
-        (renderQueue.sourceDimensions.h / renderQueue.sourceDimensions.w),
-      h: renderQueue.sourceDimensions.h,
-    }),
+    PreviewHelper.generateCropCommands(
+      renderQueue.verticalCropAnalysis,
+      {
+        w:
+          renderQueue.sourceDimensions.h *
+          (renderQueue.sourceDimensions.h / renderQueue.sourceDimensions.w),
+        h: renderQueue.sourceDimensions.h,
+      },
+      405
+    ),
     Utilities.Charset.UTF_8
   );
   StorageManager.uploadFile(

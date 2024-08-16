@@ -16,6 +16,8 @@ limitations under the License.
 
 :host {
   --filmstrip-size: 6px;
+  --filmstrip-image-width: 256px;
+  --filmstrip-image-height: 144px;
 }
 
 .content {
@@ -82,7 +84,7 @@ img {
 
 .filmstrip-img {
   display: flex;
-  width: 256px;
+  width: var(--filmstrip-image-width);
 }
 
 .current-segment {
@@ -114,7 +116,7 @@ mat-icon {
   color: rgba(0, 0, 0, 0.87);
   cursor: move;
   background: black;
-  height: 144px;
+  height: var(--filmstrip-image-height);
 }
 
 .active-segment .drag-element::before {

@@ -64,6 +64,7 @@ segments-list {
   max-width: 1280px;
   max-height: 720px;
   aspect-ratio: 16 / 9;
+  align-items: center;
 }
 
 .video-container > video {
@@ -73,10 +74,6 @@ segments-list {
 
 .video-container > canvas {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
 }
 

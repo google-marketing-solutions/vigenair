@@ -207,22 +207,38 @@ limitations under the License.
             </mat-button-toggle>
             <mat-button-toggle
               value="vertical"
-              matTooltip="Vertical format"
-              [disabled]="!verticalVideoObjects"
+              matTooltip="{{
+                nonLandscapeInputVideo
+                  ? 'Available for landscape videos only'
+                  : 'Vertical format'
+              }}"
+              [disabled]="!verticalVideoObjects || nonLandscapeInputVideo"
             >
               <mat-icon>smartphone</mat-icon>
             </mat-button-toggle>
             <mat-button-toggle
               value="square"
+              matTooltip="{{
+                nonLandscapeInputVideo
+                  ? 'Available for landscape videos only'
+                  : 'Square format'
+              }}"
               matTooltip="Square format"
-              [disabled]="!squareVideoObjects"
+              [disabled]="!squareVideoObjects || nonLandscapeInputVideo"
             >
               <mat-icon>slideshow</mat-icon>
             </mat-button-toggle>
             <mat-button-toggle
               value="settings"
-              matTooltip="Settings dialog"
-              [disabled]="!verticalVideoObjects && !squareVideoObjects"
+              matTooltip="{{
+                nonLandscapeInputVideo
+                  ? 'Available for landscape videos only'
+                  : 'Settings dialog'
+              }}"
+              [disabled]="
+                (!verticalVideoObjects && !squareVideoObjects) ||
+                nonLandscapeInputVideo
+              "
             >
               <mat-icon>settings</mat-icon>
             </mat-button-toggle>
@@ -362,10 +378,22 @@ limitations under the License.
             />
           </div>
           <div class="user-settings">
-            <mat-checkbox color="primary" [(ngModel)]="renderAllFormats">
-              Render all formats
-            </mat-checkbox>
-            <span class="format-icons">
+            <span
+              matTooltip="{{
+                nonLandscapeInputVideo
+                  ? 'Available for landscape videos only'
+                  : ''
+              }}"
+            >
+              <mat-checkbox
+                color="primary"
+                [(ngModel)]="renderAllFormats"
+                [disabled]="nonLandscapeInputVideo"
+              >
+                Render all formats
+              </mat-checkbox>
+            </span>
+            <span class="format-icons" *ngIf="!nonLandscapeInputVideo">
               <span class="format-icon"><mat-icon>computer</mat-icon></span>
               <span class="format-icon"><mat-icon>smartphone</mat-icon></span>
               <span class="format-icon"><mat-icon>slideshow</mat-icon></span>

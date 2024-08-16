@@ -162,6 +162,9 @@ export class AppComponent {
   webAppUrl = '';
   dragPosition = { x: 0, y: 0 };
   cropAreaRect?: DOMRect;
+  nonLandscapeInputVideo = false;
+  videoWidth = 0;
+  videoHeight = 0;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -273,12 +276,7 @@ export class AppComponent {
     if (!context || !entities) {
       return;
     }
-    context.clearRect(
-      0,
-      0,
-      this.previewVideoElem.nativeElement.videoWidth,
-      this.previewVideoElem.nativeElement.videoHeight
-    );
+    context.clearRect(0, 0, this.videoWidth, this.videoHeight);
     if (this.displayObjectTracking) {
       const timestamp = this.previewVideoElem.nativeElement.currentTime;
       entities.forEach(e => {
@@ -342,8 +340,8 @@ export class AppComponent {
   }
 
   parseAnalysis(objectsJson: any, filterCondition: (e: any) => boolean) {
-    const vw = this.previewVideoElem.nativeElement.videoWidth;
-    const vh = this.previewVideoElem.nativeElement.videoHeight;
+    const vw = this.videoWidth;
+    const vh = this.videoHeight;
     return objectsJson.annotation_results[0].object_annotations
       .filter(filterCondition)
       .map((e: any) => {
@@ -384,7 +382,9 @@ export class AppComponent {
           this.originalAvSegments = structuredClone(this.avSegments);
           this.segmentsStatus = 'check_circle';
           this.loading = false;
-          this.generatePreviews();
+          if (!this.nonLandscapeInputVideo) {
+            this.generatePreviews();
+          }
         },
         error: () => this.failHandler(folder),
       });
@@ -490,6 +490,7 @@ export class AppComponent {
     this.previewTrackElem.nativeElement.src = '';
     this.subtitlesTrack = '';
     this.cropAreaRect = undefined;
+    this.nonLandscapeInputVideo = false;
     this.previewVideoElem.nativeElement.pause();
     this.VideoComboComponent?.videoElem.nativeElement.pause();
     this.videoMagicPanel.close();
@@ -507,15 +508,36 @@ export class AppComponent {
     this.getGcsFolderPath();
     this.previewVideoElem.nativeElement.src = this.videoPath;
     this.previewVideoElem.nativeElement.onloadeddata = () => {
-      this.magicCanvas.nativeElement.width =
-        this.previewVideoElem.nativeElement.videoWidth;
-      this.magicCanvas.nativeElement.height =
-        this.previewVideoElem.nativeElement.videoHeight;
+      this.videoWidth = Math.min(
+        this.previewVideoElem.nativeElement.videoWidth,
+        1280
+      );
+      this.videoHeight = Math.min(
+        this.previewVideoElem.nativeElement.videoHeight,
+        720
+      );
+      this.magicCanvas.nativeElement.width = this.videoWidth;
+      this.magicCanvas.nativeElement.height = this.videoHeight;
       this.previewVideoElem.nativeElement.onloadeddata = null;
       this.canvas = this.magicCanvas.nativeElement.getContext('2d')!;
       this.calculateVideoDefaultDuration(
         this.previewVideoElem.nativeElement.duration
       );
+      this.nonLandscapeInputVideo = this.videoWidth <= this.videoHeight;
+      if (this.nonLandscapeInputVideo) {
+        const segmentsListElement = document.querySelector(
+          'segments-list'
+        )! as HTMLElement;
+        segmentsListElement.style.setProperty(
+          '--filmstrip-image-width',
+          this.videoWidth / 5 + 'px'
+        );
+        segmentsListElement.style.setProperty(
+          '--filmstrip-image-height',
+          this.videoHeight / 5 + 'px'
+        );
+        this.renderAllFormats = false;
+      }
     };
     this.previewVideoElem.nativeElement.onplaying = () => {
       this.frameInterval = window.setInterval(() => {
@@ -583,8 +605,8 @@ export class AppComponent {
     this.apiCallsService
       .generatePreviews(this.analysisJson, this.avSegments, {
         sourceDimensions: {
-          w: this.previewVideoElem.nativeElement.videoWidth,
-          h: this.previewVideoElem.nativeElement.videoHeight,
+          w: this.videoWidth,
+          h: this.videoHeight,
         },
         weights: {
           text: this.weightSteps[this.weightsTextIndex],
@@ -629,15 +651,11 @@ export class AppComponent {
       const canvasViewWidth = this.magicCanvas?.nativeElement.scrollWidth;
       const canvasViewHeight = this.magicCanvas?.nativeElement.scrollHeight;
 
-      const outputX =
-        (currentFrame.x * canvasViewWidth) /
-        this.previewVideoElem.nativeElement.videoWidth;
+      const outputX = (currentFrame.x * canvasViewWidth) / this.videoWidth;
       const outputWidth =
-        (currentFrame.width * canvasViewWidth) /
-        this.previewVideoElem.nativeElement.videoWidth;
+        (currentFrame.width * canvasViewWidth) / this.videoWidth;
       const outputHeight =
-        (currentFrame.height * canvasViewHeight) /
-        this.previewVideoElem.nativeElement.videoHeight;
+        (currentFrame.height * canvasViewHeight) / this.videoHeight;
 
       const img = document.createElement('img');
       img.src = this.magicCanvas?.nativeElement.toDataURL('image/png');
@@ -650,12 +668,7 @@ export class AppComponent {
         'style',
         `position: absolute; display: block; left: ${outputX}px; width: ${outputWidth}px; height: ${outputHeight}px`
       );
-      this.canvas!.clearRect(
-        0,
-        0,
-        this.previewVideoElem.nativeElement.videoWidth,
-        this.previewVideoElem.nativeElement.videoHeight
-      );
+      this.canvas!.clearRect(0, 0, this.videoWidth, this.videoHeight);
       this.previewVideoElem.nativeElement.controls = false;
       this.cropAreaRect = img.getBoundingClientRect();
     } else {
