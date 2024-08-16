@@ -91,8 +91,8 @@ gcloud functions deploy vigenair \
 --source=. \
 --entry-point=gcs_file_uploaded \
 --timeout=540s \
---memory=8Gi \
---cpu=2 \
+--memory=32Gi \
+--cpu=8 \
 --trigger-event-filters="type=google.cloud.storage.object.v1.finalized" \
 --trigger-event-filters="bucket=<gcs-bucket>" \
 --trigger-location="<gcs-location>"
