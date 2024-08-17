@@ -163,8 +163,11 @@ export class AppComponent {
   dragPosition = { x: 0, y: 0 };
   cropAreaRect?: DOMRect;
   nonLandscapeInputVideo = false;
-  videoWidth = 0;
-  videoHeight = 0;
+  videoWidth = 1280;
+  videoHeight = 720;
+  maxSquareWidth = 720;
+  maxVerticalWidth = 405;
+  maxNonLandscapeHeight = 720;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -498,6 +501,18 @@ export class AppComponent {
     this.videoUploadPanel.open();
   }
 
+  resetVideoCanvas() {
+    this.magicCanvas.nativeElement.style.removeProperty('width');
+    this.magicCanvas.nativeElement.style.removeProperty('height');
+    this.videoWidth = 1280;
+    this.videoHeight = 720;
+    const segmentsListElement = document.querySelector(
+      'segments-list'
+    )! as HTMLElement;
+    segmentsListElement.style.setProperty('--filmstrip-image-width', '256px');
+    segmentsListElement.style.setProperty('--filmstrip-image-height', '144px');
+  }
+
   processVideo(folder: string, videoFilePath: string) {
     this.resetState();
     this.folder = folder;
@@ -508,23 +523,23 @@ export class AppComponent {
     this.getGcsFolderPath();
     this.previewVideoElem.nativeElement.src = this.videoPath;
     this.previewVideoElem.nativeElement.onloadeddata = () => {
-      this.videoWidth = Math.min(
-        this.previewVideoElem.nativeElement.videoWidth,
-        1280
-      );
-      this.videoHeight = Math.min(
-        this.previewVideoElem.nativeElement.videoHeight,
-        720
-      );
-      this.magicCanvas.nativeElement.width = this.videoWidth;
-      this.magicCanvas.nativeElement.height = this.videoHeight;
-      this.previewVideoElem.nativeElement.onloadeddata = null;
-      this.canvas = this.magicCanvas.nativeElement.getContext('2d')!;
-      this.calculateVideoDefaultDuration(
-        this.previewVideoElem.nativeElement.duration
-      );
-      this.nonLandscapeInputVideo = this.videoWidth <= this.videoHeight;
+      this.resetVideoCanvas();
+      this.nonLandscapeInputVideo =
+        this.previewVideoElem.nativeElement.videoWidth <=
+        this.previewVideoElem.nativeElement.videoHeight;
+
       if (this.nonLandscapeInputVideo) {
+        this.videoWidth = Math.min(
+          this.previewVideoElem.nativeElement.videoWidth,
+          this.previewVideoElem.nativeElement.videoWidth ===
+            this.previewVideoElem.nativeElement.videoHeight
+            ? this.maxSquareWidth
+            : this.maxVerticalWidth
+        );
+        this.videoHeight = Math.min(
+          this.previewVideoElem.nativeElement.videoHeight,
+          this.maxNonLandscapeHeight
+        );
         const segmentsListElement = document.querySelector(
           'segments-list'
         )! as HTMLElement;
@@ -537,7 +552,19 @@ export class AppComponent {
           this.videoHeight / 5 + 'px'
         );
         this.renderAllFormats = false;
+      } else {
+        this.magicCanvas.nativeElement.setAttribute(
+          'style',
+          'width: 100%; height: 100%'
+        );
       }
+      this.magicCanvas.nativeElement.width = this.videoWidth;
+      this.magicCanvas.nativeElement.height = this.videoHeight;
+      this.canvas = this.magicCanvas.nativeElement.getContext('2d')!;
+      this.calculateVideoDefaultDuration(
+        this.previewVideoElem.nativeElement.duration
+      );
+      this.previewVideoElem.nativeElement.onloadeddata = null;
     };
     this.previewVideoElem.nativeElement.onplaying = () => {
       this.frameInterval = window.setInterval(() => {
@@ -605,8 +632,14 @@ export class AppComponent {
     this.apiCallsService
       .generatePreviews(this.analysisJson, this.avSegments, {
         sourceDimensions: {
-          w: this.videoWidth,
-          h: this.videoHeight,
+          w: Math.min(
+            this.videoWidth,
+            this.previewVideoElem.nativeElement.videoWidth
+          ),
+          h: Math.min(
+            this.videoHeight,
+            this.previewVideoElem.nativeElement.videoHeight
+          ),
         },
         weights: {
           text: this.weightSteps[this.weightsTextIndex],
@@ -641,6 +674,8 @@ export class AppComponent {
     const { currentFrame, idx } = this.getCurrentCropAreaFrame(
       this.activeVideoObjects!
     )!;
+    const canvasViewWidth = this.magicCanvas.nativeElement.scrollWidth;
+    const canvasViewHeight = this.magicCanvas.nativeElement.scrollHeight;
 
     if (this.moveCropArea) {
       while (this.canvasDragElement?.nativeElement.firstChild) {
@@ -648,9 +683,6 @@ export class AppComponent {
           this.canvasDragElement?.nativeElement.firstChild
         );
       }
-      const canvasViewWidth = this.magicCanvas?.nativeElement.scrollWidth;
-      const canvasViewHeight = this.magicCanvas?.nativeElement.scrollHeight;
-
       const outputX = (currentFrame.x * canvasViewWidth) / this.videoWidth;
       const outputWidth =
         (currentFrame.width * canvasViewWidth) / this.videoWidth;
@@ -658,7 +690,7 @@ export class AppComponent {
         (currentFrame.height * canvasViewHeight) / this.videoHeight;
 
       const img = document.createElement('img');
-      img.src = this.magicCanvas?.nativeElement.toDataURL('image/png');
+      img.src = this.magicCanvas.nativeElement.toDataURL('image/png');
       img.setAttribute(
         'style',
         `object-position: -${outputX}px; clip-path: rect(0px ${outputWidth}px ${outputHeight}px 0px); width: ${canvasViewWidth}px; height: ${canvasViewHeight}px;`
@@ -668,6 +700,7 @@ export class AppComponent {
         'style',
         `position: absolute; display: block; left: ${outputX}px; width: ${outputWidth}px; height: ${outputHeight}px`
       );
+      this.magicCanvas.nativeElement.style.visibility = 'hidden';
       this.canvas!.clearRect(0, 0, this.videoWidth, this.videoHeight);
       this.previewVideoElem.nativeElement.controls = false;
       this.cropAreaRect = img.getBoundingClientRect();
@@ -676,8 +709,9 @@ export class AppComponent {
         .firstChild as HTMLImageElement;
       const newX =
         currentFrame.x +
-        imgElement.getBoundingClientRect().x -
-        this.cropAreaRect!.x;
+        ((imgElement.getBoundingClientRect().x - this.cropAreaRect!.x) *
+          this.videoWidth) /
+          canvasViewWidth;
       this.updateVideoObjects(currentFrame.x, newX, idx);
 
       this.dragPosition = { x: 0, y: 0 };
@@ -685,6 +719,7 @@ export class AppComponent {
         'style',
         'display: none'
       );
+      this.magicCanvas.nativeElement.style.visibility = 'visible';
       this.previewVideoElem.nativeElement.controls = true;
     }
   }

@@ -188,13 +188,10 @@ The UI continuously queries GCS for updates while showing a preview of the uploa
   * Select the desired format (square / vertical) from the toggle group and play the video.
   * Pause the video at the point where you would like to manually move the crop area.
   * Click on the "Move crop area" button that will appear above the video once paused.
-
-    <center><img src='./img/preview-format-move.png' width="700px" alt="Vigenair UI: Move crop area" /></center>
-
   * Drag the crop area left or right as desired.
   * Save the new position of the crop area by clicking on the "Save adjusted crop area" button.
 
-    <center><img src='./img/preview-format-save.png' width="700px" alt="Vigenair UI: Move crop area" /></center>
+    <center><img src='./img/preview-format-move.gif' width="700px" alt="Vigenair UI: Move crop area" /></center>
 
 The crop area will be adjusted automatically for all preceding and subsequent video frames that had the same undesired position.
 
