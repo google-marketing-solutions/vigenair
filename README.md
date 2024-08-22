@@ -61,12 +61,13 @@ Please make sure you have fulfilled all prerequisites mentioned under [Requireme
 1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`, then login via `clasp login`.
 1. Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
 1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install), then login via `gcloud auth login`.
-1. Make sure your system has an up-to-date installation of `git` and use it to clone this repository.
-1. Navigate to the directory where the source code lives.
+1. Make sure your system has an up-to-date installation of `git` and use it to clone this repository:
+   `git clone https://github.com/google-marketing-solutions/vigenair`.
+1. Navigate to the directory where the source code lives: `cd vigenair`.
 1. Run `npm start`.
 
-You will be asked to enter a GCP Project ID, and whether you would like to deploy GCP components, the UI, or both. If you opt to deploy GCP components, you will be asked to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
-The `npm start` command will then ask you to authenticate to both Google Workspace (via [clasp](https://github.com/google/clasp)) and Google Cloud, followed by creating a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), deploying the `vigenair` Cloud Function to your Cloud project, and finally deploying the Angular UI web app to a new Apps Script project. The URL of the web app will be output at the end of the deployment process, which you can use to run the app and start generating videos.
+The `npm start` script will prompt you with a couple of questions. First, enter your GCP Project ID, and then answer the questions whether you would like to deploy GCP components, the UI, or both. If you opt to deploy GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
+The `npm start` script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to a new Apps Script project, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
 
 See [How Vigenair Works](#how-vigenair-works) for more details on the different components of the solution.
 
