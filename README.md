@@ -64,33 +64,31 @@ Please make sure you have fulfilled all prerequisites mentioned under [Requireme
 1. Make sure your system has an up-to-date installation of `git` and use it to clone this repository:
    `git clone https://github.com/google-marketing-solutions/vigenair`.
 1. Navigate to the directory where the source code lives: `cd vigenair`.
-1. Run `npm start`.
+1. Run `npm start`:
+    * First, enter your GCP Project ID.
+    * Then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
+        * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
+        * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domin to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
 
-The `npm start` script will prompt you with a couple of questions. First, enter your GCP Project ID, and then answer the questions whether you would like to deploy GCP components, the UI, or both. If you opt to deploy GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
+    > Note: If you have already run the script and you notice that there was a typo in one of the inputs, or if you would like to change the Cloud region, GCS location, or the UI access settings for Google Workspace users, you **must** first run `git reset --hard` before rerunning `npm start`.
+
 The `npm start` script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to a new Apps Script project, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
 
 See [How Vigenair Works](#how-vigenair-works) for more details on the different components of the solution.
 
 > Note: If using a completely new GCP project with no prior deployments of Cloud Run / Cloud Functions, you may receive [Eventarc permission denied errors](https://cloud.google.com/eventarc/docs/troubleshooting#trigger-error) when deploying the `vigenair` Cloud Function for the very first time. Please wait a few minutes ([up to seven](https://cloud.google.com/iam/docs/access-change-propagation)) for all necessary permissions to propagate before retrying the `npm start` command.
 
-### UI Web App Access Settings
-
-By default, Vigenair runs only for the user that deployed it. This is controlled by the [Web App access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which is set to `MYSELF` by default. This setup works well for most cases, however if you are a Google Workspace user you may change this value to `DOMAIN` to allow other individuals within your organisation to run the app. The `npm start` command will prompt you for this as well if you opt to deploy the UI.
-
 ### Managing Apps Script Deployments
 
-The installation script manages deployments for you; it always creates a new deployment (and archives older versions) whenever you run it, so that the version of the web app you use has the latest changes from this repository. If you would like to manually manage deployments, you may do so by navigating to the [Apps Script home page](https://script.google.com), locating and selecting the `ViGenAiR` project, then managing deployments via the *Deploy* button/drop-down in the top-right corner of the page.
+The `npm start` and `npm run update-app` scripts manage deployments for you; a new deployment is always created and existing ones get archived, so that the version of the web app you use has the latest changes from your local copy of this repository. If you would like to manually manage deployments, you may do so by navigating to the [Apps Script home page](https://script.google.com), locating and selecting the `ViGenAiR` project, then managing deployments via the *Deploy* button/drop-down in the top-right corner of the page.
 
 ### Requirements
 
 You need the following to use Vigenair:
 
-* Google account: required to access the Vigenair UI.
-* GCP project with:
-  * The [Vertex AI API](https://cloud.google.com/vertex-ai/docs/generative-ai/start/quickstarts/api-quickstart) enabled: required to access Gemini in Vertex AI.
-    * All users running Vigenair must be granted the [Vertex AI User](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user) role on the associated GCP project.
-  * The [Video AI API](https://cloud.google.com/video-intelligence) enabled (AKA Cloud Video Intelligence API): required for analysing input videos.
-  * All users running Vigenair must be granted the [Storage Object User](https://cloud.google.com/storage/docs/access-control/iam-roles) role on the associated GCP project.
+* Google account: required to access the Vigenair web app.
+* GCP project
+  * All users running Vigenair must be granted the [Vertex AI User](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user) and the [Storage Object User](https://cloud.google.com/storage/docs/access-control/iam-roles) roles on the associated GCP project.
 
 The Vigenair [setup and deployment script](#get-started) will create the following components:
 

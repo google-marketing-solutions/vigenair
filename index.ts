@@ -38,7 +38,7 @@ import {
       name: "deployGcpComponents",
       message:
         "Would you like to deploy the 'vigenair' service on Cloud Run / Cloud Functions?",
-      initial: false,
+      initial: true,
       active: "Yes",
       inactive: "No",
     },
