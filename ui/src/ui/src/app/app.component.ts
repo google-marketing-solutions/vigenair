@@ -374,7 +374,7 @@ export class AppComponent {
   getAvSegments(folder: string) {
     this.segmentsStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/data.json`, 6000, 100)
+      .getFromGcs(`${folder}/data.json`, CONFIG.retryDelay, CONFIG.maxRetries)
       .subscribe({
         next: data => {
           const dataJson = JSON.parse(data);
@@ -401,7 +401,7 @@ export class AppComponent {
     this.videoMagicPanel.close();
     this.videoCombosPanel.open();
     this.apiCallsService
-      .getFromGcs(`${folder}/combos.json`, 6000, 100)
+      .getFromGcs(`${folder}/combos.json`, CONFIG.retryDelay, CONFIG.maxRetries)
       .subscribe({
         next: data => {
           this.combosJson = JSON.parse(data);
@@ -419,7 +419,11 @@ export class AppComponent {
   getVideoAnalysis(folder: string) {
     this.analysisStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/analysis.json`, 6000, 100)
+      .getFromGcs(
+        `${folder}/analysis.json`,
+        CONFIG.retryDelay,
+        CONFIG.maxRetries
+      )
       .subscribe({
         next: data => {
           this.analysisJson = JSON.parse(data);
@@ -439,7 +443,7 @@ export class AppComponent {
   getSubtitlesTrack(folder: string) {
     this.transcriptStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/input.vtt`, 6000, 100)
+      .getFromGcs(`${folder}/input.vtt`, CONFIG.retryDelay, CONFIG.maxRetries)
       .subscribe({
         next: data => {
           const dataUrl = `data:text/vtt;base64,${StringUtil.encode(data)}`;

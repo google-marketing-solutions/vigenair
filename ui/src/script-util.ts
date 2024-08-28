@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-import { CONFIG } from './config';
-
 export class ScriptUtil {
   static executeWithRetry(
     fn: Function,
-    maxRetries = CONFIG.maxRetries,
-    delayMillies = 0
+    retryDelayMillis = 0,
+    maxRetries = 3
   ): GoogleAppsScript.URL_Fetch.HTTPResponse {
     let retryCount = 0;
     let error = null;
@@ -29,8 +27,8 @@ export class ScriptUtil {
       try {
         return fn();
       } catch (err) {
-        if (delayMillies) {
-          Utilities.sleep(delayMillies);
+        if (retryDelayMillis) {
+          Utilities.sleep(retryDelayMillis);
         }
         retryCount++;
         error = err;

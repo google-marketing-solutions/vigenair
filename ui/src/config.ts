@@ -76,12 +76,13 @@ export const CONFIG = {
 
     `,
   },
-  maxRetries: 3,
   defaultVideoLanguage: 'English',
   videoFolderNameSeparator: '--',
   videoFolderNoAudioSuffix: 'n',
   videoIntelligenceConfidenceThreshold: 0.7,
   defaultCacheExpiration: 60, // in seconds
-  defaultDuration: 30,
+  defaultDuration: 30, // in seconds
+  retryDelay: 6000, // in milliseconds
+  maxRetries: 600,
   debug: false,
 };
