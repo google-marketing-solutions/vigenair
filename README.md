@@ -32,6 +32,8 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [September 2024]
+  * `backend`: You can now process any video of any length or size - even beyond the Google Cloud Video AI API [limits](https://cloud.google.com/video-intelligence/quotas) of 50 GB size and up to 3h video length.
 * [August 2024]
   * Updated the [pricing](#pricing-and-quotas) section and Cloud calculator example to use the new (cheaper) pricing for `Gemini 1.5 Flash`.
   * `frontend`: You can now manually move the Smart Framing crop area to better capture the point of interest. Read more [here](#3-object-tracking-and-smart-framing).

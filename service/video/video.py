@@ -17,23 +17,258 @@
 This module contains functions to interact with the Video AI API.
 """
 
-from typing import Sequence
+import json
+import os
+import pathlib
+import re
+from typing import Any, Dict, Sequence, Tuple
 
 import config as ConfigService
 import pandas as pd
-import utils as Utils
 from google.cloud import videointelligence
 
 
+def combine_analysis_chunks(
+    analysis_chunks: Sequence[videointelligence.VideoAnnotationResults]
+) -> Tuple[Dict[str, Any], videointelligence.VideoAnnotationResults]:
+  """Combines video analysis chunks into a single response."""
+  concatenated_shots = []
+  concatenated_texts = []
+  concatenated_objects = []
+  concatenated_faces = []
+  concatenated_logos = []
+  concatenated_segment_labels = []
+  concatenated_shot_labels = []
+  concatenated_frame_labels = []
+  output = videointelligence.AnnotateVideoResponse()
+  output_result = videointelligence.VideoAnnotationResults()
+  cumulative_seconds = 0
+
+  for index, analysis_result in enumerate(analysis_chunks):
+    if not index:
+      segment_end = analysis_result.segment.end_time_offset
+      output_result.input_uri = re.sub(
+          fr'{ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR}/\d+',
+          ConfigService.INPUT_FILENAME,
+          analysis_result.input_uri,
+      )
+
+    shots = analysis_result.shot_annotations
+    texts = analysis_result.text_annotations
+    objects = analysis_result.object_annotations
+    faces = analysis_result.face_detection_annotations
+    logos = analysis_result.logo_recognition_annotations
+    segment_labels = analysis_result.segment_label_annotations
+    shot_labels = analysis_result.shot_label_annotations
+    frame_labels = analysis_result.frame_label_annotations
+
+    if index:
+      for shot in shots:
+        set_offset('start_time_offset', shot, segment_end, cumulative_seconds)
+        set_offset('end_time_offset', shot, segment_end, cumulative_seconds)
+      for segment in [s for t in texts for s in t.segments]:
+        element = segment.segment
+        set_offset(
+            'start_time_offset',
+            element,
+            segment_end,
+            cumulative_seconds,
+        )
+        set_offset('end_time_offset', element, segment_end, cumulative_seconds)
+      for obj in objects:
+        element = obj.segment
+        set_offset(
+            'start_time_offset',
+            element,
+            segment_end,
+            cumulative_seconds,
+        )
+        set_offset('end_time_offset', element, segment_end, cumulative_seconds)
+        for frame in obj.frames:
+          set_offset(
+              'time_offset',
+              frame,
+              segment_end,
+              cumulative_seconds,
+          )
+      for face in [track for f in faces for track in f.tracks]:
+        element = face.segment
+        set_offset(
+            'start_time_offset',
+            element,
+            segment_end,
+            cumulative_seconds,
+        )
+        set_offset('end_time_offset', element, segment_end, cumulative_seconds)
+        for timestamped_object in face.timestamped_objects:
+          set_offset(
+              'time_offset',
+              timestamped_object,
+              segment_end,
+              cumulative_seconds,
+          )
+      for logo in [track for l in logos for track in l.tracks]:
+        element = logo.segment
+        set_offset(
+            'start_time_offset',
+            element,
+            segment_end,
+            cumulative_seconds,
+        )
+        set_offset('end_time_offset', element, segment_end, cumulative_seconds)
+        for timestamped_object in logo.timestamped_objects:
+          set_offset(
+              'time_offset',
+              timestamped_object,
+              segment_end,
+              cumulative_seconds,
+          )
+      for segment in [s for l in segment_labels for s in l.segments]:
+        element = segment.segment
+        set_offset(
+            'start_time_offset',
+            element,
+            segment_end,
+            cumulative_seconds,
+        )
+        set_offset('end_time_offset', element, segment_end, cumulative_seconds)
+      for segment in [s for l in shot_labels for s in l.segments]:
+        element = segment.segment
+        set_offset(
+            'start_time_offset',
+            element,
+            segment_end,
+            cumulative_seconds,
+        )
+        set_offset('end_time_offset', element, segment_end, cumulative_seconds)
+      for frame in [f for l in frame_labels for f in l.frames]:
+        set_offset(
+            'time_offset',
+            frame,
+            segment_end,
+            cumulative_seconds,
+        )
+
+      segment_end = shots[-1].end_time_offset
+
+    cumulative_seconds = segment_end.seconds or 0
+    concatenated_shots.extend(shots)
+    concatenated_texts.extend(texts)
+    concatenated_objects.extend(objects)
+    concatenated_faces.extend(faces)
+    concatenated_logos.extend(logos)
+    concatenated_segment_labels.extend(segment_labels)
+    concatenated_shot_labels.extend(shot_labels)
+    concatenated_frame_labels.extend(frame_labels)
+
+  output_result.shot_annotations = concatenated_shots
+  output_result.text_annotations = concatenated_texts
+  output_result.object_annotations = concatenated_objects
+  output_result.face_detection_annotations = concatenated_faces
+  output_result.logo_recognition_annotations = concatenated_logos
+  output_result.segment_label_annotations = concatenated_segment_labels
+  output_result.shot_label_annotations = concatenated_shot_labels
+  output_result.frame_label_annotations = concatenated_frame_labels
+  output_result.segment.end_time_offset = concatenated_shots[-1].end_time_offset
+
+  output.annotation_results.append(output_result)
+  result = videointelligence.AnnotateVideoResponse(output)
+  result_json_camelcase = type(output).to_json(output)
+  result_json = convert_keys(json.loads(result_json_camelcase))
+  return result_json, result.annotation_results[0]
+
+
+def set_offset(
+    key: str,
+    element: Dict[str, Dict[str, int]],
+    segment_end: Dict[str, int],
+    cumulative_seconds: int,
+):
+  """Adjusts the time offset for a video analysis shot."""
+  time_element = getattr(element, key)
+  element_nanos = getattr(time_element, 'nanos', 0)
+  element_seconds = getattr(time_element, 'seconds', 0)
+
+  segment_nanos = getattr(segment_end, 'nanos', 0)
+  segment_seconds = getattr(segment_end, 'seconds', cumulative_seconds)
+
+  nanos = (element_nanos+segment_nanos) / 1e9
+  additional_offset_seconds = 1 if nanos > 1 else 0
+  nanos = int((nanos-additional_offset_seconds) * 1e9)
+  new_time_element = {
+      'seconds': element_seconds + additional_offset_seconds + segment_seconds,
+      'nanos': nanos,
+  }
+
+  setattr(element, key, new_time_element)
+
+
+def convert_keys(d):
+  """Recursively converts dict keys from camelCase to snake_case."""
+  new_d = {}
+  for k, v in d.items():
+    if isinstance(v, list):
+      v = [convert_keys(inner_v) for inner_v in v]
+    elif isinstance(v, dict):
+      v = convert_keys(v)
+
+    snake_k = camel_to_snake(k)
+    if snake_k.endswith('time_offset'):
+      new_d[snake_k] = {}
+      seconds = int(v[:v.index('.')]) if '.' in v else int(v[:-1])
+      nanos = int(round((float(v[:-1]) - seconds) * 1e9)) if '.' in v else 0
+      if seconds:
+        new_d[snake_k]['seconds'] = seconds
+      if nanos:
+        new_d[snake_k]['nanos'] = nanos
+    else:
+      new_d[snake_k] = v
+  return new_d
+
+
+def camel_to_snake(s):
+  """Converts a string from camelCase to snake_case."""
+  return ''.join(['_' + c.lower() if c.isupper() else c for c in s]).lstrip('_')
+
+
 def analyse_video(
-    video_file: Utils.TriggerFile,
+    video_file_path: str,
     bucket_name: str,
-) -> videointelligence.AnnotateVideoResponse:
+    gcs_folder: str,
+) -> videointelligence.VideoAnnotationResults:
+  """Runs video analysis via the Video AI API and returns the results."""
+  file_path, file_ext = os.path.splitext(video_file_path)
+  file_name = pathlib.Path(file_path).name
+  is_chunk = ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR in file_path
+  gcs_path = str(
+      pathlib.Path(gcs_folder, ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR)
+  ) if is_chunk else gcs_folder
+  gcs_file_path = str(pathlib.Path(gcs_path, f'{file_name}{file_ext}'))
+
+  return _run_video_intelligence(
+      bucket_name=bucket_name,
+      gcs_input_path=gcs_file_path,
+      gcs_output_path=str(
+          pathlib.Path(
+              gcs_path,
+              f'{file_name}.json'
+              if is_chunk else ConfigService.OUTPUT_ANALYSIS_FILE,
+          )
+      ),
+  )
+
+
+def _run_video_intelligence(
+    bucket_name: str,
+    gcs_input_path: str,
+    gcs_output_path: str,
+) -> videointelligence.VideoAnnotationResults:
   """Runs video analysis via the Video AI API and returns the results.
 
   Args:
-    video_file: The video file to be analysed.
     bucket_name: The GCS bucket name where the video is stored.
+    gcs_input_path: The path to the input video file in GCS.
+    gcs_output_path: The path to the output analysis file in GCS.
 
   Returns:
     The annotation results from the Video AI API.
@@ -44,7 +279,6 @@ def analyse_video(
       videointelligence.Feature.OBJECT_TRACKING,
       videointelligence.Feature.SHOT_CHANGE_DETECTION,
       videointelligence.Feature.FACE_DETECTION,
-      videointelligence.Feature.PERSON_DETECTION,
       videointelligence.Feature.LOGO_RECOGNITION,
       videointelligence.Feature.TEXT_DETECTION,
   ]
@@ -55,26 +289,17 @@ def analyse_video(
   face_config = videointelligence.FaceDetectionConfig(
       include_bounding_boxes=True, include_attributes=True
   )
-  person_config = videointelligence.PersonDetectionConfig(
-      include_bounding_boxes=True,
-      include_attributes=True,
-      include_pose_landmarks=True,
-  )
 
   context = videointelligence.VideoContext(
       label_detection_config=label_config,
       face_detection_config=face_config,
-      person_detection_config=person_config,
   )
 
   operation = video_client.annotate_video(
       request={
           'features': features,
-          'input_uri': f'gs://{bucket_name}/{video_file.full_gcs_path}',
-          'output_uri': (
-              f'gs://{bucket_name}/{video_file.gcs_folder}/'
-              f'{ConfigService.OUTPUT_ANALYSIS_FILE}'
-          ),
+          'input_uri': f'gs://{bucket_name}/{gcs_input_path}',
+          'output_uri': f'gs://{bucket_name}/{gcs_output_path}',
           'video_context': context,
       }
   )
@@ -84,7 +309,7 @@ def analyse_video(
 
 
 def get_visual_shots_data(
-    annotation_results: videointelligence.AnnotateVideoResponse,
+    annotation_results: videointelligence.VideoAnnotationResults,
     transcription_dataframe: pd.DataFrame,
     audio_segment_id_key: str = 'audio_segment_id',
 ) -> pd.DataFrame:
@@ -114,7 +339,10 @@ def get_visual_shots_data(
       shots_data.append((
           i + 1,
           _identify_segments(
-              start_time, end_time, transcription_dataframe, audio_segment_id_key
+              start_time,
+              end_time,
+              transcription_dataframe,
+              audio_segment_id_key,
           ),
           start_time,
           end_time,
@@ -137,7 +365,7 @@ def get_visual_shots_data(
 
 
 def get_shot_labels_data(
-    annotation_results: videointelligence.AnnotateVideoResponse,
+    annotation_results: videointelligence.VideoAnnotationResults,
     optimised_av_segments: pd.DataFrame,
     av_segment_id_key: str = 'av_segment_id',
 ) -> pd.DataFrame:
@@ -167,7 +395,10 @@ def get_shot_labels_data(
       labels_data.append((
           shot_label.entity.description,
           _identify_segments(
-              start_time, end_time, optimised_av_segments, av_segment_id_key
+              start_time,
+              end_time,
+              optimised_av_segments,
+              av_segment_id_key,
           ),
           start_time,
           end_time,
@@ -192,7 +423,7 @@ def get_shot_labels_data(
 
 
 def get_object_tracking_data(
-    annotation_results: videointelligence.AnnotateVideoResponse,
+    annotation_results: videointelligence.VideoAnnotationResults,
     optimised_av_segments: pd.DataFrame,
     av_segment_id_key: str = 'av_segment_id',
 ) -> pd.DataFrame:
@@ -256,7 +487,7 @@ def get_object_tracking_data(
 
 
 def get_logo_detection_data(
-    annotation_results: videointelligence.AnnotateVideoResponse,
+    annotation_results: videointelligence.VideoAnnotationResults,
     optimised_av_segments: pd.DataFrame,
     av_segment_id_key: str = 'av_segment_id',
 ) -> pd.DataFrame:
@@ -351,7 +582,7 @@ def get_logo_detection_data(
 
 
 def get_text_detection_data(
-    annotation_results: videointelligence.AnnotateVideoResponse,
+    annotation_results: videointelligence.VideoAnnotationResults,
     optimised_av_segments: pd.DataFrame,
     av_segment_id_key: str = 'av_segment_id',
 ) -> pd.DataFrame:
@@ -408,7 +639,9 @@ def get_text_detection_data(
           'box_vertices',
       ],
   )
-  text_detection_dataframe = text_detection_dataframe.sort_values(by=['start_s'])
+  text_detection_dataframe = (
+      text_detection_dataframe.sort_values(by=['start_s'])
+  )
 
   return text_detection_dataframe
 

@@ -34,6 +34,18 @@ CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD = float(
 CONFIG_MULTIMODAL_ASSET_GENERATION = os.environ.get(
     'CONFIG_MULTIMODAL_ASSET_GENERATION', 'false'
 ) == 'true'
+CONFIG_MAX_VIDEO_CHUNK_SIZE = float(
+    os.environ.get(
+        'CONFIG_MAX_VIDEO_CHUNK_SIZE',
+        f'{1 * 1e9}'  # GB
+    )
+)
+CONFIG_MAX_AUDIO_CHUNK_SIZE = float(
+    os.environ.get(
+        'CONFIG_MAX_AUDIO_CHUNK_SIZE',
+        '480'  # seconds
+    )
+)
 
 CONFIG_DEFAULT_SAFETY_CONFIG = {
     generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: (
@@ -64,6 +76,7 @@ OUTPUT_ANALYSIS_FILE = 'analysis.json'
 OUTPUT_DATA_FILE = 'data.json'
 OUTPUT_COMBINATIONS_FILE = 'combos.json'
 OUTPUT_AV_SEGMENTS_DIR = 'av_segments_cuts'
+OUTPUT_ANALYSIS_CHUNKS_DIR = 'analysis_chunks'
 OUTPUT_COMBINATION_ASSETS_DIR = 'assets'
 
 GCS_BASE_URL = 'https://storage.mtls.cloud.google.com'

@@ -19,6 +19,7 @@ input video file and create coherent audio/video segments.
 """
 
 import concurrent.futures
+import json
 import logging
 import os
 import pathlib
@@ -35,6 +36,452 @@ import utils as Utils
 import vertexai
 import video as VideoService
 from vertexai.preview.generative_models import GenerativeModel, Part
+
+
+def _process_video(
+    output_dir: str,
+    input_video_file_path: str,
+    gcs_folder: str,
+    gcs_bucket_name: str,
+):
+  video_chunks = _get_video_chunks(
+      output_dir=output_dir,
+      video_file_path=input_video_file_path,
+      gcs_folder=gcs_folder,
+      gcs_bucket_name=gcs_bucket_name,
+  )
+  size = len(video_chunks)
+  logging.info('EXTRACTOR - processing video with %d chunks...', size)
+  annotation_results = [None] * size
+  with concurrent.futures.ThreadPoolExecutor() as thread_executor:
+    futures_dict = {
+        thread_executor.submit(
+            VideoService.analyse_video,
+            video_file_path=video_file_path,
+            bucket_name=gcs_bucket_name,
+            gcs_folder=gcs_folder,
+        ): index
+        for index, video_file_path in enumerate(video_chunks)
+    }
+
+    for response in concurrent.futures.as_completed(futures_dict):
+      index = futures_dict[response]
+      annotation_results[index] = response.result()
+      logging.info(
+          'THREADING - analyse_video finished for chunk#%d!',
+          index + 1,
+      )
+
+  result = annotation_results[0]
+  if len(annotation_results) > 1:
+    logging.info(
+        'THREADING - Combining %d analyse_video outputs...',
+        len(annotation_results),
+    )
+    (
+        result_json,
+        result,
+    ) = VideoService.combine_analysis_chunks(annotation_results)
+    analysis_filepath = str(
+        pathlib.Path(output_dir, ConfigService.OUTPUT_ANALYSIS_FILE)
+    )
+    with open(analysis_filepath, 'w', encoding='utf-8') as f:
+      f.write(json.dumps(result_json, indent=2))
+    StorageService.upload_gcs_file(
+        file_path=analysis_filepath,
+        bucket_name=gcs_bucket_name,
+        destination_file_name=str(
+            pathlib.Path(gcs_folder, ConfigService.OUTPUT_ANALYSIS_FILE)
+        ),
+    )
+  return result
+
+
+def _get_video_chunks(
+    output_dir: str,
+    video_file_path: str,
+    gcs_folder: str,
+    gcs_bucket_name: str,
+    size_limit: int = ConfigService.CONFIG_MAX_VIDEO_CHUNK_SIZE,
+) -> Sequence[str]:
+  """Cuts the input video into smaller chunks by size."""
+  _, file_ext = os.path.splitext(video_file_path)
+  output_folder = str(
+      pathlib.Path(output_dir, ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR)
+  )
+  os.makedirs(output_folder, exist_ok=True)
+
+  file_size = os.stat(video_file_path).st_size
+  duration = _get_media_duration(video_file_path)
+  current_duration = 0
+  file_count = 0
+  gcs_path = str(
+      pathlib.Path(gcs_folder, ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR)
+  )
+  result = []
+
+  if file_size > size_limit:
+    while current_duration < duration:
+      file_count += 1
+      output_file_path = str(
+          pathlib.Path(output_folder, f'{file_count}{file_ext}')
+      )
+      Utils.execute_subprocess_commands(
+          cmds=[
+              'ffmpeg',
+              '-ss',
+              str(current_duration),
+              '-i',
+              video_file_path,
+              '-fs',
+              str(size_limit),
+              '-c',
+              'copy',
+              output_file_path,
+          ],
+          description=(
+              f'Cut input video into {size_limit/1e9}GB chunks. '
+              f'Chunk #{file_count}.'
+          ),
+      )
+      os.chmod(output_file_path, 777)
+      new_duration = _get_media_duration(output_file_path)
+      if new_duration == 0.0:
+        logging.warning('Skipping processing 0 length chunk#%d...', file_count)
+        break
+      gcs_file_path = str(pathlib.Path(gcs_path, f'{file_count}{file_ext}'))
+      StorageService.upload_gcs_file(
+          file_path=output_file_path,
+          bucket_name=gcs_bucket_name,
+          destination_file_name=gcs_file_path,
+      )
+      current_duration += new_duration
+      result.append(output_file_path)
+  else:
+    result.append(video_file_path)
+
+  return result
+
+
+def _process_audio(
+    output_dir: str,
+    input_audio_file_path: str,
+    gcs_folder: str,
+    gcs_bucket_name: str,
+    analyse_audio: bool,
+) -> pd.DataFrame:
+  transcription_dataframe = pd.DataFrame()
+
+  if input_audio_file_path and analyse_audio:
+    transcription_dataframe = _process_video_with_audio(
+        output_dir,
+        input_audio_file_path,
+        gcs_folder,
+        gcs_bucket_name,
+    )
+  else:
+    _process_video_without_audio(output_dir, gcs_folder, gcs_bucket_name)
+
+  return transcription_dataframe
+
+
+def _process_video_with_audio(
+    output_dir: str,
+    input_audio_file_path: str,
+    gcs_folder: str,
+    gcs_bucket_name: str,
+) -> pd.DataFrame:
+  audio_chunks = _get_audio_chunks(
+      output_dir=output_dir,
+      audio_file_path=input_audio_file_path,
+      gcs_folder=gcs_folder,
+      gcs_bucket_name=gcs_bucket_name,
+  )
+  size = len(audio_chunks)
+  logging.info('EXTRACTOR - processing audio with %d chunks...', size)
+  vocals_files = [None] * size
+  music_files = [None] * size
+  transcription_dataframes = [None] * size
+  language_probability_dict = {}
+  audio_output_dir = str(
+      pathlib.Path(output_dir, ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR)
+  )
+
+  with concurrent.futures.ThreadPoolExecutor(max_workers=1) as thread_executor:
+    futures_dict = {
+        thread_executor.submit(
+            _analyse_audio,
+            root_dir=output_dir,
+            output_dir=(audio_output_dir if size > 1 else output_dir),
+            index=index + 1,
+            audio_file_path=audio_file_path,
+        ): index
+        for index, audio_file_path in enumerate(audio_chunks)
+    }
+
+    for response in concurrent.futures.as_completed(futures_dict):
+      index = futures_dict[response]
+      (
+          vocals_file_path,
+          music_file_path,
+          audio_transcription_dataframe,
+          video_language,
+          language_probability,
+      ) = response.result()
+      vocals_files[index] = vocals_file_path
+      music_files[index] = music_file_path
+      transcription_dataframes[index] = audio_transcription_dataframe
+      if video_language in language_probability_dict:
+        language_probability_dict[video_language] = max(
+            language_probability_dict[video_language],
+            language_probability,
+        )
+      else:
+        language_probability_dict[video_language] = language_probability
+      logging.info(
+          'THREADING - analyse_audio finished for chunk#%d!',
+          index + 1,
+      )
+      if size > 1:
+        StorageService.upload_gcs_dir(
+            source_directory=audio_output_dir,
+            bucket_name=gcs_bucket_name,
+            target_dir=str(
+                pathlib.Path(
+                    gcs_folder, ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR
+                )
+            ),
+        )
+
+  subtitles_output_path = str(
+      pathlib.Path(
+          output_dir,
+          ConfigService.OUTPUT_SUBTITLES_FILE,
+      )
+  )
+  if size > 1:
+    AudioService.combine_subtitle_files(
+        audio_output_dir,
+        subtitles_output_path,
+    )
+  StorageService.upload_gcs_file(
+      file_path=subtitles_output_path,
+      bucket_name=gcs_bucket_name,
+      destination_file_name=str(
+          pathlib.Path(gcs_folder, ConfigService.OUTPUT_SUBTITLES_FILE)
+      ),
+  )
+  logging.info(
+      'TRANSCRIPTION - %s written successfully!',
+      ConfigService.OUTPUT_SUBTITLES_FILE,
+  )
+  video_language = max(
+      language_probability_dict, key=language_probability_dict.get
+  )
+  with open(
+      f'{output_dir}/{ConfigService.OUTPUT_LANGUAGE_FILE}', 'w', encoding='utf8'
+  ) as f:
+    f.write(video_language)
+  logging.info(
+      'LANGUAGE - %s written successfully with language: %s!',
+      ConfigService.OUTPUT_LANGUAGE_FILE,
+      video_language,
+  )
+
+  transcription_dataframe = transcription_dataframes[0]
+  if len(transcription_dataframes) > 1:
+    logging.info(
+        'THREADING - Combining %d transcribe_audio outputs...',
+        len(transcription_dataframes),
+    )
+    transcription_dataframe = AudioService.combine_analysis_chunks(
+        transcription_dataframes
+    )
+    logging.info(
+        'TRANSCRIPTION - Full transcription dataframe: %r',
+        transcription_dataframe.to_json(orient='records')
+    )
+
+  if len(vocals_files) > 1:
+    logging.info(
+        'THREADING - Combining %d split_audio vocals files...',
+        len(vocals_files),
+    )
+    vocals_file_path = str(
+        pathlib.Path(output_dir, ConfigService.OUTPUT_SPEECH_FILE)
+    )
+    AudioService.combine_audio_files(vocals_file_path, vocals_files)
+    logging.info('AUDIO - vocals_file_path: %s', vocals_file_path)
+  if len(music_files) > 1:
+    logging.info(
+        'THREADING - Combining %d split_audio music files...',
+        len(music_files),
+    )
+    music_file_path = str(
+        pathlib.Path(output_dir, ConfigService.OUTPUT_MUSIC_FILE)
+    )
+    AudioService.combine_audio_files(music_file_path, music_files)
+    logging.info('AUDIO - music_file_path: %s', music_file_path)
+
+  return transcription_dataframe
+
+
+def _process_video_without_audio(
+    output_dir: str,
+    gcs_folder: str,
+    gcs_bucket_name: str,
+):
+  """Skips audio analysis."""
+  subtitles_filepath = str(
+      pathlib.Path(output_dir, ConfigService.OUTPUT_SUBTITLES_FILE)
+  )
+  with open(subtitles_filepath, 'w', encoding='utf8'):
+    pass
+  StorageService.upload_gcs_file(
+      file_path=subtitles_filepath,
+      bucket_name=gcs_bucket_name,
+      destination_file_name=str(
+          pathlib.Path(gcs_folder, ConfigService.OUTPUT_SUBTITLES_FILE)
+      ),
+  )
+  logging.info(
+      'TRANSCRIPTION - Empty %s written successfully!',
+      ConfigService.OUTPUT_SUBTITLES_FILE,
+  )
+
+
+def _analyse_audio(
+    root_dir: str,
+    output_dir: str,
+    index: int,
+    audio_file_path: str,
+) -> Tuple[str, str, str, str, float]:
+  """Runs audio analysis in parallel."""
+  vocals_file_path = None
+  music_file_path = None
+  transcription_dataframe = None
+
+  with concurrent.futures.ProcessPoolExecutor(max_workers=2) as process_executor:
+    futures_dict = {
+        process_executor.submit(
+            AudioService.transcribe_audio,
+            output_dir=output_dir,
+            audio_file_path=audio_file_path,
+        ): 'transcribe_audio',
+        process_executor.submit(
+            AudioService.split_audio,
+            output_dir=output_dir,
+            audio_file_path=audio_file_path,
+            prefix='' if root_dir == output_dir else f'{index}_',
+        ): 'split_audio',
+    }
+
+    for future in concurrent.futures.as_completed(futures_dict):
+      source = futures_dict[future]
+      match source:
+        case 'transcribe_audio':
+          transcription_dataframe, language, probability = future.result()
+          logging.info(
+              'THREADING - transcribe_audio finished for chunk#%d!',
+              index,
+          )
+          logging.info(
+              'TRANSCRIPTION - Transcription dataframe for chunk#%d: %r',
+              index,
+              transcription_dataframe.to_json(orient='records'),
+          )
+        case 'split_audio':
+          vocals_file_path, music_file_path = future.result()
+          logging.info('THREADING - split_audio finished for chunk#%d!', index)
+
+  return (
+      vocals_file_path,
+      music_file_path,
+      transcription_dataframe,
+      language,
+      probability,
+  )
+
+
+def _get_audio_chunks(
+    output_dir: str,
+    audio_file_path: str,
+    gcs_folder: str,
+    gcs_bucket_name: str,
+    duration_limit: int = ConfigService.CONFIG_MAX_AUDIO_CHUNK_SIZE,
+) -> Sequence[str]:
+  """Cuts the input audio into smaller chunks by duration."""
+  _, file_ext = os.path.splitext(audio_file_path)
+  output_folder = str(
+      pathlib.Path(output_dir, ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR)
+  )
+  os.makedirs(output_folder, exist_ok=True)
+
+  duration = _get_media_duration(audio_file_path)
+  current_duration = 0
+  file_count = 0
+  gcs_path = str(
+      pathlib.Path(gcs_folder, ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR)
+  )
+  result = []
+
+  if duration > duration_limit:
+    while current_duration < duration:
+      file_count += 1
+      output_file_path = str(
+          pathlib.Path(output_folder, f'{file_count}{file_ext}')
+      )
+      Utils.execute_subprocess_commands(
+          cmds=[
+              'ffmpeg',
+              '-ss',
+              str(current_duration),
+              '-i',
+              audio_file_path,
+              '-to',
+              str(duration_limit),
+              '-c',
+              'copy',
+              output_file_path,
+          ],
+          description=(
+              f'Cut input audio into {duration_limit/60}min chunks. '
+              f'Chunk #{file_count}.'
+          ),
+      )
+      os.chmod(output_file_path, 777)
+      gcs_file_path = str(pathlib.Path(gcs_path, f'{file_count}{file_ext}'))
+      StorageService.upload_gcs_file(
+          file_path=output_file_path,
+          bucket_name=gcs_bucket_name,
+          destination_file_name=gcs_file_path,
+      )
+      new_duration = _get_media_duration(output_file_path)
+      current_duration += new_duration
+      result.append(output_file_path)
+  else:
+    result.append(audio_file_path)
+
+  return result
+
+
+def _get_media_duration(input_file_path: str) -> float:
+  """Retrieves the duration of the input media file."""
+  output = Utils.execute_subprocess_commands(
+      cmds=[
+          'ffprobe',
+          '-i',
+          input_file_path,
+          '-show_entries',
+          'format=duration',
+          '-v',
+          'quiet',
+          '-of',
+          'default=noprint_wrappers=1:nokey=1',
+      ],
+      description=f'get duration of [{input_file_path}] with ffprobe',
+  )
+  return float(output)
 
 
 class Extractor:
@@ -60,29 +507,43 @@ class Extractor:
     """Extracts all the available data from the input video."""
     logging.info('EXTRACTOR - Starting extraction...')
     tmp_dir = tempfile.mkdtemp()
-    video_file_path = StorageService.download_gcs_file(
+    input_video_file_path = StorageService.download_gcs_file(
         file_path=self.video_file,
         output_dir=tmp_dir,
         bucket_name=self.gcs_bucket_name,
     )
-    audio_file_path = AudioService.extract_audio(video_file_path)
-    transcription_dataframe = pd.DataFrame()
+    input_audio_file_path = AudioService.extract_audio(input_video_file_path)
     annotation_results = None
+    transcription_dataframe = pd.DataFrame()
 
-    if audio_file_path and self.video_file.video_metadata.analyse_audio:
-      (
-          transcription_dataframe,
-          annotation_results,
-          vocals_file_path,
-          music_file_path,
-      ) = self.process_video_with_audio(
-          tmp_dir,
-          audio_file_path,
-      )
-      logging.info('AUDIO - vocals_file_path: %s', vocals_file_path)
-      logging.info('AUDIO - music_file_path: %s', music_file_path)
-    else:
-      annotation_results = self.process_video_without_audio(tmp_dir)
+    with concurrent.futures.ProcessPoolExecutor() as process_executor:
+      futures_dict = {
+          process_executor.submit(
+              _process_audio,
+              output_dir=tmp_dir,
+              input_audio_file_path=input_audio_file_path,
+              gcs_folder=self.video_file.gcs_folder,
+              gcs_bucket_name=self.gcs_bucket_name,
+              analyse_audio=self.video_file.video_metadata.analyse_audio,
+          ): 'process_audio',
+          process_executor.submit(
+              _process_video,
+              output_dir=tmp_dir,
+              input_video_file_path=input_video_file_path,
+              gcs_folder=self.video_file.gcs_folder,
+              gcs_bucket_name=self.gcs_bucket_name,
+          ): 'process_video',
+      }
+
+      for future in concurrent.futures.as_completed(futures_dict):
+        source = futures_dict[future]
+        match source:
+          case 'process_audio':
+            logging.info('THREADING - process_audio finished!')
+            transcription_dataframe = future.result()
+          case 'process_video':
+            logging.info('THREADING - process_video finished!')
+            annotation_results = future.result()
 
     optimised_av_segments = _create_optimised_segments(
         annotation_results,
@@ -95,7 +556,7 @@ class Extractor:
 
     optimised_av_segments = self.cut_and_annotate_av_segments(
         tmp_dir,
-        video_file_path,
+        input_video_file_path,
         optimised_av_segments,
     )
     logging.info(
@@ -112,87 +573,6 @@ class Extractor:
         target_dir=self.video_file.gcs_folder,
     )
     logging.info('EXTRACTOR - Extraction completed successfully!')
-
-  def process_video_without_audio(self, tmp_dir):
-    """Runs video analysis only."""
-    subtitles_filepath = str(
-        pathlib.Path(tmp_dir, ConfigService.OUTPUT_SUBTITLES_FILE)
-    )
-    with open(subtitles_filepath, 'w', encoding='utf8'):
-      pass
-    StorageService.upload_gcs_file(
-        file_path=subtitles_filepath,
-        bucket_name=self.gcs_bucket_name,
-        destination_file_name=str(
-            pathlib.Path(
-                self.video_file.gcs_folder, ConfigService.OUTPUT_SUBTITLES_FILE
-            )
-        ),
-    )
-    logging.info(
-        'TRANSCRIPTION - Empty %s written successfully!',
-        ConfigService.OUTPUT_SUBTITLES_FILE,
-    )
-    annotation_results = VideoService.analyse_video(
-        video_file=self.video_file,
-        bucket_name=self.gcs_bucket_name,
-    )
-    logging.info('VIDEO_ANALYSIS - Completed successfully!')
-    return annotation_results
-
-  def process_video_with_audio(self, tmp_dir: str, audio_file_path: str):
-    """Runs video and audio analyses in parallel."""
-    transcription_dataframe = None
-    annotation_results = None
-    vocals_file_path = None
-    music_file_path = None
-    with concurrent.futures.ProcessPoolExecutor() as process_executor:
-      futures_dict = {
-          process_executor.submit(
-              AudioService.transcribe_audio,
-              output_dir=tmp_dir,
-              audio_file_path=audio_file_path,
-          ): 'transcribe_audio',
-          process_executor.submit(
-              VideoService.analyse_video,
-              video_file=self.video_file,
-              bucket_name=self.gcs_bucket_name,
-          ): 'analyse_video',
-          process_executor.submit(
-              AudioService.split_audio,
-              output_dir=tmp_dir,
-              audio_file_path=audio_file_path,
-          ): 'split_audio',
-      }
-
-      for future in concurrent.futures.as_completed(futures_dict):
-        source = futures_dict[future]
-        match source:
-          case 'transcribe_audio':
-            transcription_dataframe = future.result()
-            logging.info('THREADING - transcribe_audio finished!')
-            logging.info(
-                'TRANSCRIPTION - Transcription dataframe: %r',
-                transcription_dataframe.to_json(orient='records')
-            )
-            StorageService.upload_gcs_dir(
-                source_directory=tmp_dir,
-                bucket_name=self.gcs_bucket_name,
-                target_dir=self.video_file.gcs_folder,
-            )
-          case 'analyse_video':
-            annotation_results = future.result()
-            logging.info('THREADING - analyse_video finished!')
-          case 'split_audio':
-            vocals_file_path, music_file_path = future.result()
-            logging.info('THREADING - split_audio finished!')
-
-    return (
-        transcription_dataframe,
-        annotation_results,
-        vocals_file_path,
-        music_file_path,
-    )
 
   def cut_and_annotate_av_segments(
       self,
@@ -244,10 +624,14 @@ class Extractor:
         description, keyword = response.result()
         descriptions[index] = description
         keywords[index] = keyword
-        resources_base_path = (
-            f'{ConfigService.GCS_BASE_URL}/{self.gcs_bucket_name}/'
-            f'{parse.quote(self.video_file.gcs_folder)}/'
-            f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/{index+1}'
+        resources_base_path = str(
+            pathlib.Path(
+                ConfigService.GCS_BASE_URL,
+                self.gcs_bucket_name,
+                parse.quote(self.video_file.gcs_folder),
+                ConfigService.OUTPUT_AV_SEGMENTS_DIR,
+                str(index + 1),
+            )
         )
         cut_paths[index] = f'{resources_base_path}.{self.video_file.file_ext}'
         screenshot_paths[index] = (
@@ -352,8 +736,7 @@ def _cut_and_annotate_av_segment(
         safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
     )
     if (
-        response.candidates
-        and response.candidates[0].content.parts
+        response.candidates and response.candidates[0].content.parts
         and response.candidates[0].content.parts[0].text
     ):
       text = response.candidates[0].content.parts[0].text
@@ -457,16 +840,12 @@ def _create_optimised_av_segments(
     silent_short_shot = (
         not audio_segment_ids and visual_segment['duration_s'] <= 1
     )
-    continued_shot = set(audio_segment_ids).intersection(
-        current_audio_segment_ids
-    )
+    continued_shot = set(audio_segment_ids
+                        ).intersection(current_audio_segment_ids)
 
     if (
-        continued_shot
-        or not current_visual_segments
-        or (
-            silent_short_shot
-            and not current_audio_segment_ids
+        continued_shot or not current_visual_segments or (
+            silent_short_shot and not current_audio_segment_ids
             and is_last_shot_short
         )
     ):
@@ -564,7 +943,12 @@ def _annotate_segments(
     text.append(_get_entities(text_dataframe, av_segment_id, return_key='text'))
 
   optimised_av_segments = optimised_av_segments.assign(
-      **{'labels': labels, 'objects': objects, 'logos': logo, 'text': text}
+      **{
+          'labels': labels,
+          'objects': objects,
+          'logos': logo,
+          'text': text
+      }
   )
 
   return optimised_av_segments
@@ -610,12 +994,9 @@ def _get_entities(
   """
   temp = data.loc[[(search_value in labels) for labels in data[search_key]]]
   entities = (
-      temp[
-          temp[confidence_key]
-          > ConfigService.CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD
-      ]
-      .sort_values(by=confidence_key, ascending=False)[return_key]
-      .to_list()
+      temp[temp[confidence_key] >
+           ConfigService.CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD
+          ].sort_values(by=confidence_key, ascending=False)[return_key].to_list()
   )
 
   return list(set(entities))
