@@ -19,6 +19,7 @@
  * Do not rename without ensuring all references are updated.
  */
 
+import { CONFIG } from './config';
 import {
   AvSegment,
   GenerateVariantsResponse,
@@ -102,6 +103,49 @@ function generatePreviews(
 function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
   const folder = `${gcsFolder}/${Date.now()}-combos`;
 
+  if (renderQueue.squareCropAnalysis) {
+    const encodedSquareCropCommands = Utilities.base64Encode(
+      PreviewHelper.generateCropCommands(
+        renderQueue.squareCropAnalysis,
+        {
+          w: renderQueue.sourceDimensions.h,
+          h: renderQueue.sourceDimensions.h,
+        },
+        CONFIG.defaultVideoHeight
+      ),
+      Utilities.Charset.UTF_8
+    );
+    StorageManager.uploadFile(
+      encodedSquareCropCommands,
+      folder,
+      'square.txt',
+      'text/plain'
+    );
+  }
+
+  if (renderQueue.verticalCropAnalysis) {
+    const encodedVerticalCropCommands = Utilities.base64Encode(
+      PreviewHelper.generateCropCommands(
+        renderQueue.verticalCropAnalysis,
+        {
+          w:
+            renderQueue.sourceDimensions.h *
+            (renderQueue.sourceDimensions.h / renderQueue.sourceDimensions.w),
+          h: renderQueue.sourceDimensions.h,
+        },
+        CONFIG.defaultVideoHeight *
+          (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth)
+      ),
+      Utilities.Charset.UTF_8
+    );
+    StorageManager.uploadFile(
+      encodedVerticalCropCommands,
+      folder,
+      'vertical.txt',
+      'text/plain'
+    );
+  }
+
   const encodedRenderQueueJson = Utilities.base64Encode(
     JSON.stringify(renderQueue.queue),
     Utilities.Charset.UTF_8
@@ -111,44 +155,6 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
     folder,
     'render.json',
     'application/json'
-  );
-
-  const encodedSquareCropCommands = Utilities.base64Encode(
-    PreviewHelper.generateCropCommands(
-      renderQueue.squareCropAnalysis,
-      {
-        w: renderQueue.sourceDimensions.h,
-        h: renderQueue.sourceDimensions.h,
-      },
-      720
-    ),
-    Utilities.Charset.UTF_8
-  );
-  StorageManager.uploadFile(
-    encodedSquareCropCommands,
-    folder,
-    'square.txt',
-    'text/plain'
-  );
-
-  const encodedVerticalCropCommands = Utilities.base64Encode(
-    PreviewHelper.generateCropCommands(
-      renderQueue.verticalCropAnalysis,
-      {
-        w:
-          renderQueue.sourceDimensions.h *
-          (renderQueue.sourceDimensions.h / renderQueue.sourceDimensions.w),
-        h: renderQueue.sourceDimensions.h,
-      },
-      405
-    ),
-    Utilities.Charset.UTF_8
-  );
-  StorageManager.uploadFile(
-    encodedVerticalCropCommands,
-    folder,
-    'vertical.txt',
-    'text/plain'
   );
 
   return folder;

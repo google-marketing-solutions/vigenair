@@ -193,7 +193,7 @@ class Combiner:
       )
 
   def finalise_render(self):
-    """Combines all generates <id>_combos.json into a single one."""
+    """Combines all generated <id>_combos.json into a single one."""
     logging.info('COMBINER - Finalising rendering...')
     tmp_dir = tempfile.mkdtemp()
     render_output_dicts = [

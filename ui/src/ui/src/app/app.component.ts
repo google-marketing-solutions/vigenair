@@ -163,11 +163,13 @@ export class AppComponent {
   dragPosition = { x: 0, y: 0 };
   cropAreaRect?: DOMRect;
   nonLandscapeInputVideo = false;
-  videoWidth = 1280;
-  videoHeight = 720;
-  maxSquareWidth = 720;
-  maxVerticalWidth = 405;
-  maxNonLandscapeHeight = 720;
+  videoWidth = CONFIG.defaultVideoWidth;
+  videoHeight = CONFIG.defaultVideoHeight;
+  maxSquareWidth = CONFIG.defaultVideoHeight;
+  maxVerticalWidth =
+    CONFIG.defaultVideoHeight *
+    (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth);
+  maxNonLandscapeHeight = CONFIG.defaultVideoHeight;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')

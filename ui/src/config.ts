@@ -77,6 +77,8 @@ export const CONFIG = {
     `,
   },
   defaultVideoLanguage: 'English',
+  defaultVideoWidth: 1280,
+  defaultVideoHeight: 720,
   videoFolderNameSeparator: '--',
   videoFolderNoAudioSuffix: 'n',
   videoIntelligenceConfidenceThreshold: 0.7,
