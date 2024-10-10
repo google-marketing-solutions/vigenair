@@ -131,8 +131,16 @@ class TriggerFile:
         and self.file_name == ConfigService.INPUT_FILENAME
     )
 
-  def is_combiner_trigger(self) -> bool:
+  def is_combiner_initial_trigger(self) -> bool:
     return self.file_name_ext == ConfigService.INPUT_RENDERING_FILE
+
+  def is_combiner_render_trigger(self) -> bool:
+    return self.file_name_ext.endswith(ConfigService.INPUT_RENDERING_FILE)
+
+  def is_combiner_finalise_trigger(self) -> bool:
+    return self.file_name_ext.endswith(
+        ConfigService.INPUT_RENDERING_FINALISE_FILE
+    )
 
 
 def execute_subprocess_commands(

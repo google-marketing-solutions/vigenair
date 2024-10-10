@@ -19,6 +19,7 @@ based on user-specific rendering settings.
 """
 
 import dataclasses
+import gc
 import json
 import logging
 import os
@@ -166,9 +167,73 @@ class Combiner:
     self.text_model = GenerativeModel(ConfigService.CONFIG_TEXT_MODEL)
     self.vision_model = GenerativeModel(ConfigService.CONFIG_VISION_MODEL)
 
+  def check_finalise_render(self, variants_count: int):
+    """Checks whether all variants have been rendered to trigger `finalise`."""
+    rendered_count = len(
+        StorageService.filter_files(
+            bucket_name=self.gcs_bucket_name,
+            prefix=f'{self.render_file.gcs_folder}/',
+            suffix=ConfigService.OUTPUT_COMBINATIONS_FILE,
+        )
+    )
+    if rendered_count == variants_count:
+      finalise_file_path = (
+          f'{variants_count}-{variants_count}_'
+          f'{ConfigService.INPUT_RENDERING_FINALISE_FILE}'
+      )
+      with open(finalise_file_path, 'w', encoding='utf8'):
+        pass
+
+      StorageService.upload_gcs_file(
+          file_path=finalise_file_path,
+          bucket_name=self.gcs_bucket_name,
+          destination_file_name=str(
+              pathlib.Path(self.render_file.gcs_folder, finalise_file_path)
+          ),
+      )
+
+  def finalise_render(self):
+    """Combines all generates <id>_combos.json into a single one."""
+    logging.info('COMBINER - Finalising rendering...')
+    tmp_dir = tempfile.mkdtemp()
+    render_output_dicts = [
+        json.loads(json_file_contents.decode('utf-8'))
+        for json_file_contents in StorageService.filter_files(
+            bucket_name=self.gcs_bucket_name,
+            prefix=f'{self.render_file.gcs_folder}/',
+            suffix=ConfigService.OUTPUT_COMBINATIONS_FILE,
+            fetch_content=True,
+        )
+    ]
+    output = {}
+    for render_output_dict in render_output_dicts:
+      for k, v in render_output_dict.items():
+        output[k] = v
+
+    combos_json_path = os.path.join(
+        tmp_dir,
+        ConfigService.OUTPUT_COMBINATIONS_FILE,
+    )
+    with open(combos_json_path, 'w', encoding='utf8') as f:
+      json.dump(output, f, indent=2)
+
+    StorageService.upload_gcs_file(
+        file_path=combos_json_path,
+        bucket_name=self.gcs_bucket_name,
+        destination_file_name=str(
+            pathlib.Path(
+                self.render_file.gcs_folder,
+                ConfigService.OUTPUT_COMBINATIONS_FILE,
+            )
+        ),
+    )
+    gc.collect()
+    logging.info('COMBINER - Rendering completed successfully!')
+
   def render(self):
-    """Renders videos based on the input rendering settings."""
-    logging.info('COMBINER - Starting rendering...')
+    """Renders a single video based on the input rendering settings."""
+    variant_id = self.render_file.file_name.split('_')[0]
+    logging.info('COMBINER - Starting rendering variant %s...', variant_id)
     tmp_dir = tempfile.mkdtemp()
     root_video_folder = self.render_file.gcs_root_folder
     video_file_name = next(
@@ -187,6 +252,7 @@ class Combiner:
         bucket_name=self.gcs_bucket_name,
     )
     logging.info('RENDERING - Video file path: %s', video_file_path)
+    _, video_ext = os.path.splitext(video_file_path)
     has_audio = StorageService.download_gcs_file(
         file_path=Utils.TriggerFile(
             str(
@@ -233,6 +299,128 @@ class Combiner:
         fetch_contents=True,
     ) or ConfigService.DEFAULT_VIDEO_LANGUAGE
     logging.info('RENDERING - Video language: %s', video_language)
+    square_video_file_path = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(
+                pathlib.Path(
+                    self.render_file.gcs_folder,
+                    ConfigService.INPUT_SQUARE_CROP_FILE.replace(
+                        '.txt', video_ext
+                    )
+                )
+            )
+        ),
+        output_dir=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+    )
+    logging.info(
+        'RENDERING - Square video file path: %s', square_video_file_path
+    )
+    vertical_video_file_path = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(
+                pathlib.Path(
+                    self.render_file.gcs_folder,
+                    ConfigService.INPUT_VERTICAL_CROP_FILE.replace(
+                        '.txt', video_ext
+                    )
+                )
+            )
+        ),
+        output_dir=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+    )
+    logging.info(
+        'RENDERING - Vertical video file path: %s', vertical_video_file_path
+    )
+    render_file_contents = StorageService.download_gcs_file(
+        file_path=self.render_file,
+        bucket_name=self.gcs_bucket_name,
+        fetch_contents=True,
+    )
+    av_segments_file_contents = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(pathlib.Path(root_video_folder, ConfigService.OUTPUT_DATA_FILE))
+        ),
+        bucket_name=self.gcs_bucket_name,
+        fetch_contents=True,
+    )
+    optimised_av_segments = (
+        json.loads(av_segments_file_contents.decode('utf-8'))
+    )
+    video_variant = list(
+        map(
+            _video_variant_mapper,
+            enumerate(json.loads(render_file_contents.decode('utf-8'))),
+        )
+    )[0]
+    combos_dir = tempfile.mkdtemp()
+    rendered_combos = {}
+    rendered_variant_paths = _render_video_variant(
+        output_dir=combos_dir,
+        gcs_folder_path=self.render_file.gcs_folder,
+        gcs_bucket_name=self.gcs_bucket_name,
+        video_file_path=video_file_path,
+        square_video_file_path=square_video_file_path,
+        vertical_video_file_path=vertical_video_file_path,
+        has_audio=has_audio,
+        speech_track_path=speech_track_path,
+        music_track_path=music_track_path,
+        video_variant=video_variant,
+        vision_model=self.vision_model,
+        text_model=self.text_model,
+        video_language=video_language,
+        optimised_av_segments=optimised_av_segments,
+    )
+    combo = dataclasses.asdict(video_variant)
+    combo.pop('render_settings', None)
+    combo.update(rendered_variant_paths)
+    rendered_combos[str(video_variant.variant_id)] = combo
+    logging.info(
+        'RENDERING - Rendered variant as: %r',
+        rendered_combos,
+    )
+    combos_json_path = os.path.join(
+        combos_dir,
+        f'{variant_id}_{ConfigService.OUTPUT_COMBINATIONS_FILE}',
+    )
+    with open(combos_json_path, 'w', encoding='utf8') as f:
+      json.dump(rendered_combos, f, indent=2)
+
+    StorageService.upload_gcs_dir(
+        source_directory=combos_dir,
+        bucket_name=self.gcs_bucket_name,
+        target_dir=self.render_file.gcs_folder,
+    )
+
+    self.check_finalise_render(variants_count=int(variant_id.split('-')[1]))
+    gc.collect()
+    logging.info(
+        'COMBINER - Rendering variant %s completed successfully!',
+        variant_id,
+    )
+
+  def initial_render(self):
+    """Renders videos based on the input rendering settings."""
+    logging.info('COMBINER - Starting rendering...')
+    tmp_dir = tempfile.mkdtemp()
+    root_video_folder = self.render_file.gcs_root_folder
+    video_file_name = next(
+        iter(
+            StorageService.filter_video_files(
+                prefix=f'{root_video_folder}/{ConfigService.INPUT_FILENAME}',
+                bucket_name=self.gcs_bucket_name,
+                first_only=True,
+            )
+        ), None
+    )
+    logging.info('RENDERING - Video file name: %s', video_file_name)
+    video_file_path = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(video_file_name),
+        output_dir=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+    )
+    logging.info('RENDERING - Video file path: %s', video_file_path)
     square_crop_file_path = StorageService.download_gcs_file(
         file_path=Utils.TriggerFile(
             str(
@@ -266,78 +454,58 @@ class Combiner:
         bucket_name=self.gcs_bucket_name,
         fetch_contents=True,
     )
-    av_segments_file_contents = StorageService.download_gcs_file(
-        file_path=Utils.TriggerFile(
-            str(pathlib.Path(root_video_folder, ConfigService.OUTPUT_DATA_FILE))
-        ),
-        bucket_name=self.gcs_bucket_name,
-        fetch_contents=True,
-    )
-    optimised_av_segments = (
-        json.loads(av_segments_file_contents.decode('utf-8'))
-    )
     video_variants = list(
         map(
             _video_variant_mapper,
             enumerate(json.loads(render_file_contents.decode('utf-8'))),
         )
     )
-    video_variants_dict = {
-        variant.variant_id: variant
-        for variant in video_variants
-    }
-    logging.info('RENDERING - Rendering video variants: %r...', video_variants)
+    logging.info(
+        'RENDERING - Rendering %d video variants: %r',
+        len(video_variants),
+        video_variants,
+    )
     combos_dir = tempfile.mkdtemp()
-    rendered_combos = {}
-    (square_video_file_path, vertical_video_file_path) = _create_cropped_videos(
+    _create_cropped_videos(
         video_variants=video_variants,
         video_file_path=video_file_path,
         square_crop_file_path=square_crop_file_path,
         vertical_crop_file_path=vertical_crop_file_path,
         output_dir=combos_dir,
     )
-    for video_variant in video_variants:
-      rendered_variant_paths = _render_video_variant(
-          output_dir=combos_dir,
-          gcs_folder_path=self.render_file.gcs_folder,
-          gcs_bucket_name=self.gcs_bucket_name,
-          video_file_path=video_file_path,
-          square_video_file_path=square_video_file_path,
-          vertical_video_file_path=vertical_video_file_path,
-          has_audio=has_audio,
-          speech_track_path=speech_track_path,
-          music_track_path=music_track_path,
-          video_variant=video_variant,
-          vision_model=self.vision_model,
-          text_model=self.text_model,
-          video_language=video_language,
-          optimised_av_segments=optimised_av_segments,
-      )
-      variant = video_variants_dict[video_variant.variant_id]
-      combo = vars(variant)
-      combo.pop('render_settings', None)
-      combo['av_segments'] = {
-          key: vars(value)
-          for key, value in variant.av_segments.items()
-      }
-      combo.update(rendered_variant_paths)
-      rendered_combos[str(video_variant.variant_id)] = combo
-    logging.info(
-        'RENDERING - Rendered all variants as: %r',
-        rendered_combos,
-    )
-    combos_json_path = os.path.join(
-        combos_dir, ConfigService.OUTPUT_COMBINATIONS_FILE
-    )
-    with open(combos_json_path, 'w', encoding='utf8') as f:
-      json.dump(rendered_combos, f, indent=2)
-
     StorageService.upload_gcs_dir(
         source_directory=combos_dir,
         bucket_name=self.gcs_bucket_name,
         target_dir=self.render_file.gcs_folder,
     )
-    logging.info('COMBINER - Rendering completed successfully!')
+    for video_variant in video_variants:
+      variant_destination_file_path = (
+          f'{video_variant.variant_id}-{len(video_variants)}'
+          f'_{ConfigService.INPUT_RENDERING_FILE}'
+      )
+      variant_dict = dataclasses.asdict(video_variant)
+      variant_dict['av_segments'] = [
+          s for s in variant_dict['av_segments'].values()
+      ]
+      variant_json_path = os.path.join(
+          combos_dir,
+          variant_destination_file_path,
+      )
+      with open(variant_json_path, 'w', encoding='utf8') as f:
+        json.dump([variant_dict], f, indent=2)
+
+      StorageService.upload_gcs_file(
+          file_path=variant_json_path,
+          bucket_name=self.gcs_bucket_name,
+          destination_file_name=str(
+              pathlib.Path(
+                  self.render_file.gcs_folder,
+                  variant_destination_file_path,
+              )
+          ),
+      )
+    gc.collect()
+    logging.info('COMBINER - Initial render completed successfully!')
 
 
 def _video_variant_mapper(index_variant_dict_tuple: Tuple[int, Dict[str, Any]]):
@@ -349,9 +517,10 @@ def _video_variant_mapper(index_variant_dict_tuple: Tuple[int, Dict[str, Any]]):
       for segment_dict in segment_dicts
   }
   video_variant_settings = VideoVariantRenderSettings(**render_settings_dict)
+  variant_id = variant_dict.pop('variant_id', index)
 
   return VideoVariant(
-      variant_id=index,
+      variant_id=variant_id,
       av_segments=segments,
       render_settings=video_variant_settings,
       **variant_dict,
@@ -607,8 +776,8 @@ def _render_video_variant(
 
   for format_type, rendered_path in rendered_paths.items():
     result['variants'][format_type] = (
-        f'{ConfigService.GCS_BASE_URL}/'
-        f'{pathlib.Path(gcs_bucket_name, parse.quote(gcs_folder_path), rendered_path["path"])}'
+        f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/'
+        f'{parse.quote(gcs_folder_path)}/{rendered_path["path"]}'
     )
     if 'images' in rendered_path:
       if 'images' not in result:

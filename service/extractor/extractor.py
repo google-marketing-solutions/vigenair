@@ -624,14 +624,10 @@ class Extractor:
         description, keyword = response.result()
         descriptions[index] = description
         keywords[index] = keyword
-        resources_base_path = str(
-            pathlib.Path(
-                ConfigService.GCS_BASE_URL,
-                self.gcs_bucket_name,
-                parse.quote(self.video_file.gcs_folder),
-                ConfigService.OUTPUT_AV_SEGMENTS_DIR,
-                str(index + 1),
-            )
+        resources_base_path = (
+            f'{ConfigService.GCS_BASE_URL}/'
+            f'{self.gcs_bucket_name}/{parse.quote(self.video_file.gcs_folder)}/'
+            f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/{index + 1}'
         )
         cut_paths[index] = f'{resources_base_path}.{self.video_file.file_ext}'
         screenshot_paths[index] = (

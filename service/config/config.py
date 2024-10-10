@@ -65,6 +65,7 @@ CONFIG_DEFAULT_SAFETY_CONFIG = {
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 INPUT_FILENAME = 'input'
 INPUT_RENDERING_FILE = 'render.json'
+INPUT_RENDERING_FINALISE_FILE = 'finalise.txt'
 INPUT_SQUARE_CROP_FILE = 'square.txt'
 INPUT_VERTICAL_CROP_FILE = 'vertical.txt'
 OUTPUT_SUBTITLES_TYPE = 'vtt'  # 'vtt' or 'srt'

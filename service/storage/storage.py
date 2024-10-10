@@ -171,3 +171,33 @@ def filter_video_files(
       if first_only:
         break
   return result
+
+
+def filter_files(
+    bucket_name: str,
+    prefix: str,
+    suffix: str,
+    fetch_content=False,
+) -> Sequence[bytes]:
+  """Filters files in a GCS bucket based on a suffix.
+
+  Args:
+    bucket_name: The name of the bucket to list files from.
+    prefix: The prefix to filter files by.
+    suffix: The suffix to filter files by.
+    fetch_content: Optional boolean whether to return file names or their
+      content. Defaults to False (names only).
+
+  Returns:
+    A list of file contents matching the given suffix, or an empty list if no
+    files match.
+  """
+  storage_client = storage.Client()
+  blobs = storage_client.list_blobs(bucket_name, prefix=prefix)
+  result = []
+
+  for blob in blobs:
+    if blob.name.endswith(suffix):
+      logging.info('FILTER - Found matching file "%s".', blob.name)
+      result.append(blob.download_as_bytes() if fetch_content else blob.name)
+  return result

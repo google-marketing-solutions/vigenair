@@ -23,11 +23,10 @@ Function, with `gcs_file_uploaded` as the main entry point.
 import logging
 from typing import Any, Dict
 
-import functions_framework
-from google.cloud import logging as cloudlogging
-
 import combiner as CombinerService
 import extractor as ExtractorService
+import functions_framework
+from google.cloud import logging as cloudlogging
 import utils as Utils
 
 
@@ -54,10 +53,20 @@ def gcs_file_uploaded(cloud_event: Dict[str, Any]):
         gcs_bucket_name=bucket, video_file=trigger_file
     )
     extractor_instance.extract()
-  elif trigger_file.is_combiner_trigger():
+  elif trigger_file.is_combiner_initial_trigger():
+    combiner_instance = CombinerService.Combiner(
+        gcs_bucket_name=bucket, render_file=trigger_file
+    )
+    combiner_instance.initial_render()
+  elif trigger_file.is_combiner_render_trigger():
     combiner_instance = CombinerService.Combiner(
         gcs_bucket_name=bucket, render_file=trigger_file
     )
     combiner_instance.render()
+  elif trigger_file.is_combiner_finalise_trigger():
+    combiner_instance = CombinerService.Combiner(
+        gcs_bucket_name=bucket, render_file=trigger_file
+    )
+    combiner_instance.finalise_render()
 
   logging.info('END - Finished processing uploaded file: %s.', filepath)
