@@ -375,7 +375,11 @@ class Combiner:
     combo = dataclasses.asdict(video_variant)
     combo.pop('render_settings', None)
     combo.update(rendered_variant_paths)
-    rendered_combos[str(video_variant.variant_id)] = combo
+    combo['av_segments'] = {
+        f'_{segment_id}': segment
+        for segment_id, segment in combo['av_segments'].items()
+    }
+    rendered_combos[f'_{video_variant.variant_id}'] = combo
     logging.info(
         'RENDERING - Rendered variant as: %r',
         rendered_combos,
