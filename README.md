@@ -32,6 +32,8 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [October 2024]
+  * `frontend` + `backend`: Added functionality to "fade out" audio at the end of generated videos. Read more [here](#42-user-controls-for-video-rendering).
 * [September 2024]
   * `backend`: You can now process any video of any length or size - even beyond the Google Cloud Video AI API [limits](https://cloud.google.com/video-intelligence/quotas) of 50 GB size and up to 3h video length.
 * [August 2024]
@@ -242,6 +244,7 @@ Users are now ready for combination. They can view the A/V segments and generate
 * Vigenair supports different rendering settings for the audio of the generated videos. The image below describes the supported options and how they differ:
 
   <center><img src='./img/audio.png' width="350px" alt="Vigenair's audio rendering options" /></center>
+* Whether to fade out audio at the end of generated videos. When selected, videos will be faded out for `1s` (configured by the `CONFIG_DEFAULT_FADE_OUT_DURATION` environment variable for the Combiner service).
 * Whether to generate [Demand Gen](https://support.google.com/google-ads/answer/13695777) campaign text and image assets alongside the variant or not. Defaults to generating Demand Gen assets using *multimodal* models on Vertex AI, which offers the highest quality of output assets.
 * Whether to render all formats (horizontal, vertical and square) assets or to only render horizontal assets. Defaults to rendering all formats.
 * Users can also select the individual segments that each variant is comprised of. This selection is available in both the *video preview* and *segments list* views. Please note that switching between variant tabs will clear any changes to the selection.
@@ -255,7 +258,7 @@ Desired variants can be added to the render queue along with the their associate
 
 <center><img src='./img/render-queue.png' width="600px" alt="Vigenair UI: Variants in the render queue" /></center>
 
-* Each variant added to the render queue will be presented as a card in a sidebar that will open from the right-hand-side of the page. The card contains the thumbnail of the variant's first segment, along with the variant title, list of segments contained within it, its duration and chosen render settings (audio settings, Demand Gen assets choice and desired formats).
+* Each variant added to the render queue will be presented as a card in a sidebar that will open from the right-hand-side of the page. The card contains the thumbnail of the variant's first segment, along with the variant title, list of segments contained within it, its duration and chosen render settings (audio settings including fade out, Demand Gen assets choice and desired formats).
 * Variants where the user had manually modified the preselected segments will be displayed with the score greyed out and with the suffix `(modified)` appended to the variant's title.
 * Users cannot add the same variant with the *exact same segment selection and rendering settings* more than once to the render queue.
 * Users can always remove variants from the render queue which they no longer desire via the dedicated button per card.

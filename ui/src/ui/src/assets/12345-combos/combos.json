@@ -1,28 +1,28 @@
 {
-  "1": {
+  "_1": {
     "variant_id": 1,
     "av_segments": {
-      "1": {
+      "_1": {
         "start_s": 0,
         "end_s": 17,
         "av_segment_id": 1
       },
-      "2": {
+      "_2": {
         "start_s": 17.04,
         "av_segment_id": 2,
         "end_s": 26.4
       },
-      "4": {
+      "_4": {
         "end_s": 29.24,
         "start_s": 27.28,
         "av_segment_id": 4
       },
-      "5": {
+      "_5": {
         "end_s": 36.76,
         "start_s": 29.28,
         "av_segment_id": 5
       },
-      "6": {
+      "_6": {
         "start_s": 36.8,
         "end_s": 44.96,
         "av_segment_id": 6
@@ -34,27 +34,32 @@
     "description": "This combination starts with the heartwarming and funny video calls, immediately grabbing the viewer's attention. The off-screen speech smoothly transitions into the Lufthansa ad, showcasing the beauty of travel and the world. The combination ends with the \"Say yes to the world\" tagline, leaving a lasting impression on the viewer.",
     "variants": {
       "horizontal": "assets/12345-combos/combo_1_h.mp4"
+    },
+    "render_settings": {
+      "use_music_overlay": false,
+      "use_continuous_audio": false,
+      "fade_out": true
     }
   },
-  "0": {
+  "_0": {
     "variant_id": 0,
     "av_segments": {
-      "1": {
+      "_1": {
         "start_s": 0,
         "av_segment_id": 1,
         "end_s": 17
       },
-      "2": {
+      "_2": {
         "av_segment_id": 2,
         "start_s": 17.04,
         "end_s": 26.4
       },
-      "4": {
+      "_4": {
         "end_s": 29.24,
         "start_s": 27.28,
         "av_segment_id": 4
       },
-      "6": {
+      "_6": {
         "av_segment_id": 6,
         "end_s": 44.96,
         "start_s": 36.8
@@ -68,6 +73,11 @@
       "horizontal": "assets/12345-combos/combo_0_h.mp4",
       "vertical": "assets/12345-combos/combo_0_v.mp4",
       "square": "assets/12345-combos/combo_0_s.mp4"
+    },
+    "render_settings": {
+      "use_music_overlay": true,
+      "use_continuous_audio": false,
+      "fade_out": false
     },
     "texts": [
       {

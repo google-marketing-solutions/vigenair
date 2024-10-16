@@ -46,6 +46,14 @@ CONFIG_MAX_AUDIO_CHUNK_SIZE = float(
         '480'  # seconds
     )
 )
+CONFIG_DEFAULT_FADE_OUT_DURATION = os.environ.get(
+    'CONFIG_DEFAULT_FADE_OUT_DURATION',
+    '1'  # seconds
+)
+
+# 10ms silence at the end of the fade out makes it "sound" better
+# https://en.wikipedia.org/wiki/Fade_(audio_engineering)#:~:text=Appropriate%20fade%2Din%20time,10ms.%5B14%5D
+CONFIG_DEFAULT_FADE_OUT_BUFFER = 0.1
 
 CONFIG_DEFAULT_SAFETY_CONFIG = {
     generative_models.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: (

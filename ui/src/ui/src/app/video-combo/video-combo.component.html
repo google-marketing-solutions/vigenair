@@ -47,6 +47,21 @@ limitations under the License.
 <div class="row" style="justify-content: start">
   Segments: {{ combo.scenes }}
 </div>
+<div
+  class="row"
+  style="justify-content: start; margin-top: 0"
+  *ngIf="combo.render_settings"
+>
+  Audio:
+  {{
+    (combo.render_settings.use_continuous_audio
+      ? 'Overlay all'
+      : combo.render_settings.use_music_overlay
+        ? 'Overlay music'
+        : 'Individual segments') +
+      (combo.render_settings.fade_out ? ' + Fade out' : '')
+  }}
+</div>
 <div class="row" style="justify-content: start">
   {{ combo.description }}
 </div>

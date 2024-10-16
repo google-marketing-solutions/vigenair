@@ -367,6 +367,13 @@ limitations under the License.
             </mat-form-field>
           </div>
           <div class="user-settings" style="margin-top: 8px">
+            <span matTooltip="Fades out audio at the end of the video">
+              <mat-checkbox color="primary" [(ngModel)]="fadeOut">
+                Fade out
+              </mat-checkbox>
+            </span>
+          </div>
+          <div class="user-settings" style="margin-top: 8px">
             <mat-checkbox color="primary" [(ngModel)]="demandGenAssets">
               Generate Demand Gen assets
             </mat-checkbox>
@@ -582,11 +589,12 @@ limitations under the License.
             <div class="variant-settings">
               <b>Audio:</b>
               {{
-                variant.render_settings.use_continuous_audio
+                (variant.render_settings.use_continuous_audio
                   ? 'Overlay all'
                   : variant.render_settings.use_music_overlay
                     ? 'Overlay music'
-                    : 'Individual segments'
+                    : 'Individual segments') +
+                  (variant.render_settings.fade_out ? ' + Fade out' : '')
               }}
             </div>
           </div>

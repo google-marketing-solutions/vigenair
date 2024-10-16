@@ -79,6 +79,7 @@ export const CONFIG = {
   defaultVideoLanguage: 'English',
   defaultVideoWidth: 1280,
   defaultVideoHeight: 720,
+  defaultVideoDurationStep: 5,
   videoFolderNameSeparator: '--',
   videoFolderNoAudioSuffix: 'n',
   videoIntelligenceConfidenceThreshold: 0.7,
@@ -86,5 +87,5 @@ export const CONFIG = {
   defaultDuration: 30, // in seconds
   retryDelay: 6000, // in milliseconds
   maxRetries: 600,
-  debug: false,
+  debug: true,
 };

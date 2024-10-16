@@ -41,6 +41,7 @@ export interface GenerateVariantsResponse {
   reasoning: string;
   duration: string;
   variants?: VariantFormats;
+  render_settings?: RenderSettings;
   images?: VariantImageAssets;
   texts?: VariantTextAsset[];
 }
@@ -56,6 +57,7 @@ export interface RenderSettings {
   render_all_formats: boolean;
   use_music_overlay: boolean;
   use_continuous_audio: boolean;
+  fade_out: boolean;
 }
 
 export interface RenderQueue {
@@ -105,6 +107,7 @@ export interface RenderedVariant {
   variants: VariantFormats;
   duration: string;
   scenes: string;
+  render_settings: RenderSettings;
   images?: VariantImageAssets;
   texts?: VariantTextAsset[];
 }

@@ -141,6 +141,7 @@ export class AppComponent {
   step = 0;
   renderAllFormats = true;
   audioSettings = 'segment';
+  fadeOut = false;
   demandGenAssets = true;
   analyseAudio = true;
   previousRuns: string[] | undefined;
@@ -604,11 +605,9 @@ export class AppComponent {
   }
 
   calculateVideoDefaultDuration(duration: number) {
-    const step = duration >= 60 ? 10 : 5;
     const halfDuration = Math.round(duration / 2);
-
-    this.step = step;
-    this.duration = Math.min(30, halfDuration - (halfDuration % step));
+    this.step = CONFIG.defaultVideoDurationStep;
+    this.duration = Math.min(30, halfDuration - (halfDuration % this.step));
   }
 
   generateVariants() {
@@ -949,6 +948,7 @@ export class AppComponent {
       render_all_formats: this.renderAllFormats,
       use_music_overlay: this.audioSettings === 'music',
       use_continuous_audio: this.audioSettings === 'continuous',
+      fade_out: this.fadeOut,
     };
     const selectedScenes = selectedSegments.map(
       (segment: AvSegment) => segment.av_segment_id
@@ -1075,6 +1075,7 @@ export class AppComponent {
         scenes: segments
           .map((segment: AvSegment) => segment.av_segment_id)
           .join(', '),
+        render_settings: combo.render_settings,
       };
       if (combo.images) {
         renderedVariant.images = combo.images;

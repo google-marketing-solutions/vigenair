@@ -96,6 +96,7 @@ export class VertexHelper {
       contentType: 'application/json',
       payload: JSON.stringify(request),
     });
+    AppLogger.debug(response);
     if (response.getResponseCode() === 429) {
       AppLogger.info(
         `Waiting ${
