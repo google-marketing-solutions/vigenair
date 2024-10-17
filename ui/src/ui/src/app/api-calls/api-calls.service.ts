@@ -16,8 +16,9 @@
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { Observable, of, retry, switchMap, timer } from 'rxjs';
+import { catchError, Observable, of, retry, switchMap, timer } from 'rxjs';
 import { CONFIG } from '../../../../config';
+
 import {
   ApiCalls,
   GeneratePreviewsResponse,
@@ -55,6 +56,13 @@ export class ApiCallsService implements ApiCalls {
             subscriber.complete();
           });
         })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Could not retrieve the user auth token! Error: ',
+            error
+          );
+          throw error;
+        })
         .getUserAuthToken();
     });
   }
@@ -84,6 +92,10 @@ export class ApiCallsService implements ApiCalls {
               console.log('Upload complete!', response);
               const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/input.mp4`;
               return of([folder, videoFilePath]);
+            }),
+            catchError(error => {
+              console.error('Upload failed with error: ', error);
+              throw error;
             })
           )
       )
@@ -111,13 +123,11 @@ export class ApiCallsService implements ApiCalls {
       retry({
         count: maxRetries,
         delay: (error, retryCount) => {
-          if (
-            (error.status && error.status !== 404) ||
-            retryCount >= maxRetries
-          ) {
-            throw new Error(`Received an unexpected error: ${error}`);
+          if (error.status && error.status === 404 && retryCount < maxRetries) {
+            console.log('Expected output not available yet, retrying...');
+            return timer(retryDelay);
           }
-          return timer(retryDelay);
+          throw error;
         },
       })
     );
@@ -136,6 +146,13 @@ export class ApiCallsService implements ApiCalls {
             subscriber.next(variants);
             subscriber.complete();
           });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Encountered an unexpected error while generating variants! Error: ',
+            error
+          );
+          throw error;
         })
         .generateVariants(gcsFolder, settings);
     });
@@ -156,6 +173,13 @@ export class ApiCallsService implements ApiCalls {
             subscriber.complete();
           });
         })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Encountered an unexpected error while generating format previews! Error: ',
+            error
+          );
+          throw error;
+        })
         .generatePreviews(analysis, segments, settings);
     });
   }
@@ -170,6 +194,13 @@ export class ApiCallsService implements ApiCalls {
             subscriber.next(response);
             subscriber.complete();
           });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Could not retrieve previous runs from GCS! Error: ',
+            error
+          );
+          throw error;
         })
         .getRunsFromGcs();
     });
@@ -188,6 +219,13 @@ export class ApiCallsService implements ApiCalls {
             subscriber.next(response);
             subscriber.complete();
           });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Encountered an unexpected error while rendering variants! Error: ',
+            error
+          );
+          throw error;
         })
         .renderVariants(gcsFolder, renderQueue);
     });
@@ -209,6 +247,10 @@ export class ApiCallsService implements ApiCalls {
             subscriber.next(response);
             subscriber.complete();
           });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error('Could not retrieve the Web App URL! Error: ', error);
+          throw error;
         })
         .getWebAppUrl();
     });

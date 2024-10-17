@@ -16,7 +16,7 @@
 
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -48,6 +48,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { environment } from '../environments/environment';
 
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
@@ -171,6 +172,7 @@ export class AppComponent {
     CONFIG.defaultVideoHeight *
     (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth);
   maxNonLandscapeHeight = CONFIG.defaultVideoHeight;
+  maxRetries = CONFIG.maxRetries;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -194,17 +196,21 @@ export class AppComponent {
   constructor(
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog,
-    private activatedRoute: ActivatedRoute
+    private dialog: MatDialog
   ) {
     this.getPreviousRuns();
     this.getWebAppUrl();
-    this.activatedRoute.queryParams.subscribe(params => {
-      const inputCombosFolder = params['inputCombosFolder'];
-      if (inputCombosFolder) {
-        this.handleInputCombosFolder(inputCombosFolder);
-      }
-    });
+
+    // Allow locally served app to process query params.
+    // Production env (Apps Script) is handled via ngAfterViewInit()
+    if (!environment.production) {
+      inject(ActivatedRoute).queryParams.subscribe(params => {
+        const inputCombosFolder = params['inputCombosFolder'];
+        if (inputCombosFolder) {
+          this.handleInputCombosFolder(inputCombosFolder);
+        }
+      });
+    }
   }
 
   ngAfterViewInit() {
@@ -221,16 +227,43 @@ export class AppComponent {
     this.getRenderedCombos(inputCombosFolder);
   }
 
+  failHandler(error: Error, folder?: string) {
+    console.error('An unexpected error occurred: ', error);
+    this.loading = false;
+    this.snackBar
+      .open('An unexpected error occurred.', 'Start over', {
+        horizontalPosition: 'center',
+      })
+      .afterDismissed()
+      .subscribe(() => {
+        this.videoUploadPanel.open();
+        this.videoMagicPanel.close();
+        if (this.previewVideoElem.nativeElement) {
+          this.previewVideoElem.nativeElement.pause();
+        }
+      });
+    if (folder) {
+      this.apiCallsService.deleteGcsFolder(folder);
+      this.getPreviousRuns();
+    }
+  }
+
   getWebAppUrl() {
-    this.apiCallsService.getWebAppUrl().subscribe(url => {
-      this.webAppUrl = url;
+    this.apiCallsService.getWebAppUrl().subscribe({
+      next: url => {
+        this.webAppUrl = url;
+      },
+      error: err => this.failHandler(err),
     });
   }
 
   getPreviousRuns() {
-    this.apiCallsService.getRunsFromGcs().subscribe(result => {
-      this.previousRuns = result.runs;
-      this.encodedUserId = result.encodedUserId;
+    this.apiCallsService.getRunsFromGcs().subscribe({
+      next: result => {
+        this.previousRuns = result.runs;
+        this.encodedUserId = result.encodedUserId;
+      },
+      error: err => this.failHandler(err),
     });
   }
 
@@ -244,22 +277,6 @@ export class AppComponent {
 
   onFileSelected(file: File) {
     this.selectedFile = file;
-  }
-
-  failHandler(folder: string) {
-    this.loading = false;
-    this.snackBar
-      .open('An error occured.', 'Start over', {
-        horizontalPosition: 'center',
-      })
-      .afterDismissed()
-      .subscribe(() => {
-        this.videoUploadPanel.open();
-        this.previewVideoElem.nativeElement.pause();
-        this.videoMagicPanel.close();
-      });
-    this.apiCallsService.deleteGcsFolder(folder);
-    this.getPreviousRuns();
   }
 
   getCurrentCropAreaFrame(entities: any[]):
@@ -377,7 +394,7 @@ export class AppComponent {
   getAvSegments(folder: string) {
     this.segmentsStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/data.json`, CONFIG.retryDelay, CONFIG.maxRetries)
+      .getFromGcs(`${folder}/data.json`, CONFIG.retryDelay, this.maxRetries)
       .subscribe({
         next: data => {
           const dataJson = JSON.parse(data);
@@ -392,7 +409,7 @@ export class AppComponent {
             this.generatePreviews();
           }
         },
-        error: () => this.failHandler(folder),
+        error: err => this.failHandler(err, folder),
       });
   }
 
@@ -404,7 +421,7 @@ export class AppComponent {
     this.videoMagicPanel.close();
     this.videoCombosPanel.open();
     this.apiCallsService
-      .getFromGcs(`${folder}/combos.json`, CONFIG.retryDelay, CONFIG.maxRetries)
+      .getFromGcs(`${folder}/combos.json`, CONFIG.retryDelay, this.maxRetries)
       .subscribe({
         next: data => {
           this.combosJson = JSON.parse(data);
@@ -415,38 +432,34 @@ export class AppComponent {
           this.videoMagicPanel.close();
           this.videoCombosPanel.open();
         },
-        error: () => this.failHandler(folder),
+        error: err => this.failHandler(err, folder),
       });
   }
 
   getVideoAnalysis(folder: string) {
     this.analysisStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(
-        `${folder}/analysis.json`,
-        CONFIG.retryDelay,
-        CONFIG.maxRetries
-      )
+      .getFromGcs(`${folder}/analysis.json`, CONFIG.retryDelay, this.maxRetries)
       .subscribe({
         next: data => {
           this.analysisJson = JSON.parse(data);
           this.analysisStatus = 'check_circle';
           this.videoObjects = this.parseAnalysis(
             this.analysisJson,
-            (e: any) =>
+            (e: { confidence: number }) =>
               e.confidence > CONFIG.videoIntelligenceConfidenceThreshold
           );
           this.activeVideoObjects = this.videoObjects;
           this.getAvSegments(folder);
         },
-        error: () => this.failHandler(folder),
+        error: err => this.failHandler(err, folder),
       });
   }
 
   getSubtitlesTrack(folder: string) {
     this.transcriptStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/input.vtt`, CONFIG.retryDelay, CONFIG.maxRetries)
+      .getFromGcs(`${folder}/input.vtt`, CONFIG.retryDelay, this.maxRetries)
       .subscribe({
         next: data => {
           const dataUrl = `data:text/vtt;base64,${StringUtil.encode(data)}`;
@@ -455,7 +468,7 @@ export class AppComponent {
           this.transcriptStatus = 'check_circle';
           this.getVideoAnalysis(folder);
         },
-        error: () => this.failHandler(folder),
+        error: err => this.failHandler(err, folder),
       });
   }
 
@@ -469,8 +482,11 @@ export class AppComponent {
     this.loading = true;
     this.apiCallsService
       .uploadVideo(this.selectedFile!, this.analyseAudio, this.encodedUserId!)
-      .subscribe(response => {
-        this.processVideo(response[0], response[1]);
+      .subscribe({
+        next: response => {
+          this.processVideo(response[0], response[1]);
+        },
+        error: err => this.failHandler(err),
       });
   }
 
@@ -516,8 +532,14 @@ export class AppComponent {
     const segmentsListElement = document.querySelector(
       'segments-list'
     )! as HTMLElement;
-    segmentsListElement.style.setProperty('--filmstrip-image-width', '256px');
-    segmentsListElement.style.setProperty('--filmstrip-image-height', '144px');
+    segmentsListElement.style.setProperty(
+      '--filmstrip-image-width',
+      `${CONFIG.defaultVideoWidth / 5}px`
+    );
+    segmentsListElement.style.setProperty(
+      '--filmstrip-image-height',
+      `${CONFIG.defaultVideoHeight / 5}px`
+    );
   }
 
   processVideo(folder: string, videoFilePath: string) {
@@ -593,6 +615,16 @@ export class AppComponent {
     };
     this.videoUploadPanel.close();
     this.videoMagicPanel.open();
+
+    // Increments by 1 for every additional video minute
+    const minutesFactor =
+      Math.floor((this.previewVideoElem.nativeElement.duration - 1) / 60) + 1;
+
+    // Wait a total of 10 minutes per minute of video, for a max of 1 hour
+    this.maxRetries = Math.min(
+      this.maxRetries * minutesFactor,
+      CONFIG.maxRetries
+    );
     this.getSubtitlesTrack(folder);
   }
 
@@ -620,13 +652,16 @@ export class AppComponent {
         demandGenAssets: this.demandGenAssets,
         negativePrompt: this.negativePrompt,
       })
-      .subscribe(variants => {
-        this.loading = false;
-        this.generatingVariants = false;
-        this.selectedVariant = 0;
-        this.variants = variants;
-        this.setSelectedSegments();
-        this.displayObjectTracking = false;
+      .subscribe({
+        next: variants => {
+          this.loading = false;
+          this.generatingVariants = false;
+          this.selectedVariant = 0;
+          this.variants = variants;
+          this.setSelectedSegments();
+          this.displayObjectTracking = false;
+        },
+        error: err => this.failHandler(err),
       });
   }
 
@@ -654,22 +689,26 @@ export class AppComponent {
           },
         },
       })
-      .subscribe(previews => {
-        this.generatingPreviews = false;
-        if (loading) {
-          this.loading = false;
-        }
-        const previewFilter = (e: any) => e.entity.description === 'crop-area';
-        const squarePreviewAnalysis = JSON.parse(previews.square);
-        this.squareVideoObjects = this.parseAnalysis(
-          squarePreviewAnalysis,
-          previewFilter
-        );
-        const verticalPreviewAnalysis = JSON.parse(previews.vertical);
-        this.verticalVideoObjects = this.parseAnalysis(
-          verticalPreviewAnalysis,
-          previewFilter
-        );
+      .subscribe({
+        next: previews => {
+          this.generatingPreviews = false;
+          if (loading) {
+            this.loading = false;
+          }
+          const previewFilter = (e: { entity: { description: string } }) =>
+            e.entity.description === 'crop-area';
+          const squarePreviewAnalysis = JSON.parse(previews.square);
+          this.squareVideoObjects = this.parseAnalysis(
+            squarePreviewAnalysis,
+            previewFilter
+          );
+          const verticalPreviewAnalysis = JSON.parse(previews.vertical);
+          this.verticalVideoObjects = this.parseAnalysis(
+            verticalPreviewAnalysis,
+            previewFilter
+          );
+        },
+        error: err => this.failHandler(err),
       });
   }
 
@@ -1044,12 +1083,15 @@ export class AppComponent {
           h: this.previewVideoElem.nativeElement.videoHeight,
         },
       })
-      .subscribe(combosFolder => {
-        this.loading = false;
-        this.renderQueue = [];
-        this.renderQueueJsonArray = [];
-        this.closeRenderQueueSidenav();
-        this.getRenderedCombos(combosFolder);
+      .subscribe({
+        next: combosFolder => {
+          this.loading = false;
+          this.renderQueue = [];
+          this.renderQueueJsonArray = [];
+          this.closeRenderQueueSidenav();
+          this.getRenderedCombos(combosFolder);
+        },
+        error: err => this.failHandler(err),
       });
   }
 

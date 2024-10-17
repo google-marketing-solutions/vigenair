@@ -508,12 +508,7 @@ limitations under the License.
       </div>
     </mat-expansion-panel>
   </mat-sidenav-content>
-  <mat-sidenav
-    #renderQueueSidenav
-    position="end"
-    autoFocus="false"
-    style="width: 35rem"
-  >
+  <mat-sidenav #renderQueueSidenav position="end" style="width: 35rem">
     <div style="margin-bottom: auto">
       @for (variant of renderQueue; track variant; let i = $index) {
         <mat-card
