@@ -593,6 +593,14 @@ export class AppComponent {
       this.calculateVideoDefaultDuration(
         this.previewVideoElem.nativeElement.duration
       );
+      // Increments by 1 for every additional video minute
+      const minutesFactor =
+        Math.floor((this.previewVideoElem.nativeElement.duration - 1) / 60) + 1;
+      // Wait a total of 10 minutes per minute of video, for a max of 1 hour
+      this.maxRetries = Math.min(
+        this.maxRetries * minutesFactor,
+        CONFIG.maxRetries
+      );
       this.previewVideoElem.nativeElement.onloadeddata = null;
     };
     this.previewVideoElem.nativeElement.onplaying = () => {
@@ -615,16 +623,6 @@ export class AppComponent {
     };
     this.videoUploadPanel.close();
     this.videoMagicPanel.open();
-
-    // Increments by 1 for every additional video minute
-    const minutesFactor =
-      Math.floor((this.previewVideoElem.nativeElement.duration - 1) / 60) + 1;
-
-    // Wait a total of 10 minutes per minute of video, for a max of 1 hour
-    this.maxRetries = Math.min(
-      this.maxRetries * minutesFactor,
-      CONFIG.maxRetries
-    );
     this.getSubtitlesTrack(folder);
   }
 
