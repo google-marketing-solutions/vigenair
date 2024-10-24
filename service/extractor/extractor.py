@@ -34,8 +34,8 @@ import pandas as pd
 import storage as StorageService
 import utils as Utils
 import vertexai
+from vertexai.generative_models import GenerativeModel, Part
 import video as VideoService
-from vertexai.preview.generative_models import GenerativeModel, Part
 
 
 def _process_video(

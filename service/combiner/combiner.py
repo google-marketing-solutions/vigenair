@@ -35,7 +35,7 @@ import pandas as pd
 import storage as StorageService
 import utils as Utils
 import vertexai
-from vertexai.preview.generative_models import GenerativeModel, Part
+from vertexai.generative_models import GenerativeModel, Part
 
 
 @dataclasses.dataclass(init=False)

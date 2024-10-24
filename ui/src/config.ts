@@ -87,5 +87,6 @@ export const CONFIG = {
   defaultDuration: 30, // in seconds
   retryDelay: 6000, // in milliseconds
   maxRetries: 600,
+  maxRetriesAppsScript: 5,
   debug: true,
 };

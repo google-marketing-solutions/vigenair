@@ -64,7 +64,9 @@ export class ApiCallsService implements ApiCalls {
           throw error;
         })
         .getUserAuthToken();
-    });
+    }).pipe(
+      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    );
   }
 
   uploadVideo(
@@ -155,7 +157,9 @@ export class ApiCallsService implements ApiCalls {
           throw error;
         })
         .generateVariants(gcsFolder, settings);
-    });
+    }).pipe(
+      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    );
   }
 
   generatePreviews(
@@ -181,7 +185,9 @@ export class ApiCallsService implements ApiCalls {
           throw error;
         })
         .generatePreviews(analysis, segments, settings);
-    });
+    }).pipe(
+      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    );
   }
 
   getRunsFromGcs(): Observable<PreviousRunsResponse> {
@@ -203,7 +209,9 @@ export class ApiCallsService implements ApiCalls {
           throw error;
         })
         .getRunsFromGcs();
-    });
+    }).pipe(
+      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    );
   }
 
   renderVariants(
@@ -253,6 +261,8 @@ export class ApiCallsService implements ApiCalls {
           throw error;
         })
         .getWebAppUrl();
-    });
+    }).pipe(
+      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    );
   }
 }
