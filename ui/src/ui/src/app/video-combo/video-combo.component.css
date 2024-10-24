@@ -98,6 +98,10 @@ video {
   margin-bottom: 8px;
 }
 
+mat-table {
+  margin-top: 12px;
+}
+
 .approve-container {
   margin-right: auto;
 }
@@ -109,6 +113,10 @@ video {
   font-size: 46px;
 }
 
+.approve-icon-disabled {
+  color: grey;
+}
+
 .approve-icon.shadow {
   filter: drop-shadow(2px 2px 3px black);
   position: absolute;
@@ -118,4 +126,8 @@ video {
   font-size: 18px;
   font-weight: 500;
   margin-right: auto;
+}
+
+.text-actions span {
+  cursor: pointer;
 }

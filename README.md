@@ -17,7 +17,7 @@ limitations under the License.
 
 # ViGenAiR - Recrafting Video Ads with Generative AI
 
-[![GitHub last commit](https://img.shields.io/github/last-commit/google/vigenair)](https://github.com/google/vigenair/commits)
+[![GitHub last commit](https://img.shields.io/github/last-commit/google-marketing-solutions/vigenair)](https://github.com/google-marketing-solutions/vigenair/commits)
 [![Code Style: Google](https://img.shields.io/badge/code%20style-google-blueviolet.svg)](https://github.com/google/gts)
 
 **Disclaimer: This is not an official Google product.**
@@ -33,6 +33,7 @@ limitations under the License.
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
 * [October 2024]
+  * `frontend`: Added functionality to regenerate Demand Gen text assets, Read more [here](#6-output-videos).
   * `frontend` + `backend`: Added functionality to "fade out" audio at the end of generated videos. Read more [here](#42-user-controls-for-video-rendering).
 * [September 2024]
   * `backend`: You can now process any video of any length or size - even beyond the Google Cloud Video AI API [limits](https://cloud.google.com/video-intelligence/quotas) of 50 GB size and up to 3h video length.
@@ -275,6 +276,7 @@ Clicking on the `Render` button inside the render queue will render the variants
 The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos - in their different formats and along with all associated assets - will be displayed. Users can preview the final videos and select the ones they would like to upload into Google Ads / YouTube. Users may also share a page of the Web App containing the rendered videos and associated image & text assets via the dedicated "share" icon in the top-right corner of the "Rendered videos" panel.
 
 <center><img src='./img/rendered.png' width="600px" alt="Vigenair UI: Rendered videos display with 'share' icon" /></center>
+<center><img src='./img/rendered-assets.png' width="600px" alt="Vigenair UI: Rendered image and text assets" /></center>
 
 > Note: Due to an [ongoing Apps Script issue](https://issuetracker.google.com/issues/170799249), users viewing the application via "share" links **must** be granted the `Editor` role on the underlying Google Sheet and Apps Script project. This can be done by navigating to the [Apps Script home page](https://script.google.com), locating the `ViGenAiR` script and using the [more vertical](https://fonts.google.com/icons?selected=Material+Symbols+Outlined:more_vert) icon to `Share Sheet + Script`.
 

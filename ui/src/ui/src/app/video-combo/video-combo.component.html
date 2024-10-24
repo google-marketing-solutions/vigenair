@@ -150,8 +150,18 @@ limitations under the License.
     class="row"
     style="flex-direction: column; padding-right: 8px"
   >
-    <span class="assets-header">Text assets</span>
-    <mat-table [dataSource]="combo.texts" class="mat-elevation-z8">
+    <div>
+      <span class="assets-header">Text assets</span>
+    </div>
+    <mat-progress-bar
+      *ngIf="comboLoading"
+      mode="indeterminate"
+    ></mat-progress-bar>
+    <mat-table
+      [dataSource]="combo.texts"
+      class="mat-elevation-z8"
+      [style.background-color]="comboLoading ? 'lightgrey' : ''"
+    >
       <ng-container matColumnDef="position">
         <mat-header-cell *matHeaderCellDef>
           {{ showApprovalStatus ? 'Approval Status' : 'No.' }}
@@ -161,8 +171,13 @@ limitations under the License.
             <div (click)="toggleApprovalStatus(element)">
               <mat-icon
                 class="approve-icon"
+                [class]="comboLoading ? 'approve-icon-disabled' : ''"
                 [matTooltip]="
-                  element.approved ? 'Remove approval' : 'Approve text asset'
+                  comboLoading
+                    ? ''
+                    : element.approved
+                      ? 'Remove approval'
+                      : 'Approve text asset'
                 "
                 >{{
                   element.approved ? 'check_box' : 'check_box_outline_blank'
@@ -176,26 +191,81 @@ limitations under the License.
       </ng-container>
       <ng-container matColumnDef="headline">
         <mat-header-cell *matHeaderCellDef> Headline </mat-header-cell>
-        <mat-cell
-          *matCellDef="let element"
-          [innerHTML]="marked.parse(element.headline)"
-        >
+        <mat-cell *matCellDef="let element">
+          @if (element.editable) {
+            <mat-form-field *ngIf="element.editable" style="width: 100%">
+              <input matInput type="text" [(ngModel)]="element.headline" />
+              @if (element.headline) {
+                <button
+                  matSuffix
+                  mat-icon-button
+                  aria-label="Clear"
+                  (click)="element.headline = ''"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-form-field>
+          } @else {
+            <span [innerHTML]="marked.parse(element.headline)"></span>
+          }
         </mat-cell>
       </ng-container>
       <ng-container matColumnDef="description">
         <mat-header-cell *matHeaderCellDef> Description </mat-header-cell>
-        <mat-cell
-          *matCellDef="let element"
-          [innerHTML]="marked.parse(element.description)"
-          style="white-space: pre-line"
-        >
+        <mat-cell *matCellDef="let element" style="white-space: pre-line">
+          @if (element.editable) {
+            <mat-form-field *ngIf="element.editable" style="width: 100%">
+              <input matInput type="text" [(ngModel)]="element.description" />
+              @if (element.description) {
+                <button
+                  matSuffix
+                  mat-icon-button
+                  aria-label="Clear"
+                  (click)="element.description = ''"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-form-field>
+          } @else {
+            <span [innerHTML]="marked.parse(element.description)"></span>
+          }
+        </mat-cell>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
+        <mat-cell *matCellDef="let element; let i = index">
+          <div class="text-actions">
+            @if (element.editable) {
+              <span
+                (click)="
+                  element.editable = comboLoading ? element.editable : false
+                "
+                ><mat-icon matTooltip="Save row">save</mat-icon></span
+              >
+            } @else {
+              <span
+                (click)="
+                  element.editable = comboLoading ? element.editable : true
+                "
+                ><mat-icon matTooltip="Edit row">edit</mat-icon></span
+              >
+            }
+            <span (click)="regenerateText(element)"
+              ><mat-icon matTooltip="Regenerate row">refresh</mat-icon></span
+            >
+          </div>
         </mat-cell>
       </ng-container>
       <mat-header-row
-        *matHeaderRowDef="['position', 'headline', 'description']"
+        *matHeaderRowDef="['position', 'headline', 'description', 'actions']"
       ></mat-header-row>
       <mat-row
-        *matRowDef="let row; columns: ['position', 'headline', 'description']"
+        *matRowDef="
+          let row;
+          columns: ['position', 'headline', 'description', 'actions']
+        "
       ></mat-row>
     </mat-table>
   </div>

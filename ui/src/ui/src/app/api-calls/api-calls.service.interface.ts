@@ -102,7 +102,8 @@ export interface VariantImageAssets {
 export interface VariantTextAsset {
   headline: string;
   description: string;
-  approved: boolean;
+  approved?: boolean;
+  editable?: boolean;
 }
 
 export interface RenderedVariant {
@@ -167,6 +168,11 @@ export interface ApiCalls {
   ): Observable<string>;
   getGcsFolderPath(folder: string): Observable<string>;
   getWebAppUrl(): Observable<string>;
+  regenerateTextAsset(
+    gcsFolder: string,
+    variantVideoPath: string,
+    textAsset: VariantTextAsset
+  ): Observable<VariantTextAsset>;
   storeApprovalStatus(
     gcsFolder: string,
     combos: RenderedVariant[]

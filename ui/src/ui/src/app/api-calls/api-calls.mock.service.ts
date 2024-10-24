@@ -26,6 +26,7 @@ import {
   PreviousRunsResponse,
   RenderedVariant,
   RenderQueue,
+  VariantTextAsset,
 } from './api-calls.service.interface';
 
 @Injectable({
@@ -136,6 +137,25 @@ export class ApiCallsService implements ApiCalls {
   }
   getWebAppUrl(): Observable<string> {
     return of('');
+  }
+  regenerateTextAsset(
+    gcsFolder: string,
+    variantVideoPath: string,
+    textAsset: VariantTextAsset
+  ): Observable<VariantTextAsset> {
+    return new Observable(subscriber => {
+      setTimeout(() => {
+        this.ngZone.run(() => {
+          subscriber.next({
+            headline: `NEW - ${textAsset.headline}`,
+            description: `NEW - ${textAsset.description}`,
+            approved: true,
+            editable: false,
+          });
+          subscriber.complete();
+        });
+      }, 1000);
+    });
   }
   storeApprovalStatus(
     gcsFolder: string,

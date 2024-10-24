@@ -25,22 +25,6 @@ interface VertexAiModelParams {
   topP: number;
 }
 
-interface VertexAiPalmRequest {
-  instances: [{ prompt: string }];
-  parameters: VertexAiModelParams;
-}
-
-interface VertexAiPalmPrediction {
-  content: string;
-  safetyAttributes: {
-    blocked: boolean;
-  };
-}
-
-interface VertexAiPalmResponse {
-  predictions: VertexAiPalmPrediction[] | null;
-}
-
 interface VertexAiGeminiRequest {
   contents: {
     role: 'user';
@@ -88,10 +72,7 @@ export class VertexHelper {
     return `https://${CONFIG.vertexAi.location}-${CONFIG.vertexAi.endpoint}/v1/projects/${CONFIG.vertexAi.projectId}/locations/${CONFIG.vertexAi.location}/publishers/google/models/${CONFIG.vertexAi.model}`;
   }
 
-  static fetchJson(
-    url: string,
-    request: VertexAiPalmRequest | VertexAiGeminiRequest
-  ): unknown {
+  static fetchJson(url: string, request: VertexAiGeminiRequest): unknown {
     const response = ScriptUtil.urlFetch(url, 'POST', {
       contentType: 'application/json',
       payload: JSON.stringify(request),
@@ -104,46 +85,17 @@ export class VertexHelper {
         }s as API quota limit has been reached...`
       );
       Utilities.sleep(CONFIG.vertexAi.quotaLimitDelay);
-      return this.fetchJson(url, request);
+      return VertexHelper.fetchJson(url, request);
     }
     return JSON.parse(response.getContentText());
   }
 
-  static generate(prompt: string): string {
-    if (CONFIG.vertexAi.model.startsWith('gemini')) {
-      return this.multimodalGenerate(prompt);
-    }
-    return this.predict(prompt);
+  static generate(prompt: string, gcsVideoUrl?: string) {
+    return VertexHelper.multimodalGenerate(prompt, gcsVideoUrl);
   }
 
-  static predict(prompt: string): string {
-    const endpoint = `${this.getEndpointUrlBase()}:predict`;
-
-    const request: VertexAiPalmRequest = {
-      instances: [{ prompt: prompt }],
-      parameters: CONFIG.vertexAi.modelParams,
-    };
-    AppLogger.debug(`Request: ${JSON.stringify(request)}`);
-
-    const response = this.fetchJson(endpoint, request) as VertexAiPalmResponse;
-    AppLogger.debug(`Response: ${JSON.stringify(response)}`);
-
-    if (response.predictions) {
-      if (response.predictions[0].safetyAttributes.blocked) {
-        throw new Error(
-          `Request was blocked as it triggered API safety filters. Prompt: ${prompt}`
-        );
-      } else if (!response.predictions[0].content) {
-        throw new Error(`Received empty response from API. Prompt: ${prompt}`);
-      } else {
-        return response.predictions[0].content;
-      }
-    }
-    throw new Error(JSON.stringify(response));
-  }
-
-  static multimodalGenerate(prompt: string): string {
-    const endpoint = `${this.getEndpointUrlBase()}:streamGenerateContent`;
+  static multimodalGenerate(prompt: string, gcsVideoUrl?: string): string {
+    const endpoint = `${VertexHelper.getEndpointUrlBase()}:streamGenerateContent`;
 
     const request: VertexAiGeminiRequest = {
       contents: {
@@ -170,13 +122,17 @@ export class VertexHelper {
         },
       ],
     };
+    if (gcsVideoUrl) {
+      request.contents.parts.push({
+        fileData: { mimeType: 'video/mp4', fileUri: gcsVideoUrl },
+      });
+    }
     AppLogger.debug(`Request: ${JSON.stringify(request)}`);
 
-    const response = this.fetchJson(
+    const response = VertexHelper.fetchJson(
       endpoint,
       request
     ) as VertexAiGeminiResponseCandidate[];
-    AppLogger.debug(`Response: ${JSON.stringify(response)}`);
 
     const content: string[] = [];
     response.forEach(candidate => {

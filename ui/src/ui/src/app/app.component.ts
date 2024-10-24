@@ -232,17 +232,23 @@ export class AppComponent {
     this.getRenderedCombos(inputCombosFolder);
   }
 
-  failHandler(error: Error, folder?: string) {
+  failHandler(error: Error, folder?: string, startOver = false) {
     console.error('An unexpected error occurred: ', error);
     this.loading = false;
+    this.generatingVariants = false;
+    this.rendering = false;
+    this.loadingVariant = false;
+    this.generatingPreviews = false;
     this.snackBar
       .open('An unexpected error occurred.', 'Start over', {
         horizontalPosition: 'center',
       })
       .afterDismissed()
       .subscribe(() => {
-        this.videoUploadPanel.open();
-        this.videoMagicPanel.close();
+        if (startOver) {
+          this.videoUploadPanel.open();
+          this.videoMagicPanel.close();
+        }
         if (this.previewVideoElem.nativeElement) {
           this.previewVideoElem.nativeElement.pause();
         }
@@ -414,7 +420,7 @@ export class AppComponent {
             this.generatePreviews();
           }
         },
-        error: err => this.failHandler(err, folder),
+        error: err => this.failHandler(err, folder, true),
       });
   }
 
@@ -438,7 +444,7 @@ export class AppComponent {
           this.videoCombosPanel.open();
           this.storeCombosApproval(false);
         },
-        error: err => this.failHandler(err, folder),
+        error: err => this.failHandler(err, folder, true),
       });
   }
 
@@ -458,7 +464,7 @@ export class AppComponent {
           this.activeVideoObjects = this.videoObjects;
           this.getAvSegments(folder);
         },
-        error: err => this.failHandler(err, folder),
+        error: err => this.failHandler(err, folder, true),
       });
   }
 
@@ -474,7 +480,7 @@ export class AppComponent {
           this.transcriptStatus = 'check_circle';
           this.getVideoAnalysis(folder);
         },
-        error: err => this.failHandler(err, folder),
+        error: err => this.failHandler(err, folder, true),
       });
   }
 
@@ -1141,6 +1147,7 @@ export class AppComponent {
       }
       if (combo.texts) {
         renderedVariant.texts = combo.texts.map((text: VariantTextAsset) => {
+          text.editable = false;
           text.approved = true;
           return text;
         });

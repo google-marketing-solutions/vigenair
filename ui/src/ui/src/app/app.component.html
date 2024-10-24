@@ -329,7 +329,11 @@ limitations under the License.
             *ngFor="let variant of variants"
             label="{{ variant.title }} -- {{ variant.duration }}"
           >
-            <video-combo [combo]="variant" displayMode="variant"></video-combo>
+            <video-combo
+              [gcsFolder]="folder"
+              [combo]="variant"
+              displayMode="variant"
+            ></video-combo>
           </mat-tab>
         </mat-tab-group>
         <br />
@@ -496,6 +500,7 @@ limitations under the License.
           label="{{ combo.title }} -- {{ combo.duration }}"
         >
           <video-combo
+            [gcsFolder]="folder"
             [combo]="combo"
             [showApprovalStatus]="showApprovalStatus"
           ></video-combo>

@@ -18,7 +18,10 @@ import { CONFIG } from './config';
 import { AppLogger } from './logging';
 import { StorageManager } from './storage';
 import { TimeUtil } from './time-util';
-import { GenerationSettings } from './ui/src/app/api-calls/api-calls.service.interface';
+import {
+  GenerationSettings,
+  VariantTextAsset,
+} from './ui/src/app/api-calls/api-calls.service.interface';
 import { VertexHelper } from './vertex';
 
 export interface AvSegment {
@@ -253,5 +256,42 @@ export class GenerationHelper {
       }
     }
     return TimeUtil.secondsToTimeString(duration);
+  }
+
+  static generateTextAsset(
+    gcsFolder: string,
+    variantVideoPath: string,
+    textAsset: VariantTextAsset
+  ): VariantTextAsset {
+    const videoLanguage =
+      (StorageManager.loadFile(`${gcsFolder}/language.txt`, true) as string) ||
+      CONFIG.defaultVideoLanguage;
+    const generationPrompt = CONFIG.vertexAi.textAssetGenerationPrompt
+      .replace('{{videoLanguage}}', videoLanguage)
+      .replace('{{headline}}', textAsset.headline)
+      .replace('{{description}}', textAsset.description);
+
+    const response = VertexHelper.generate(
+      generationPrompt,
+      `gs:/${decodeURIComponent(variantVideoPath)}`
+    );
+    AppLogger.info(`GenerateTextAsset Response: ${response}`);
+    const regex =
+      /.*Headline\s?:\**(?<headline>.*)\n+\**Description\s?:\**(?<description>.*)/ims;
+    const matches = response.match(regex);
+    if (matches) {
+      const { headline, description } = matches.groups as {
+        headline: string;
+        description: string;
+      };
+      return {
+        headline: String(headline).trim(),
+        description: String(description).trim(),
+      };
+    } else {
+      const message = `WARNING - Received an incomplete response from the API!\nResponse: ${response}`;
+      AppLogger.warn(message);
+      throw new Error(message);
+    }
   }
 }

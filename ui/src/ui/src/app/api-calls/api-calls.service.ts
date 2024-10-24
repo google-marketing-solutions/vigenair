@@ -28,6 +28,7 @@ import {
   PreviousRunsResponse,
   RenderedVariant,
   RenderQueue,
+  VariantTextAsset,
 } from './api-calls.service.interface';
 
 @Injectable({
@@ -62,7 +63,7 @@ export class ApiCallsService implements ApiCalls {
             'Could not retrieve the user auth token! Error: ',
             error
           );
-          throw error;
+          subscriber.error(error);
         })
         .getUserAuthToken();
     }).pipe(
@@ -155,7 +156,7 @@ export class ApiCallsService implements ApiCalls {
             'Encountered an unexpected error while generating variants! Error: ',
             error
           );
-          throw error;
+          subscriber.error(error);
         })
         .generateVariants(gcsFolder, settings);
     }).pipe(
@@ -183,7 +184,7 @@ export class ApiCallsService implements ApiCalls {
             'Encountered an unexpected error while generating format previews! Error: ',
             error
           );
-          throw error;
+          subscriber.error(error);
         })
         .generatePreviews(analysis, segments, settings);
     }).pipe(
@@ -207,7 +208,7 @@ export class ApiCallsService implements ApiCalls {
             'Could not retrieve previous runs from GCS! Error: ',
             error
           );
-          throw error;
+          subscriber.error(error);
         })
         .getRunsFromGcs();
     }).pipe(
@@ -234,7 +235,7 @@ export class ApiCallsService implements ApiCalls {
             'Encountered an unexpected error while rendering variants! Error: ',
             error
           );
-          throw error;
+          subscriber.error(error);
         })
         .renderVariants(gcsFolder, renderQueue);
     });
@@ -259,9 +260,36 @@ export class ApiCallsService implements ApiCalls {
         })
         .withFailureHandler((error: Error) => {
           console.error('Could not retrieve the Web App URL! Error: ', error);
-          throw error;
+          subscriber.error(error);
         })
         .getWebAppUrl();
+    }).pipe(
+      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    );
+  }
+
+  regenerateTextAsset(
+    gcsFolder: string,
+    variantVideoPath: string,
+    textAsset: VariantTextAsset
+  ): Observable<VariantTextAsset> {
+    return new Observable<VariantTextAsset>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((textAsset: VariantTextAsset) => {
+          this.ngZone.run(() => {
+            textAsset.approved = true;
+            textAsset.editable = false;
+            subscriber.next(textAsset);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error('Could not regenerate text assets! Error: ', error);
+          subscriber.error(error);
+        })
+        .regenerateTextAsset(gcsFolder, variantVideoPath, textAsset);
     }).pipe(
       retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
     );
@@ -283,7 +311,7 @@ export class ApiCallsService implements ApiCalls {
         })
         .withFailureHandler((error: Error) => {
           console.error('Error while storing approval status! Error: ', error);
-          throw error;
+          subscriber.error(error);
         })
         .storeApprovalStatus(folder, combos);
     });

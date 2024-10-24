@@ -34,6 +34,7 @@ import {
   PreviewSettings,
   RenderedVariant,
   RenderQueue,
+  VariantTextAsset,
 } from './ui/src/app/api-calls/api-calls.service.interface';
 
 function getEncodedUserId() {
@@ -167,8 +168,21 @@ function getWebAppUrl(): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+function regenerateTextAsset(
+  gcsFolder: string,
+  variantVideoPath: string,
+  textAsset: VariantTextAsset
+): VariantTextAsset {
+  return GenerationHelper.generateTextAsset(
+    gcsFolder,
+    variantVideoPath,
+    textAsset
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function storeApprovalStatus(
-  folder: string,
+  gcsFolder: string,
   combos: RenderedVariant[]
 ): boolean {
   const encodedJson = Utilities.base64Encode(
@@ -177,7 +191,7 @@ function storeApprovalStatus(
   );
   StorageManager.uploadFile(
     encodedJson,
-    folder,
+    gcsFolder,
     'approval.json',
     'application/json'
   );

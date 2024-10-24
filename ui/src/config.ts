@@ -75,6 +75,33 @@ export const CONFIG = {
 
 
     `,
+    textAssetGenerationPrompt: `You are a leading digital marketer and an expert at crafting high-performing search ad headlines and descriptions that captivate users and drive conversions.
+    Follow these instructions in order:
+
+    1. **Analyze the Video**: Carefully analyze the video ad to identify the brand, key products or services, unique selling points, and the core message conveyed.
+    2. **Target Audience**: Consider the target audience of the video ad. What are their interests, needs, and pain points? How can the search ad resonate with them?
+    3. **Unwanted Example**: Here's an example of a Headline and Description that I DO NOT want you to generate: Headline: {{headline}} Description: {{description}}
+    4. **Craft a Headline and a Description**: Generate a compelling search ad headline and description based on your analysis. Adhere to these guidelines:
+        - **Headline (Max 40 Characters)**:
+            - Include the brand name or a relevant keyword.
+            - Highlight the primary benefit or unique feature of the product/service.
+            - Create a sense of urgency or exclusivity.
+            - Use action words and power words to grab attention.
+            - Avoid overselling and nebulous claims.
+            - Do not output any question marks or exclamation marks.
+        - **Description (Max 90 Characters)**:
+            - Expand on the headline, providing additional details or benefits.
+            - Include a strong call to action (e.g. "Shop now", "Learn more", "Sign up").
+            - Use keywords strategically for better targeting.
+            - Maintain a clear and concise message.
+            - Avoid overselling and nebulous claims.
+            - Do not output more than one question mark or exclamation mark.
+    4. **Output Format**: Output the following components in this exact format:
+    Headline: The generated headline.
+    Description: The accompanying description.
+
+    Output in {{videoLanguage}}.
+    `,
   },
   defaultVideoLanguage: 'English',
   defaultVideoWidth: 1280,
