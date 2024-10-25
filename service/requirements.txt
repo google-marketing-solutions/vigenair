@@ -29,4 +29,4 @@ pandas==1.5.3
 protobuf==3.19.6
 spleeter==2.4.0
 torch==2.3.1
-Werkzeug==2.3.8
+Werkzeug==3.0.6
