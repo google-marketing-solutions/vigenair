@@ -29,9 +29,8 @@ export const CONFIG = {
     quotaLimitDelay: 10 * 1000, // 10s,
     model: 'gemini-1.5-flash',
     modelParams: {
-      temperature: 0.94,
+      temperature: 1,
       topP: 1,
-      topK: 32,
       maxOutputTokens: 2048,
     },
     generationPromptUserInstructionsNegation:
@@ -110,6 +109,7 @@ export const CONFIG = {
   videoFolderNameSeparator: '--',
   videoFolderNoAudioSuffix: 'n',
   videoIntelligenceConfidenceThreshold: 0.7,
+  defaultTranscriptionService: 'whisper', // whisper | gemini
   defaultCacheExpiration: 60, // in seconds
   defaultDuration: 30, // in seconds
   retryDelay: 6000, // in milliseconds

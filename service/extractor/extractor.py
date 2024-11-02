@@ -168,16 +168,20 @@ def _process_audio(
     input_audio_file_path: str,
     gcs_folder: str,
     gcs_bucket_name: str,
-    analyse_audio: bool,
+    transcription_service: Utils.TranscriptionService,
 ) -> pd.DataFrame:
   transcription_dataframe = pd.DataFrame()
 
-  if input_audio_file_path and analyse_audio:
+  if (
+      input_audio_file_path
+      and transcription_service != Utils.TranscriptionService.NONE
+  ):
     transcription_dataframe = _process_video_with_audio(
         output_dir,
         input_audio_file_path,
         gcs_folder,
         gcs_bucket_name,
+        transcription_service,
     )
   else:
     _process_video_without_audio(output_dir, gcs_folder, gcs_bucket_name)
@@ -190,6 +194,7 @@ def _process_video_with_audio(
     input_audio_file_path: str,
     gcs_folder: str,
     gcs_bucket_name: str,
+    transcription_service: Utils.TranscriptionService,
 ) -> pd.DataFrame:
   audio_chunks = _get_audio_chunks(
       output_dir=output_dir,
@@ -215,6 +220,9 @@ def _process_video_with_audio(
             output_dir=(audio_output_dir if size > 1 else output_dir),
             index=index + 1,
             audio_file_path=audio_file_path,
+            transcription_service=transcription_service,
+            gcs_folder=gcs_folder,
+            gcs_bucket_name=gcs_bucket_name,
         ): index
         for index, audio_file_path in enumerate(audio_chunks)
     }
@@ -355,18 +363,26 @@ def _analyse_audio(
     output_dir: str,
     index: int,
     audio_file_path: str,
+    transcription_service: Utils.TranscriptionService,
+    gcs_folder: str,
+    gcs_bucket_name=str,
 ) -> Tuple[str, str, str, str, float]:
   """Runs audio analysis in parallel."""
   vocals_file_path = None
   music_file_path = None
   transcription_dataframe = None
 
-  with concurrent.futures.ProcessPoolExecutor(max_workers=2) as process_executor:
+  with (
+      concurrent.futures.ProcessPoolExecutor(max_workers=2) as process_executor
+  ):
     futures_dict = {
         process_executor.submit(
             AudioService.transcribe_audio,
             output_dir=output_dir,
             audio_file_path=audio_file_path,
+            transcription_service=transcription_service,
+            gcs_folder=gcs_folder,
+            gcs_bucket_name=gcs_bucket_name,
         ): 'transcribe_audio',
         process_executor.submit(
             AudioService.split_audio,
@@ -513,6 +529,12 @@ class Extractor:
         bucket_name=self.gcs_bucket_name,
     )
     input_audio_file_path = AudioService.extract_audio(input_video_file_path)
+    if input_audio_file_path:
+      StorageService.upload_gcs_dir(
+          source_directory=tmp_dir,
+          bucket_name=self.gcs_bucket_name,
+          target_dir=self.video_file.gcs_folder,
+      )
     annotation_results = None
     transcription_dataframe = pd.DataFrame()
 
@@ -524,7 +546,8 @@ class Extractor:
               input_audio_file_path=input_audio_file_path,
               gcs_folder=self.video_file.gcs_folder,
               gcs_bucket_name=self.gcs_bucket_name,
-              analyse_audio=self.video_file.video_metadata.analyse_audio,
+              transcription_service=self.video_file.video_metadata.
+              transcription_service,
           ): 'process_audio',
           process_executor.submit(
               _process_video,

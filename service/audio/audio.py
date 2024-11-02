@@ -18,18 +18,22 @@ This module contains functions to extract, split and transcribe audio files.
 """
 
 import datetime
+import io
 import logging
 import os
 import pathlib
+import re
 import shutil
 from typing import Optional, Sequence, Tuple
 
 import config as ConfigService
-import pandas as pd
-import utils as Utils
-import whisper
 from faster_whisper import WhisperModel
 from iso639 import languages
+import pandas as pd
+import utils as Utils
+import vertexai
+from vertexai.generative_models import GenerativeModel, Part
+import whisper
 
 
 def combine_audio_files(output_path: str, audio_files: Sequence[str]):
@@ -229,18 +233,122 @@ def split_audio(
 def transcribe_audio(
     output_dir: str,
     audio_file_path: str,
+    transcription_service: Utils.TranscriptionService,
+    gcs_folder: str,
+    gcs_bucket_name: str,
 ) -> Tuple[pd.DataFrame, str, float]:
   """Transcribes an audio file and returns the transcription.
 
   Args:
     output_dir: Directory where the transcription will be saved.
     audio_file_path: Path to the audio file that will be transcribed.
+    transcription_service: The service to use for transcription.
+    gcs_folder: The GCS folder to use.
+    gcs_bucket_name: The GCS bucket to use.
 
   Returns:
     A pandas dataframe with the transcription data.
   """
+  match transcription_service:
+    case Utils.TranscriptionService.GEMINI:
+      return _transcribe_gemini(
+          output_dir, audio_file_path, gcs_folder, gcs_bucket_name
+      )
+    case Utils.TranscriptionService.WHISPER | _:
+      return _transcribe_whisper(output_dir, audio_file_path)
+
+
+def _transcribe_gemini(
+    output_dir: str,
+    audio_file_path: str,
+    gcs_folder: str,
+    gcs_bucket_name: str,
+) -> Tuple[pd.DataFrame, str, float]:
+  """Transcribes audio using Gemini."""
+  transcription_dataframe = pd.DataFrame()
+  video_language = ConfigService.DEFAULT_VIDEO_LANGUAGE
+  language_probability = 0.0
+
+  vertexai.init(
+      project=ConfigService.GCP_PROJECT_ID,
+      location=ConfigService.GCP_LOCATION,
+  )
+  transcription_model = (
+      GenerativeModel(ConfigService.CONFIG_TRANSCRIPTION_MODEL)
+  )
+  audio_file_gcs_uri = f'gs://{gcs_bucket_name}/{gcs_folder}' + (
+      f'/{ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR}'
+      if ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR in audio_file_path else ''
+  ) + audio_file_path.replace(output_dir, '')
+  try:
+    response = transcription_model.generate_content(
+        [
+            Part.from_uri(audio_file_gcs_uri, mime_type='audio/wav'),
+            ConfigService.TRANSCRIBE_AUDIO_PROMPT,
+        ],
+        generation_config=ConfigService.TRANSCRIBE_AUDIO_CONFIG,
+        safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
+    )
+    if (
+        response.candidates and response.candidates[0].content.parts
+        and response.candidates[0].content.parts[0].text
+    ):
+      text = response.candidates[0].content.parts[0].text
+      result = (
+          re.search(ConfigService.TRANSCRIBE_AUDIO_PATTERN, text, re.DOTALL)
+      )
+      logging.info('TRANSCRIPTION - %s', text)
+      video_language = result.group(1)
+      language_probability = result.group(2)
+      transcription_dataframe = (
+          pd.read_csv(io.StringIO(result.group(3)), usecols=[
+              0, 1, 2
+          ]).dropna(axis=1, how='all').rename(
+              columns={
+                  'Start': 'start_s',
+                  'End': 'end_s',
+                  'Transcription': 'transcript',
+              }
+          ).assign(
+              audio_segment_id=lambda df: range(1,
+                                                len(df) + 1),
+              start_s=lambda df: df['start_s'].
+              apply(Utils.timestring_to_seconds),
+              end_s=lambda df: df['end_s'].apply(Utils.timestring_to_seconds),
+              duration_s=lambda df: df['end_s'] - df['start_s'],
+          )
+      )
+      subtitles_output_path = audio_file_path.replace(
+          'wav', ConfigService.OUTPUT_SUBTITLES_TYPE
+      )
+      with open(subtitles_output_path, 'w', encoding='utf8') as f:
+        f.write(result.group(4))
+      logging.info(
+          'TRANSCRIPTION - transcript for %s written successfully!',
+          audio_file_path,
+      )
+    else:
+      logging.warning(
+          'Could not transcribe audio! Returning empty transcription...'
+      )
+  # Execution should continue regardless of the underlying exception
+  # pylint: disable=broad-exception-caught
+  except Exception:
+    logging.exception(
+        'Encountered error during transcription! '
+        'Returning empty transcription...'
+    )
+
+  return transcription_dataframe, video_language, float(language_probability)
+
+
+def _transcribe_whisper(
+    output_dir: str,
+    audio_file_path: str,
+) -> Tuple[pd.DataFrame, str, float]:
+  """Transcribes audio using Whisper."""
   model = WhisperModel(
-      ConfigService.CONFIG_WHISPER_MODEL,
+      ConfigService.CONFIG_TRANSCRIPTION_MODEL,
       device=ConfigService.DEVICE,
       compute_type='int8',
   )

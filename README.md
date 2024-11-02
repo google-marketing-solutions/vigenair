@@ -33,10 +33,11 @@ limitations under the License.
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
 * [October 2024]
+  * `frontend` + `backend`: Added Gemini as an alternative to Whisper for transcription. Read more [here](#2-video-processing-and-extraction).
   * `frontend`: Added functionality to regenerate Demand Gen text assets, Read more [here](#6-output-videos).
   * `frontend` + `backend`: Added functionality to "fade out" audio at the end of generated videos. Read more [here](#42-user-controls-for-video-rendering).
 * [September 2024]
-  * `backend`: You can now process any video of any length or size - even beyond the Google Cloud Video AI API [limits](https://cloud.google.com/video-intelligence/quotas) of 50 GB size and up to 3h video length.
+  * `backend`: You can now process any video of any length or size - even beyond the Google Cloud Video Intelligence API [limits](https://cloud.google.com/video-intelligence/quotas) of 50 GB size and up to 3h video length.
 * [August 2024]
   * Updated the [pricing](#pricing-and-quotas) section and Cloud calculator example to use the new (cheaper) pricing for `Gemini 1.5 Flash`.
   * `frontend`: You can now manually move the Smart Framing crop area to better capture the point of interest. Read more [here](#3-object-tracking-and-smart-framing).
@@ -172,9 +173,17 @@ Users upload or select videos they have previously analysed via the UI's `Video 
 New uploads into GCS trigger the Extractor service Cloud Function, which extracts all video information and stores the results on GCS (`input.vtt`, `analysis.json` and `data.json`).
 
 * First, background music and voice-over (if available) are separated via the [spleeter](https://github.com/deezer/spleeter) library, and the voice-over is transcribed.
-* Transcription is done via the [faster-whisper](https://github.com/SYSTRAN/faster-whisper) library, which uses OpenAI's Whisper model under the hood. By default, Vigenair uses the [small](https://github.com/openai/whisper#available-models-and-languages) multilingual model which provides the optimal quality-performance balance. If you find that it is not working well for your target language you may change the model used by the Cloud Function by setting the `CONFIG_WHISPER_MODEL` variable in the [update_config.sh](service/update_config.sh) script, which can be used to update the function's runtime variables. The transcription output is stored in an `input.vtt` file, along with a `language.txt` file containing the video's primary language, in the same folder as the input video.
-* Video analysis is done via the Cloud [Video AI API](https://cloud.google.com/video-intelligence), where visual shots, detected objects - with tracking, labels, people and faces, and recognised logos and any on-screen text within the input video are extracted. The output is stored in an `analysis.json` file in the same folder as the input video.
-* Finally, *coherent* audio/video segments are created using the transcription and video intelligence outputs and then cut into individual video files and stored on GCS in an `av_segments_cuts` subfolder under the root video folder. These cuts are then annotated via multimodal models on Vertex AI, which provide a description and a set of associated keywords / topics per segment. The fully annotated segments (including all information from the Video AI API) are then compiled into a `data.json` file that is stored in the same folder as the input video.
+* Transcription can either be done via Gemini or the [faster-whisper](https://github.com/SYSTRAN/faster-whisper) library, which uses OpenAI's Whisper model under the hood. This is controlled by the following configuration properties:
+
+| Component | Configuration Property | Supported Values | Default Value |
+| --- | --- | --- | --- |
+| `frontend` | `CONFIG.defaultTranscriptionService` property in [config.ts](ui/src/config.ts) | `whisper` or `gemini` | `whisper` |
+| `backend` | `CONFIG_TRANSCRIPTION_SERVICE` environment variable | `whisper` or `gemini` | `whisper` |
+| `backend` | `CONFIG_TRANSCRIPTION_MODEL` environment variable | Supported models for [whisper](https://github.com/openai/whisper#available-models-and-languages) and [gemini](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models#gemini-models) | `small` (whisper) |
+
+* Vigenair defaults to using Whisper for its optimal transcription quality. The [small](https://github.com/openai/whisper#available-models-and-languages) multilingual model is used by default, providing the best quality-performance balance. However, if it doesn't work well for your target language, you can change the model used by the Cloud Function. This is done by setting the `CONFIG_TRANSCRIPTION_MODEL` variable in the [update_config.sh](service/update_config.sh) script, which can be used to update the function's runtime variables. You can also switch the transcription service to Gemini as shown in the table above. When switching to Gemini, ensure the `CONFIG_TRANSCRIPTION_MODEL` variable is set to `gemini-1.5-flash` or any supported [Gemini model](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models#gemini-models) on Vertex AI. The transcription output is then stored in an `input.vtt` file, along with a `language.txt` file containing the video's primary language, in the same folder as the input video.
+* Video analysis is done via the Cloud [Video Intelligence API](https://cloud.google.com/video-intelligence), where visual shots, detected objects - with tracking, labels, people and faces, and recognised logos and any on-screen text within the input video are extracted. The output is stored in an `analysis.json` file in the same folder as the input video.
+* Finally, *coherent* audio/video segments are created using the transcription and video intelligence outputs and then cut into individual video files and stored on GCS in an `av_segments_cuts` subfolder under the root video folder. These cuts are then annotated via multimodal models on Vertex AI, which provide a description and a set of associated keywords / topics per segment. The fully annotated segments (including all information from the Video Intelligence API) are then compiled into a `data.json` file that is stored in the same folder as the input video.
 
 #### 3. Object Tracking and Smart Framing
 

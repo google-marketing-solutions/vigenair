@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-faster-whisper==1.0.2
+faster-whisper==1.0.3
 ffmpeg==1.4
 ffprobe==0.5
 functions-framework==3.7.0
@@ -24,7 +24,7 @@ google-cloud-storage==2.16.0
 google-cloud-videointelligence==2.13.3
 iso-639==0.4.5
 numpy==1.26.4
-openai-whisper==20231117
+openai-whisper==20240930
 pandas==1.5.3
 protobuf==3.19.6
 spleeter==2.4.0

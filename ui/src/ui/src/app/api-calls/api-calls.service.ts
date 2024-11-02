@@ -78,7 +78,9 @@ export class ApiCallsService implements ApiCalls {
     filename = 'input.mp4',
     contentType = 'video/mp4'
   ): Observable<string[]> {
-    const folder = `${file.name}${CONFIG.videoFolderNameSeparator}${analyseAudio ? '' : `${CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}`}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
+    const videoFolderTranscriptionSuffix =
+      CONFIG.defaultTranscriptionService.charAt(0);
+    const folder = `${file.name}${CONFIG.videoFolderNameSeparator}${analyseAudio ? videoFolderTranscriptionSuffix : CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
     const fullName = encodeURIComponent(`${folder}/${filename}`);
     const url = `${CONFIG.cloudStorage.uploadEndpointBase}/b/${CONFIG.cloudStorage.bucket}/o?uploadType=media&name=${fullName}`;
 

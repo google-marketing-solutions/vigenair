@@ -27,12 +27,17 @@ GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', 'my-gcp-project')
 GCP_LOCATION = os.environ.get('GCP_LOCATION', 'us-central1')
 CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-1.5-flash')
 CONFIG_VISION_MODEL = os.environ.get('CONFIG_VISION_MODEL', 'gemini-1.5-flash')
-CONFIG_WHISPER_MODEL = os.environ.get('CONFIG_WHISPER_MODEL', 'small')
+CONFIG_TRANSCRIPTION_SERVICE = os.environ.get(
+    'CONFIG_TRANSCRIPTION_SERVICE', 'whisper'
+)
+CONFIG_TRANSCRIPTION_MODEL = os.environ.get(
+    'CONFIG_TRANSCRIPTION_MODEL', 'small'
+)
 CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD = float(
     os.environ.get('CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD', '0.7')
 )
 CONFIG_MULTIMODAL_ASSET_GENERATION = os.environ.get(
-    'CONFIG_MULTIMODAL_ASSET_GENERATION', 'false'
+    'CONFIG_MULTIMODAL_ASSET_GENERATION', 'true'
 ) == 'true'
 CONFIG_MAX_VIDEO_CHUNK_SIZE = float(
     os.environ.get(
@@ -105,7 +110,6 @@ SEGMENT_ANNOTATIONS_CONFIG = {
     'max_output_tokens': 2048,
     'temperature': 0.2,
     'top_p': 1,
-    'top_k': 16,
 }
 
 # pylint: disable=line-too-long
@@ -146,7 +150,33 @@ GENERATE_ASSETS_CONFIG = {
     'max_output_tokens': 2048,
     'temperature': 0.2,
     'top_p': 1,
-    'top_k': 32,
 }
 
 DEFAULT_VIDEO_LANGUAGE = 'English'
+
+TRANSCRIBE_AUDIO_PROMPT = """Transcribe the provided audio file, paying close attention to speaker changes and pauses in speech.
+Output the following, in this order:
+1. **Language:** Specify the language of the audio (e.g., "Language: English")
+2. **Confidence:**  Specify the confidence score of the transcription (e.g., "Confidence: 0.95")
+3. **Transcription CSV:** Output the transcription in CSV (Comma-Separated Values) format (e.g. ```csv<output>```) with these columns:
+    * **Start:** (Start timestamp for each utterance in the format "mm:ss.SSS")
+    * **End:** (End timestamp for each utterance in the format "mm:ss.SSS")
+    * **Transcription:** (The transcribed text of the utterance)
+    Ensure each row in the CSV corresponds to a complete sentence or a meaningful phrase. Sentences by different speakers, even if related, should not be grouped together.
+    **Critical Timestamping Requirements:**
+        * **Pause Detection:** It is absolutely essential to accurately identify and incorporate pauses in speech. If there is a period of silence between utterances, even a brief one, this MUST be reflected in the timestamps. Do not assume continuous speech.
+        * **No Overlapping:** Timestamps for consecutive sentences should NOT overlap. The end timestamp of one sentence should be the start timestamp of the next sentence ONLY if there is no pause between them.
+4. **WebVTT Format:** Output the transcription information in WebVTT format, surrounded by backticks (e.g. ```vtt<output>```)
+
+**Constraints:**
+    * **No Extra Text:** Only output the language, confidence, table, and WebVTT data, without any additional text or explanations. This includes avoiding any labels or headings before or after the transcription table and WebVTT data.
+    * **Valid Timestamps:** All timestamps MUST be within the actual duration of the audio. No timestamps should exceed the total length of the audio. This is absolutely critical.
+    * **Sequential Timestamps:** Timestamps should progress sequentially and logically from the beginning to the end of the audio.
+
+"""
+TRANSCRIBE_AUDIO_CONFIG = {
+    'max_output_tokens': 8192,
+    'temperature': 0.2,
+    'top_p': 1,
+}
+TRANSCRIBE_AUDIO_PATTERN = '.*Language: ?(.*)\n*.*Confidence: ?(.*)\n*```csv\n(.*)```\n*```vtt\n(.*)```'

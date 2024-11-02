@@ -27,6 +27,21 @@ from typing import Optional, Sequence, Union
 import config as ConfigService
 
 
+class TranscriptionService(enum.Enum):
+  """Enum of supported transcription services."""
+
+  WHISPER = ['w', 'whisper']
+  GEMINI = ['g', 'gemini']
+  NONE = ['n']
+
+  @classmethod
+  def from_value(cls, service: str):
+    for item in TranscriptionService:
+      if service.lower() in item.value:
+        return item
+    return TranscriptionService.NONE
+
+
 class VideoExtension(enum.Enum):
   """Enum of supported video file extensions."""
 
@@ -51,7 +66,7 @@ class VideoMetadata:
   """Metadata about a video file.
 
   Represented via a single string formatted as follows:
-  <video_name>--<analyse_audio?>--<video_timestamp>--<encoded_user_id>
+  <video_name>--<transcription_service?>--<video_timestamp>--<encoded_user_id>
   """
 
   def __init__(self, metadata: str):
@@ -61,22 +76,25 @@ class VideoMetadata:
       metadata: Formatted metadata string.
     """
     components = metadata.split('--')
-    self.analyse_audio = True
     if len(components) == 4:
       (
           video_file_name,
-          analyse_audio,
+          transcription_service,
           video_timestamp,
           encoded_user_id,
       ) = components
-      self.analyse_audio = 'n' != analyse_audio
+      self.transcription_service = TranscriptionService.from_value(
+          transcription_service
+      )
     else:
       (
           video_file_name,
           video_timestamp,
           encoded_user_id,
       ) = components
-      self.analyse_audio = True
+      self.transcription_service = TranscriptionService.from_value(
+          ConfigService.CONFIG_TRANSCRIPTION_SERVICE
+      )
 
     self.video_file_name = video_file_name
     self.video_timestamp = int(video_timestamp)
@@ -85,7 +103,7 @@ class VideoMetadata:
   def __str__(self):
     return (
         f'VideoMetadata(video_file_name={self.video_file_name}, '
-        f'analyse_audio={self.analyse_audio}, '
+        f'transcription_service={self.transcription_service}, '
         f'video_timestamp={self.video_timestamp}, '
         f'encoded_user_id={self.encoded_user_id})'
     )
@@ -188,3 +206,9 @@ def execute_subprocess_commands(
         'Error while executing [%s]!\noutput=[%r]', description, e.output
     )
     raise e
+
+
+def timestring_to_seconds(timestring: str) -> float:
+  """Converts a timestring in the format mm:ss.SSS to seconds."""
+  minutes, seconds = map(float, timestring.split(':'))
+  return minutes*60 + seconds
