@@ -274,7 +274,7 @@ def _transcribe_gemini(
       location=ConfigService.GCP_LOCATION,
   )
   transcription_model = (
-      GenerativeModel(ConfigService.CONFIG_TRANSCRIPTION_MODEL)
+      GenerativeModel(ConfigService.CONFIG_TRANSCRIPTION_MODEL_GEMINI)
   )
   audio_file_gcs_uri = f'gs://{gcs_bucket_name}/{gcs_folder}' + (
       f'/{ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR}'
@@ -348,7 +348,7 @@ def _transcribe_whisper(
 ) -> Tuple[pd.DataFrame, str, float]:
   """Transcribes audio using Whisper."""
   model = WhisperModel(
-      ConfigService.CONFIG_TRANSCRIPTION_MODEL,
+      ConfigService.CONFIG_TRANSCRIPTION_MODEL_WHISPER,
       device=ConfigService.DEVICE,
       compute_type='int8',
   )

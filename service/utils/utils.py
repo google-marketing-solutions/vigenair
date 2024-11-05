@@ -92,9 +92,7 @@ class VideoMetadata:
           video_timestamp,
           encoded_user_id,
       ) = components
-      self.transcription_service = TranscriptionService.from_value(
-          ConfigService.CONFIG_TRANSCRIPTION_SERVICE
-      )
+      self.transcription_service = TranscriptionService.WHISPER
 
     self.video_file_name = video_file_name
     self.video_timestamp = int(video_timestamp)
