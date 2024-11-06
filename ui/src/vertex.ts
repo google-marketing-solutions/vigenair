@@ -21,7 +21,6 @@ import { ScriptUtil } from './script-util';
 interface VertexAiModelParams {
   temperature: number;
   maxOutputTokens: number;
-  topK: number;
   topP: number;
 }
 
