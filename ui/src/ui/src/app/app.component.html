@@ -319,6 +319,66 @@ limitations under the License.
           </mat-chip>
         </mat-chip-set>
       </div>
+      <mat-divider></mat-divider>
+      <div class="row" style="gap: 16px">
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            margin-right: auto;
+            flex: auto;
+          "
+        >
+          <mat-form-field style="flex: 1" subscriptSizing="dynamic">
+            <mat-label>What should your video variants be about?</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="prompt"
+              placeholder="e.g. 'Discovering new experiences'"
+            ></textarea>
+          </mat-form-field>
+          <mat-checkbox
+            style="align-self: flex-start"
+            color="primary"
+            [(ngModel)]="negativePrompt"
+            matTooltip="Prevent the content listed above from being included in your video variants"
+          >
+            Exclude from video variants
+          </mat-checkbox>
+        </div>
+        <div style="display: flex; flex-direction: column; margin-top: -50px">
+          <div>
+            <mat-label>Target duration:</mat-label>
+            <mat-slider
+              discrete
+              showTickMarks
+              [max]="math.round(previewVideoElem.duration)"
+              [min]="step"
+              [step]="step"
+              [disabled]="loading"
+            >
+              <input matSliderThumb [(ngModel)]="duration" #durationSlider />
+            </mat-slider>
+          </div>
+          <button
+            type="button"
+            mat-raised-button
+            color="primary"
+            (click)="generateVariants()"
+            [disabled]="loading"
+          >
+            <mat-icon>auto_awesome</mat-icon>Generate variants
+          </button>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 16px">
+        <span class="notice-text"
+          >Segments selected by the LLM might not follow prompt instructions,
+          and the overall video variant might not follow the desired target
+          duration. It is recommended to review and potentially modify the
+          selection. Navigating between variants will clear any changes.
+        </span>
+      </div>
       <ng-container *ngIf="variants">
         <mat-divider></mat-divider>
         <mat-tab-group
@@ -337,19 +397,12 @@ limitations under the License.
           </mat-tab>
         </mat-tab-group>
         <br />
-        <div class="row">
-          <button
-            type="button"
-            mat-raised-button
-            color="primary"
-            (click)="addToRenderQueue()"
-          >
-            <mat-icon>add_to_queue</mat-icon>Add to render queue
-          </button>
-        </div>
       </ng-container>
       <ng-container *ngIf="avSegments">
-        <mat-divider></mat-divider>
+        <mat-divider
+          *ngIf="variants?.length"
+          style="margin-top: 0; margin-bottom: 16px"
+        ></mat-divider>
         <div *ngIf="variants?.length">
           <span style="margin-top: 4px; margin-bottom: 8px; display: flex">
             <mat-icon>video_settings</mat-icon
@@ -414,65 +467,16 @@ limitations under the License.
               <span class="format-icon"><mat-icon>slideshow</mat-icon></span>
             </span>
           </div>
-        </div>
-        <div class="row" style="gap: 16px">
-          <div
-            style="
-              display: flex;
-              flex-direction: column;
-              margin-right: auto;
-              flex: auto;
-            "
-          >
-            <mat-form-field style="flex: 1" subscriptSizing="dynamic">
-              <mat-label>What should your video variants be about?</mat-label>
-              <textarea
-                matInput
-                [(ngModel)]="prompt"
-                placeholder="e.g. 'Discovering new experiences'"
-              ></textarea>
-            </mat-form-field>
-            <mat-checkbox
-              style="align-self: flex-start"
-              color="primary"
-              [(ngModel)]="negativePrompt"
-              matTooltip="Prevent the content listed above from being included in your video variants"
-            >
-              Exclude from video variants
-            </mat-checkbox>
-          </div>
-          <div style="display: flex; flex-direction: column; margin-top: -50px">
-            <div>
-              <mat-label>Target duration:</mat-label>
-              <mat-slider
-                discrete
-                showTickMarks
-                [max]="math.round(previewVideoElem.duration)"
-                [min]="step"
-                [step]="step"
-                [disabled]="loading"
-              >
-                <input matSliderThumb [(ngModel)]="duration" #durationSlider />
-              </mat-slider>
-            </div>
+          <div class="row">
             <button
               type="button"
               mat-raised-button
               color="primary"
-              (click)="generateVariants()"
-              [disabled]="loading"
+              (click)="addToRenderQueue()"
             >
-              <mat-icon>auto_awesome</mat-icon>Generate variants
+              <mat-icon>add_to_queue</mat-icon>Add to render queue
             </button>
           </div>
-        </div>
-        <div class="row">
-          <span class="notice-text"
-            >Segments selected by the LLM might not follow prompt instructions,
-            and the overall video variant might not follow the desired target
-            duration. It is recommended to review and potentially modify the
-            selection. Navigating between variants will clear any changes.
-          </span>
         </div>
       </ng-container>
     </mat-expansion-panel>
