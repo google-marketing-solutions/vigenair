@@ -29,6 +29,8 @@ import {
   VariantTextAsset,
 } from './api-calls.service.interface';
 
+const HORIZONTAL_SAMPLE_FOLDER = 'horizontal.mp4--1234567890123--abcdef';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -45,7 +47,7 @@ export class ApiCallsService implements ApiCalls {
     return data;
   }
   loadPreviousRun(folder: string): string[] {
-    return ['assets', 'assets/input.mp4'];
+    return [`assets/${folder}`, `assets/${folder}/input.mp4`];
   }
   uploadVideo(
     file: Blob,
@@ -55,7 +57,7 @@ export class ApiCallsService implements ApiCalls {
     return new Observable(subscriber => {
       setTimeout(() => {
         this.ngZone.run(() => {
-          subscriber.next(this.loadPreviousRun(''));
+          subscriber.next(this.loadPreviousRun(HORIZONTAL_SAMPLE_FOLDER));
           subscriber.complete();
         });
       }, 1000);
@@ -80,7 +82,7 @@ export class ApiCallsService implements ApiCalls {
       setTimeout(() => {
         this.ngZone.run(async () => {
           subscriber.next(
-            JSON.parse(await this.loadLocalFile('assets/variants.json'))
+            JSON.parse(await this.loadLocalFile(`${gcsFolder}/variants.json`))
           );
           subscriber.complete();
         });
@@ -88,6 +90,7 @@ export class ApiCallsService implements ApiCalls {
     });
   }
   generatePreviews(
+    gcsFolder: string,
     analysis: any,
     segments: any,
     settings: PreviewSettings
@@ -95,8 +98,10 @@ export class ApiCallsService implements ApiCalls {
     return new Observable(subscriber => {
       setTimeout(() => {
         this.ngZone.run(async () => {
-          const square = await this.loadLocalFile('assets/square.json');
-          const vertical = await this.loadLocalFile('assets/vertical.json');
+          const square = await this.loadLocalFile(`${gcsFolder}/square.json`);
+          const vertical = await this.loadLocalFile(
+            `${gcsFolder}/vertical.json`
+          );
           subscriber.next({ square, vertical });
           subscriber.complete();
         });
@@ -108,10 +113,7 @@ export class ApiCallsService implements ApiCalls {
       setTimeout(() => {
         this.ngZone.run(() => {
           subscriber.next({
-            runs: [
-              'Lufthansa.mp4--1712403055317--abcdef',
-              'some-video.mp4--1712403402220--ghijkl',
-            ],
+            runs: [HORIZONTAL_SAMPLE_FOLDER],
             encodedUserId: 'abcdef',
           });
           subscriber.complete();
@@ -126,7 +128,7 @@ export class ApiCallsService implements ApiCalls {
     return new Observable(subscriber => {
       setTimeout(() => {
         this.ngZone.run(() => {
-          subscriber.next('assets/12345-combos');
+          subscriber.next(`${gcsFolder}/12345-combos`);
           subscriber.complete();
         });
       }, 1000);

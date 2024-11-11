@@ -157,6 +157,7 @@ export interface ApiCalls {
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]>;
   generatePreviews(
+    gcsFolder: string,
     analysis: any,
     segments: any,
     settings: PreviewSettings

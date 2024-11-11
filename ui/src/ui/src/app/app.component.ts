@@ -681,7 +681,7 @@ export class AppComponent {
     this.generatingPreviews = true;
     this.squareVideoObjects = this.verticalVideoObjects = undefined;
     this.apiCallsService
-      .generatePreviews(this.analysisJson, this.avSegments, {
+      .generatePreviews(this.folder, this.analysisJson, this.avSegments, {
         sourceDimensions: {
           w: Math.min(
             this.videoWidth,

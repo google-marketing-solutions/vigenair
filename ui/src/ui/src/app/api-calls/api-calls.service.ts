@@ -167,6 +167,7 @@ export class ApiCallsService implements ApiCalls {
   }
 
   generatePreviews(
+    gcsFolder: string,
     analysis: any,
     segments: any,
     settings: PreviewSettings
