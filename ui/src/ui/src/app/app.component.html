@@ -164,7 +164,7 @@ limitations under the License.
             #segmentModeToggle="matButtonToggleGroup"
             value="preview"
             [disabled]="loading && !generatingVariants"
-            hideSingleSelectionIndicator="true"
+            hideSingleSelectionIndicator
           >
             <mat-button-toggle value="preview" matTooltip="Video preview">
               <mat-icon>play_arrow</mat-icon>
@@ -196,7 +196,7 @@ limitations under the License.
             #previewToggleGroup="matButtonToggleGroup"
             value="toggle"
             [disabled]="!videoObjects || segmentModeToggle.value !== 'preview'"
-            hideSingleSelectionIndicator="true"
+            hideSingleSelectionIndicator
             (click)="loadPreview()"
           >
             <mat-button-toggle
@@ -434,7 +434,7 @@ limitations under the License.
               </mat-checkbox>
             </span>
           </div>
-          <div class="user-settings" style="margin-top: 8px">
+          <div class="user-settings">
             <mat-checkbox color="primary" [(ngModel)]="demandGenAssets">
               Generate Demand Gen assets
             </mat-checkbox>
@@ -445,27 +445,30 @@ limitations under the License.
               data-mime-type="image/svg+xml"
             />
           </div>
-          <div class="user-settings">
-            <span
+          <div style="display: flex; align-items: center; margin-top: 8px">
+            <span>Render formats:</span>
+            <mat-button-toggle-group
+              #renderFormatsToggle="matButtonToggleGroup"
+              style="margin-left: 16px"
+              hideMultipleSelectionIndicator
+              multiple
+              [disabled]="nonLandscapeInputVideo"
               matTooltip="{{
                 nonLandscapeInputVideo
                   ? 'Available for landscape videos only'
-                  : ''
+                  : 'Click to select/unselect each format'
               }}"
             >
-              <mat-checkbox
-                color="primary"
-                [(ngModel)]="renderAllFormats"
-                [disabled]="nonLandscapeInputVideo"
-              >
-                Render all formats
-              </mat-checkbox>
-            </span>
-            <span class="format-icons" *ngIf="!nonLandscapeInputVideo">
-              <span class="format-icon"><mat-icon>computer</mat-icon></span>
-              <span class="format-icon"><mat-icon>smartphone</mat-icon></span>
-              <span class="format-icon"><mat-icon>slideshow</mat-icon></span>
-            </span>
+              <mat-button-toggle checked value="horizontal">
+                <mat-icon>computer</mat-icon>
+              </mat-button-toggle>
+              <mat-button-toggle value="vertical">
+                <mat-icon>smartphone</mat-icon>
+              </mat-button-toggle>
+              <mat-button-toggle value="square">
+                <mat-icon>slideshow</mat-icon>
+              </mat-button-toggle>
+            </mat-button-toggle-group>
           </div>
           <div class="row">
             <button
@@ -565,13 +568,24 @@ limitations under the License.
             />
             <div style="display: flex; flex-direction: row">
               <span
-                *ngIf="variant.render_settings.render_all_formats"
+                *ngIf="variant.render_settings.formats"
                 class="render-queue-format-icons"
-                matTooltip="Render all formats"
               >
-                <span class="format-icon"><mat-icon>computer</mat-icon></span>
-                <span class="format-icon"><mat-icon>smartphone</mat-icon></span>
-                <span class="format-icon"><mat-icon>slideshow</mat-icon></span>
+                <span
+                  *ngIf="variant.render_settings.formats.includes('horizontal')"
+                  class="format-icon"
+                  ><mat-icon>computer</mat-icon></span
+                >
+                <span
+                  *ngIf="variant.render_settings.formats.includes('vertical')"
+                  class="format-icon"
+                  ><mat-icon>smartphone</mat-icon></span
+                >
+                <span
+                  *ngIf="variant.render_settings.formats.includes('square')"
+                  class="format-icon"
+                  ><mat-icon>slideshow</mat-icon></span
+                >
               </span>
               <span
                 *ngIf="

@@ -143,7 +143,6 @@ export class AppComponent {
   prompt = '';
   duration = 0;
   step = 0;
-  renderAllFormats = true;
   audioSettings = 'segment';
   fadeOut = false;
   demandGenAssets = true;
@@ -197,6 +196,7 @@ export class AppComponent {
   @ViewChild('previewToggleGroup') previewToggleGroup!: MatButtonToggleGroup;
   @ViewChild('canvasDragElement')
   canvasDragElement?: ElementRef<HTMLDivElement>;
+  @ViewChild('renderFormatsToggle') renderFormatsToggle!: MatButtonToggleGroup;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -593,7 +593,7 @@ export class AppComponent {
           '--filmstrip-image-height',
           this.videoHeight / 5 + 'px'
         );
-        this.renderAllFormats = false;
+        this.renderFormatsToggle.value = 'horizontal';
       } else {
         this.magicCanvas.nativeElement.setAttribute(
           'style',
@@ -995,7 +995,7 @@ export class AppComponent {
     const renderSettings: RenderSettings = {
       generate_image_assets: this.demandGenAssets,
       generate_text_assets: this.demandGenAssets,
-      render_all_formats: this.renderAllFormats,
+      formats: this.renderFormatsToggle.value as FormatType[],
       use_music_overlay: this.audioSettings === 'music',
       use_continuous_audio: this.audioSettings === 'continuous',
       fade_out: this.fadeOut,
@@ -1059,7 +1059,7 @@ export class AppComponent {
     this.setSelectedSegments(
       variant.av_segments.map((segment: AvSegment) => segment.av_segment_id)
     );
-    this.renderAllFormats = variant.render_settings.render_all_formats;
+    this.renderFormatsToggle.value = variant.render_settings.formats;
     this.demandGenAssets =
       variant.render_settings.generate_text_assets &&
       variant.render_settings.generate_image_assets;

@@ -203,10 +203,7 @@ mat-divider {
   display: flex;
 }
 
-.format-icons,
 .render-queue-format-icons {
-  border-radius: var(--mat-standard-button-toggle-shape);
-  border: solid 1px var(--mat-standard-button-toggle-divider-color);
   margin-left: 12px;
   display: inline-flex;
   height: 33px;
@@ -220,7 +217,7 @@ mat-divider {
 }
 
 .format-icon {
-  border-left: solid 1px var(--mat-standard-button-toggle-divider-color);
+  height: 33px;
   padding: 4px;
 }
 

@@ -247,7 +247,7 @@ Users are now ready for combination. They can view the A/V segments and generate
   <center><img src='./img/audio.png' width="350px" alt="Vigenair's audio rendering options" /></center>
 * Whether to fade out audio at the end of generated videos. When selected, videos will be faded out for `1s` (configured by the `CONFIG_DEFAULT_FADE_OUT_DURATION` environment variable for the Combiner service).
 * Whether to generate [Demand Gen](https://support.google.com/google-ads/answer/13695777) campaign text and image assets alongside the variant or not. Defaults to generating Demand Gen assets using *multimodal* models on Vertex AI, which offers the highest quality of output assets.
-* Whether to render all formats (horizontal, vertical and square) assets or to only render horizontal assets. Defaults to rendering all formats.
+* Which formats (horizontal, vertical and square) assets to render. Defaults to rendering horizontal assets only.
 * Users can also select the individual segments that each variant is comprised of. This selection is available in both the *video preview* and *segments list* views. Please note that switching between variant tabs will clear any changes to the selection.
 * Users may also change the order of segments via the *Reorder segments* toggle, allowing the preview and rendering of more advanced and customised variations. Please note that reodering segments will reset the variant playback, and switching the toggle *off* will restore the original order.
 

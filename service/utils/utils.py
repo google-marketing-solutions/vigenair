@@ -42,6 +42,14 @@ class TranscriptionService(enum.Enum):
     return TranscriptionService.NONE
 
 
+class RenderFormatType(enum.Enum):
+  """Enum of possible render formats."""
+
+  HORIZONTAL = 'horizontal'
+  VERTICAL = 'vertical'
+  SQUARE = 'square'
+
+
 class VideoExtension(enum.Enum):
   """Enum of supported video file extensions."""
 

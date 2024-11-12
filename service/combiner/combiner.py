@@ -45,8 +45,7 @@ class VideoVariantRenderSettings:
   Attributes:
     generate_image_assets: Whether to generate image assets.
     generate_text_assets: Whether to generate text assets.
-    render_all_formats: Whether to render all formats (square and vertical)
-      alongside the default horizontal format.
+    formats: Which formats to render (horizontal, square, vertical).
     use_music_overlay: Whether to use the music overlay feature, where a
       contiguous section of the input's background music will be used for the
       video variant instead of the individual segments' background music.
@@ -58,7 +57,7 @@ class VideoVariantRenderSettings:
 
   generate_image_assets: bool = False
   generate_text_assets: bool = False
-  render_all_formats: bool = False
+  formats: Sequence[Utils.RenderFormatType] = None
   use_music_overlay: bool = False
   use_continuous_audio: bool = False
   fade_out: bool = False
@@ -74,7 +73,7 @@ class VideoVariantRenderSettings:
         'VideoVariantRenderSettings('
         f'generate_image_assets={self.generate_image_assets}, '
         f'generate_text_assets={self.generate_text_assets}, '
-        f'render_all_formats={self.render_all_formats}, '
+        f'formats={self.formats}, '
         f'use_music_overlay={self.use_music_overlay}, '
         f'use_continuous_audio={self.use_continuous_audio}, '
         f'fade_out={self.fade_out})'
@@ -555,27 +554,35 @@ def _create_cropped_videos(
   square_video_file_path = None
   vertical_video_file_path = None
 
-  if len(
+  if bool(
       list(
           filter(
-              lambda variant: variant.render_settings.render_all_formats,
-              video_variants
+              lambda variant: Utils.RenderFormatType.SQUARE.value in variant.
+              render_settings.formats, video_variants
           )
       )
-  ) > 0:
+  ):
     _, video_ext = os.path.splitext(video_file_path)
     square_video_file_path = _create_cropped_video(
         video_file_path=video_file_path,
         crop_file_path=square_crop_file_path,
         output_dir=output_dir,
-        format_type='square',
+        format_type=Utils.RenderFormatType.SQUARE.value,
         video_ext=video_ext,
     )
+  if bool(
+      list(
+          filter(
+              lambda variant: Utils.RenderFormatType.VERTICAL.value in variant.
+              render_settings.formats, video_variants
+          )
+      )
+  ):
     vertical_video_file_path = _create_cropped_video(
         video_file_path=video_file_path,
         crop_file_path=vertical_crop_file_path,
         output_dir=output_dir,
-        format_type='vertical',
+        format_type=Utils.RenderFormatType.VERTICAL.value,
         video_ext=video_ext,
     )
   return square_video_file_path, vertical_video_file_path
@@ -712,7 +719,11 @@ def _render_video_variant(
           f'{video_variant.variant_id} using ffmpeg'
       ),
   )
-  rendered_paths = {'horizontal': {'path': horizontal_combo_name}}
+  rendered_paths = {
+      Utils.RenderFormatType.HORIZONTAL.value: {
+          'path': horizontal_combo_name
+      }
+  }
   if video_variant.render_settings.generate_image_assets:
     assets = _generate_image_assets(
         video_file_path=horizontal_combo_path,
@@ -720,49 +731,55 @@ def _render_video_variant(
         gcs_folder_path=gcs_folder_path,
         output_path=output_dir,
         variant_id=video_variant.variant_id,
-        format_type='horizontal',
+        format_type=Utils.RenderFormatType.HORIZONTAL.value,
     )
     if assets:
-      rendered_paths['horizontal']['images'] = assets
+      rendered_paths[Utils.RenderFormatType.HORIZONTAL.value]['images'] = assets
 
-  if video_variant.render_settings.render_all_formats:
-    formats_to_render = {
-        'square': {
-            'blur_filter': ConfigService.FFMPEG_SQUARE_BLUR_FILTER,
-            'crop_file_path': square_video_file_path
-        },
-        'vertical': {
-            'blur_filter': ConfigService.FFMPEG_VERTICAL_BLUR_FILTER,
-            'crop_file_path': vertical_video_file_path
-        },
+  formats_to_render = {}
+  if (
+      Utils.RenderFormatType.SQUARE.value
+      in video_variant.render_settings.formats
+  ):
+    formats_to_render[Utils.RenderFormatType.SQUARE.value] = {
+        'blur_filter': ConfigService.FFMPEG_SQUARE_BLUR_FILTER,
+        'crop_file_path': square_video_file_path
     }
-    for format_type, format_instructions in formats_to_render.items():
-      format_ffmpeg_cmds = None
-      if format_instructions['crop_file_path']:
-        format_ffmpeg_cmds = _get_variant_ffmpeg_commands(
-            video_file_path=format_instructions['crop_file_path'],
-            speech_track_path=speech_track_path,
-            music_track_path=music_track_path,
-            has_audio=has_audio,
-            music_overlay=video_variant.render_settings.use_music_overlay,
-            continuous_audio=video_variant.render_settings.use_continuous_audio,
-            full_av_select_filter=full_av_select_filter,
-            music_overlay_select_filter=music_overlay_select_filter,
-            continuous_audio_select_filter=continuous_audio_select_filter,
-        )
-      rendered_paths[format_type] = _render_format(
-          input_video_path=horizontal_combo_path,
-          output_path=output_dir,
-          gcs_bucket_name=gcs_bucket_name,
-          gcs_folder_path=gcs_folder_path,
-          variant_id=video_variant.variant_id,
-          format_type=format_type,
-          generate_image_assets=(
-              video_variant.render_settings.generate_image_assets
-          ),
-          video_filter=format_instructions['blur_filter'],
-          ffmpeg_cmds=format_ffmpeg_cmds,
+  if (
+      Utils.RenderFormatType.VERTICAL.value
+      in video_variant.render_settings.formats
+  ):
+    formats_to_render[Utils.RenderFormatType.VERTICAL.value] = {
+        'blur_filter': ConfigService.FFMPEG_VERTICAL_BLUR_FILTER,
+        'crop_file_path': vertical_video_file_path
+    }
+  for format_type, format_instructions in formats_to_render.items():
+    format_ffmpeg_cmds = None
+    if format_instructions['crop_file_path']:
+      format_ffmpeg_cmds = _get_variant_ffmpeg_commands(
+          video_file_path=format_instructions['crop_file_path'],
+          speech_track_path=speech_track_path,
+          music_track_path=music_track_path,
+          has_audio=has_audio,
+          music_overlay=video_variant.render_settings.use_music_overlay,
+          continuous_audio=video_variant.render_settings.use_continuous_audio,
+          full_av_select_filter=full_av_select_filter,
+          music_overlay_select_filter=music_overlay_select_filter,
+          continuous_audio_select_filter=continuous_audio_select_filter,
       )
+    rendered_paths[format_type] = _render_format(
+        input_video_path=horizontal_combo_path,
+        output_path=output_dir,
+        gcs_bucket_name=gcs_bucket_name,
+        gcs_folder_path=gcs_folder_path,
+        variant_id=video_variant.variant_id,
+        format_type=format_type,
+        generate_image_assets=(
+            video_variant.render_settings.generate_image_assets
+        ),
+        video_filter=format_instructions['blur_filter'],
+        ffmpeg_cmds=format_ffmpeg_cmds,
+    )
 
   StorageService.upload_gcs_dir(
       source_directory=output_dir,
