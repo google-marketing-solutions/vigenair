@@ -553,6 +553,7 @@ def _create_cropped_videos(
   """
   square_video_file_path = None
   vertical_video_file_path = None
+  _, video_ext = os.path.splitext(video_file_path)
 
   if bool(
       list(
@@ -562,7 +563,6 @@ def _create_cropped_videos(
           )
       )
   ):
-    _, video_ext = os.path.splitext(video_file_path)
     square_video_file_path = _create_cropped_video(
         video_file_path=video_file_path,
         crop_file_path=square_crop_file_path,
@@ -585,6 +585,7 @@ def _create_cropped_videos(
         format_type=Utils.RenderFormatType.VERTICAL.value,
         video_ext=video_ext,
     )
+
   return square_video_file_path, vertical_video_file_path
 
 

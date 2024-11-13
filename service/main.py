@@ -48,22 +48,53 @@ def gcs_file_uploaded(cloud_event: Dict[str, Any]):
 
   trigger_file = Utils.TriggerFile(filepath)
 
-  if trigger_file.is_extractor_trigger():
+  if trigger_file.is_extractor_initial_trigger():
+    logging.info('TRIGGER - Extractor initial trigger')
     extractor_instance = ExtractorService.Extractor(
-        gcs_bucket_name=bucket, video_file=trigger_file
+        gcs_bucket_name=bucket, media_file=trigger_file
     )
-    extractor_instance.extract()
+    extractor_instance.initial_extract()
+  elif trigger_file.is_extractor_audio_trigger():
+    logging.info('TRIGGER - Extractor audio trigger')
+    extractor_instance = ExtractorService.Extractor(
+        gcs_bucket_name=bucket, media_file=trigger_file
+    )
+    extractor_instance.extract_audio()
+  elif trigger_file.is_extractor_video_trigger():
+    logging.info('TRIGGER - Extractor video trigger')
+    extractor_instance = ExtractorService.Extractor(
+        gcs_bucket_name=bucket, media_file=trigger_file
+    )
+    extractor_instance.extract_video()
+  elif (
+      trigger_file.is_extractor_finalise_audio_trigger()
+      or trigger_file.is_extractor_finalise_video_trigger()
+  ):
+    logging.info('TRIGGER - Extractor finalise audio/video trigger')
+    extractor_instance = ExtractorService.Extractor(
+        gcs_bucket_name=bucket, media_file=trigger_file
+    )
+    extractor_instance.check_finalise_extraction()
+  elif trigger_file.is_extractor_finalise_trigger():
+    logging.info('TRIGGER - Extractor finalise trigger')
+    extractor_instance = ExtractorService.Extractor(
+        gcs_bucket_name=bucket, media_file=trigger_file
+    )
+    extractor_instance.finalise_extraction()
   elif trigger_file.is_combiner_initial_trigger():
+    logging.info('TRIGGER - Combiner initial trigger')
     combiner_instance = CombinerService.Combiner(
         gcs_bucket_name=bucket, render_file=trigger_file
     )
     combiner_instance.initial_render()
   elif trigger_file.is_combiner_render_trigger():
+    logging.info('TRIGGER - Combiner render trigger')
     combiner_instance = CombinerService.Combiner(
         gcs_bucket_name=bucket, render_file=trigger_file
     )
     combiner_instance.render()
   elif trigger_file.is_combiner_finalise_trigger():
+    logging.info('TRIGGER - Combiner finalise trigger')
     combiner_instance = CombinerService.Combiner(
         gcs_bucket_name=bucket, render_file=trigger_file
     )

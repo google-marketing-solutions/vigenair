@@ -178,7 +178,9 @@ def filter_files(
     prefix: str,
     suffix: str,
     fetch_content=False,
-) -> Sequence[bytes]:
+    download=False,
+    download_dir=None,
+) -> Sequence[Union[bytes, str]]:
   """Filters files in a GCS bucket based on a suffix.
 
   Args:
@@ -187,6 +189,9 @@ def filter_files(
     suffix: The suffix to filter files by.
     fetch_content: Optional boolean whether to return file names or their
       content. Defaults to False (names only).
+    download: Optional boolean whether to store the content of the file locally.
+      Defaults to False.
+    download_dir: Optional download directory. Defaults to None.
 
   Returns:
     A list of file contents matching the given suffix, or an empty list if no
@@ -199,5 +204,15 @@ def filter_files(
   for blob in blobs:
     if blob.name.endswith(suffix):
       logging.info('FILTER - Found matching file "%s".', blob.name)
-      result.append(blob.download_as_bytes() if fetch_content else blob.name)
+      if download:
+        file_path, file_ext = os.path.splitext(blob.name)
+        file_path = pathlib.Path(file_path)
+        file_name = file_path.name
+        destination_file_name = str(
+            pathlib.Path(download_dir, f'{file_name}{file_ext}')
+        )
+        blob.download_to_filename(destination_file_name)
+        result.append(destination_file_name)
+      else:
+        result.append(blob.download_as_bytes() if fetch_content else blob.name)
   return result

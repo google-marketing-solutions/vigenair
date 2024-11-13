@@ -593,7 +593,6 @@ export class AppComponent {
           '--filmstrip-image-height',
           this.videoHeight / 5 + 'px'
         );
-        this.renderFormatsToggle.value = 'horizontal';
       } else {
         this.magicCanvas.nativeElement.setAttribute(
           'style',

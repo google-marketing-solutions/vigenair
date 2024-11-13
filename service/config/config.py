@@ -42,13 +42,13 @@ CONFIG_MULTIMODAL_ASSET_GENERATION = os.environ.get(
 CONFIG_MAX_VIDEO_CHUNK_SIZE = float(
     os.environ.get(
         'CONFIG_MAX_VIDEO_CHUNK_SIZE',
-        f'{1 * 1e9}'  # GB
+        f'{5 * 1e8}'  # 0.5 GB
     )
 )
 CONFIG_MAX_AUDIO_CHUNK_SIZE = float(
     os.environ.get(
         'CONFIG_MAX_AUDIO_CHUNK_SIZE',
-        '480'  # seconds
+        '300'  # seconds
     )
 )
 CONFIG_DEFAULT_FADE_OUT_DURATION = os.environ.get(
@@ -79,14 +79,27 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 INPUT_FILENAME = 'input'
 INPUT_RENDERING_FILE = 'render.json'
 INPUT_RENDERING_FINALISE_FILE = 'finalise.txt'
+INPUT_EXTRACTION_FINALISE_FILE = 'extract_finalise.txt'
+INPUT_EXTRACTION_FINALISE_SUFFIX = '_finalise.txt'
+INPUT_EXTRACTION_FINALISE_COUNT = 2
+INPUT_EXTRACTION_FINALISE_AUDIO_FILE = (
+    f'audio{INPUT_EXTRACTION_FINALISE_SUFFIX}'
+)
+INPUT_EXTRACTION_FINALISE_VIDEO_FILE = (
+    f'video{INPUT_EXTRACTION_FINALISE_SUFFIX}'
+)
+INPUT_EXTRACTION_AUDIO_FILENAME_SUFFIX = '_aaa'
+INPUT_EXTRACTION_VIDEO_FILENAME_SUFFIX = '_vvv'
 INPUT_SQUARE_CROP_FILE = 'square.txt'
 INPUT_VERTICAL_CROP_FILE = 'vertical.txt'
 OUTPUT_SUBTITLES_TYPE = 'vtt'  # 'vtt' or 'srt'
 OUTPUT_SUBTITLES_FILE = f'{INPUT_FILENAME}.{OUTPUT_SUBTITLES_TYPE}'
 OUTPUT_LANGUAGE_FILE = 'language.txt'
+OUTPUT_LANGUAGE_INFO_FILE = 'language.json'
 OUTPUT_SPEECH_FILE = 'vocals.wav'
 OUTPUT_MUSIC_FILE = 'accompaniment.wav'
 OUTPUT_ANALYSIS_FILE = 'analysis.json'
+OUTPUT_TRANSCRIPT_FILE = 'transcript.json'
 OUTPUT_DATA_FILE = 'data.json'
 OUTPUT_COMBINATIONS_FILE = 'combos.json'
 OUTPUT_AV_SEGMENTS_DIR = 'av_segments_cuts'

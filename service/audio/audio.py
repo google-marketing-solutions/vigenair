@@ -205,11 +205,7 @@ def split_audio(
       ],
       description='split voice-over and background music with spleeter',
   )
-  base_path = audio_file_path.split('.')[0]
-  shutil.move(f'{base_path}/{ConfigService.OUTPUT_SPEECH_FILE}', output_dir)
-  shutil.move(f'{base_path}/{ConfigService.OUTPUT_MUSIC_FILE}', output_dir)
-  os.rmdir(base_path)
-
+  base_path, _ = os.path.splitext(audio_file_path)
   vocals_file_path = str(
       pathlib.Path(output_dir, f'{prefix}{ConfigService.OUTPUT_SPEECH_FILE}')
   )
@@ -217,15 +213,15 @@ def split_audio(
       pathlib.Path(output_dir, f'{prefix}{ConfigService.OUTPUT_MUSIC_FILE}')
   )
 
-  if prefix:
-    os.rename(
-        f'{output_dir}/{ConfigService.OUTPUT_SPEECH_FILE}',
-        vocals_file_path,
-    )
-    os.rename(
-        f'{output_dir}/{ConfigService.OUTPUT_MUSIC_FILE}',
-        music_file_path,
-    )
+  shutil.move(
+      f'{base_path}/{ConfigService.OUTPUT_SPEECH_FILE}',
+      vocals_file_path if prefix else output_dir
+  )
+  shutil.move(
+      f'{base_path}/{ConfigService.OUTPUT_MUSIC_FILE}',
+      music_file_path if prefix else output_dir
+  )
+  os.rmdir(base_path)
 
   return vocals_file_path, music_file_path
 

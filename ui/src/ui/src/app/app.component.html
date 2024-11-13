@@ -459,7 +459,7 @@ limitations under the License.
                   : 'Click to select/unselect each format'
               }}"
             >
-              <mat-button-toggle checked disabled value="horizontal">
+              <mat-button-toggle [checked]="!nonLandscapeInputVideo" disabled value="horizontal">
                 <mat-icon>computer</mat-icon>
               </mat-button-toggle>
               <mat-button-toggle value="vertical">

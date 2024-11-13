@@ -136,7 +136,7 @@ class TriggerFile:
         if len(file_path.parents) > 2 else self.gcs_folder
     )
 
-    self.video_metadata = VideoMetadata(self.gcs_folder)
+    self.video_metadata = VideoMetadata(self.gcs_root_folder)
     self.full_gcs_path = filepath
     self.file_name_ext = f'{self.file_name}.{self.file_ext}'
 
@@ -149,11 +149,43 @@ class TriggerFile:
         f'video_metadata={self.video_metadata})'
     )
 
-  def is_extractor_trigger(self) -> bool:
+  def is_extractor_initial_trigger(self) -> bool:
     return (
         self.file_ext and VideoExtension.has_value(self.file_ext)
         and self.file_name == ConfigService.INPUT_FILENAME
     )
+
+  def is_extractor_audio_trigger(self) -> bool:
+    return (
+        'wav' == self.file_ext and self.file_name.endswith(
+            ConfigService.INPUT_EXTRACTION_AUDIO_FILENAME_SUFFIX
+        )
+    )
+
+  def is_extractor_video_trigger(self) -> bool:
+    return (
+        self.file_ext and VideoExtension.has_value(self.file_ext)
+        and self.file_name.endswith(
+            ConfigService.INPUT_EXTRACTION_VIDEO_FILENAME_SUFFIX
+        )
+    )
+
+  def is_extractor_finalise_audio_trigger(self) -> bool:
+    return (
+        self.file_name_ext.endswith(
+            ConfigService.INPUT_EXTRACTION_FINALISE_AUDIO_FILE
+        )
+    )
+
+  def is_extractor_finalise_video_trigger(self) -> bool:
+    return (
+        self.file_name_ext.endswith(
+            ConfigService.INPUT_EXTRACTION_FINALISE_VIDEO_FILE
+        )
+    )
+
+  def is_extractor_finalise_trigger(self) -> bool:
+    return self.file_name_ext == ConfigService.INPUT_EXTRACTION_FINALISE_FILE
 
   def is_combiner_initial_trigger(self) -> bool:
     return self.file_name_ext == ConfigService.INPUT_RENDERING_FILE
@@ -218,3 +250,33 @@ def timestring_to_seconds(timestring: str) -> float:
   """Converts a timestring in the format mm:ss.SSS to seconds."""
   minutes, seconds = map(float, timestring.split(':'))
   return minutes*60 + seconds
+
+
+def rename_chunks(result: Sequence[str], file_suffix: str):
+  """Renames the output chunks."""
+  for output_file_path in result:
+    file_name, file_ext = os.path.splitext(output_file_path)
+    file_name = file_name.replace(file_suffix, '')
+    os.rename(
+        output_file_path,
+        f'{file_name}-{len(result)}{file_suffix}{file_ext}',
+    )
+
+
+def get_media_duration(input_file_path: str) -> float:
+  """Retrieves the duration of the input media file."""
+  output = execute_subprocess_commands(
+      cmds=[
+          'ffprobe',
+          '-i',
+          input_file_path,
+          '-show_entries',
+          'format=duration',
+          '-v',
+          'quiet',
+          '-of',
+          'default=noprint_wrappers=1:nokey=1',
+      ],
+      description=f'get duration of [{input_file_path}] with ffprobe',
+  )
+  return float(output)

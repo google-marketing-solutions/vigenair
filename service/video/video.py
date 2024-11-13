@@ -28,6 +28,14 @@ import pandas as pd
 from google.cloud import videointelligence
 
 
+def video_annotation_from_json(
+    annotation_json: Any
+) -> videointelligence.VideoAnnotationResults:
+  return videointelligence.VideoAnnotationResults(
+      annotation_json['annotation_results'][0]
+  )
+
+
 def combine_analysis_chunks(
     analysis_chunks: Sequence[videointelligence.VideoAnnotationResults]
 ) -> Tuple[Dict[str, Any], videointelligence.VideoAnnotationResults]:
@@ -235,26 +243,17 @@ def analyse_video(
     video_file_path: str,
     bucket_name: str,
     gcs_folder: str,
+    output_file_name: str,
 ) -> videointelligence.VideoAnnotationResults:
   """Runs video analysis via the Video AI API and returns the results."""
   file_path, file_ext = os.path.splitext(video_file_path)
   file_name = pathlib.Path(file_path).name
-  is_chunk = ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR in file_path
-  gcs_path = str(
-      pathlib.Path(gcs_folder, ConfigService.OUTPUT_ANALYSIS_CHUNKS_DIR)
-  ) if is_chunk else gcs_folder
-  gcs_file_path = str(pathlib.Path(gcs_path, f'{file_name}{file_ext}'))
+  gcs_file_path = str(pathlib.Path(gcs_folder, f'{file_name}{file_ext}'))
 
   return _run_video_intelligence(
       bucket_name=bucket_name,
       gcs_input_path=gcs_file_path,
-      gcs_output_path=str(
-          pathlib.Path(
-              gcs_path,
-              f'{file_name}.json'
-              if is_chunk else ConfigService.OUTPUT_ANALYSIS_FILE,
-          )
-      ),
+      gcs_output_path=str(pathlib.Path(gcs_folder, output_file_name)),
   )
 
 

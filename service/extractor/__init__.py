@@ -14,4 +14,6 @@
 
 """Vigenair extractor module."""
 
+from .audio_extractor import *
 from .extractor import *
+from .video_extractor import *

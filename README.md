@@ -32,6 +32,7 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [November 2024]: General bug fixes and performance improvements.
 * [October 2024]
   * `frontend` + `backend`: Added functionality to "fade out" audio at the end of generated videos. Read more [here](#42-user-controls-for-video-rendering).
   * `frontend`: Added functionality to regenerate Demand Gen text assets. Read more [here](#6-output-videos).
