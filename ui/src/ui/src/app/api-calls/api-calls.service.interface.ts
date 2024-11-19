@@ -17,6 +17,11 @@
 import { Observable } from 'rxjs';
 
 export type FormatType = 'horizontal' | 'vertical' | 'square';
+export type OverlayType =
+  | 'variant_start'
+  | 'variant_end'
+  | 'video_start'
+  | 'video_end';
 
 export interface GenerationSettings {
   prompt: string;
@@ -61,6 +66,7 @@ export interface RenderSettings {
   use_music_overlay: boolean;
   use_continuous_audio: boolean;
   fade_out: boolean;
+  overlay_type: OverlayType;
 }
 
 export interface RenderQueue {

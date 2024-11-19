@@ -32,7 +32,9 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
-* [November 2024]: General bug fixes and performance improvements.
+* [November 2024]
+  * `frontend` + `backend`: General bug fixes and performance improvements.
+  * `frontend` + `backend`: Added possibility to select the timing for audio and music overlays. Read more [here](#42-user-controls-for-video-rendering).
 * [October 2024]
   * `frontend` + `backend`: Added functionality to "fade out" audio at the end of generated videos. Read more [here](#42-user-controls-for-video-rendering).
   * `frontend`: Added functionality to regenerate Demand Gen text assets. Read more [here](#6-output-videos).
@@ -246,6 +248,16 @@ Users are now ready for combination. They can view the A/V segments and generate
 * Vigenair supports different rendering settings for the audio of the generated videos. The image below describes the supported options and how they differ:
 
   <center><img src='./img/audio.png' width="350px" alt="Vigenair's audio rendering options" /></center>
+
+  Furthermore, if *Music* or *All audio* overlay is selected, the user can additionally decide how the overlay should be done via one of the following options:
+
+  <center><img src='./img/render-settings-overlay.png' alt="Vigenair UI: Variants render settings for audio overlay" /></center>
+
+  * **Variant start** (default): Audio will start from the beginning of the first segment in the variant.
+  * **Video start**: Audio will start from the beginning of the original video, regardless of when the variant starts.
+  * **Video end**: Audio will end with the ending of the original video, regardless of when the variant ends.
+  * **Variant end**: Audio will end with the ending of the last segment in the variant.
+
 * Whether to fade out audio at the end of generated videos. When selected, videos will be faded out for `1s` (configured by the `CONFIG_DEFAULT_FADE_OUT_DURATION` environment variable for the Combiner service).
 * Whether to generate [Demand Gen](https://support.google.com/google-ads/answer/13695777) campaign text and image assets alongside the variant or not. Defaults to generating Demand Gen assets using *multimodal* models on Vertex AI, which offers the highest quality of output assets.
 * Which formats (horizontal, vertical and square) assets to render. Defaults to rendering horizontal assets only.

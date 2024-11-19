@@ -50,6 +50,15 @@ class RenderFormatType(enum.Enum):
   SQUARE = 'square'
 
 
+class RenderOverlayType(enum.Enum):
+  """Enum of possible render overlays."""
+
+  VARIANT_START = 'variant_start'
+  VARIANT_END = 'variant_end'
+  VIDEO_START = 'video_start'
+  VIDEO_END = 'video_end'
+
+
 class VideoExtension(enum.Enum):
   """Enum of supported video file extensions."""
 

@@ -53,6 +53,7 @@ class VideoVariantRenderSettings:
       audio track for the video variant instead of the individual segments'
       audio track portions.
     fade_out: Whether to fade out the end of the video variant.
+    overlay_type: How to overlay music / audio for the variant.
   """
 
   generate_image_assets: bool = False
@@ -61,6 +62,7 @@ class VideoVariantRenderSettings:
   use_music_overlay: bool = False
   use_continuous_audio: bool = False
   fade_out: bool = False
+  overlay_type: Utils.RenderOverlayType = None
 
   def __init__(self, **kwargs):
     field_names = set([f.name for f in dataclasses.fields(self)])
@@ -76,7 +78,8 @@ class VideoVariantRenderSettings:
         f'formats={self.formats}, '
         f'use_music_overlay={self.use_music_overlay}, '
         f'use_continuous_audio={self.use_continuous_audio}, '
-        f'fade_out={self.fade_out})'
+        f'fade_out={self.fade_out}, '
+        f'overlay_type={self.overlay_type})'
     )
 
 
@@ -687,6 +690,7 @@ def _render_video_variant(
           shot_groups,
       )
   )
+  video_duration = Utils.get_media_duration(video_file_path)
   (
       full_av_select_filter,
       music_overlay_select_filter,
@@ -694,7 +698,8 @@ def _render_video_variant(
   ) = _build_ffmpeg_filters(
       shot_timestamps,
       has_audio,
-      video_variant.render_settings.fade_out,
+      video_variant.render_settings,
+      video_duration,
   )
 
   ffmpeg_cmds = _get_variant_ffmpeg_commands(
@@ -1192,13 +1197,17 @@ def _group_consecutive_segments(
 def _build_ffmpeg_filters(
     shot_timestamps: Sequence[Tuple[float, float]],
     has_audio: bool,
-    fade_out: bool,
+    render_settings: VideoVariantRenderSettings,
+    video_duration: float,
 ) -> Tuple[str, str, str]:
   """Builds the ffmpeg filters.
 
   Args:
     shot_timestamps: A sequence of tuples, where each tuple contains the start
       and end timestamps of a shot.
+    has_audio: Whether the video has audio.
+    render_settings: The render settings to use.
+    video_duration: The duration of the video.
 
   Returns:
     A tuple containing the full audio/video, music overlay and continuous audio
@@ -1209,7 +1218,8 @@ def _build_ffmpeg_filters(
   select_filter_concat = []
   idx = 0
   duration = 0
-  all_start = sys.maxsize
+  variant_first_segment_start = sys.maxsize
+  variant_last_segment_end = 0
   for start, end in shot_timestamps:
     selection_filter = f'between(t,{start},{end})'
     video_select_filter.append(
@@ -1222,7 +1232,8 @@ def _build_ffmpeg_filters(
       )
       select_filter_concat.append(f'[a{idx}]')
     duration += end - start
-    all_start = min(all_start, start)
+    variant_first_segment_start = min(variant_first_segment_start, start)
+    variant_last_segment_end = max(variant_last_segment_end, end)
     idx += 1
 
   fade_out_duration = float(ConfigService.CONFIG_DEFAULT_FADE_OUT_DURATION)
@@ -1230,8 +1241,18 @@ def _build_ffmpeg_filters(
   fade_out_start = duration - fade_out_duration - fade_out_buffer
   fade_out_filter = (
       f';[outa]afade=t=out:st={fade_out_start}:d={fade_out_duration}[outa]'
-      if fade_out else ''
+      if render_settings.fade_out else ''
   )
+
+  match render_settings.overlay_type:
+    case Utils.RenderOverlayType.VIDEO_START.value:
+      overlay_start = 0
+    case Utils.RenderOverlayType.VIDEO_END.value:
+      overlay_start = video_duration - duration
+    case Utils.RenderOverlayType.VARIANT_END.value:
+      overlay_start = variant_last_segment_end - duration
+    case Utils.RenderOverlayType.VARIANT_START.value | _:
+      overlay_start = variant_first_segment_start
 
   full_av_select_filter = ''.join(
       video_select_filter + audio_select_filter + select_filter_concat
@@ -1243,7 +1264,7 @@ def _build_ffmpeg_filters(
   music_overlay_select_filter = ''.join(
       video_select_filter
       + [entry.replace('0:a', '1:a') for entry in audio_select_filter] + [
-          f"[2:a]aselect='between(t,{all_start},{all_start+duration})'"
+          f"[2:a]aselect='between(t,{overlay_start},{overlay_start+duration})'"
           ',asetpts=N/SR/TB[music];'
       ] + select_filter_concat + [
           f'concat=n={idx}:v=1:a=1[outv][tempa];',
@@ -1253,7 +1274,7 @@ def _build_ffmpeg_filters(
   ) if has_audio else ''
   continuous_audio_select_filter = ''.join(
       video_select_filter + [
-          f"[0:a]aselect='between(t,{all_start},{all_start+duration})'"
+          f"[0:a]aselect='between(t,{overlay_start},{overlay_start+duration})'"
           ',asetpts=N/SR/TB[outa];'
       ] + [entry for entry in select_filter_concat if entry.startswith('[v')]
       + [f'concat=n={idx}:v=1[outv]', fade_out_filter]

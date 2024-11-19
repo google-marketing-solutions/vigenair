@@ -60,6 +60,7 @@ import {
   AvSegment,
   FormatType,
   GenerateVariantsResponse,
+  OverlayType,
   RenderedVariant,
   RenderQueueVariant,
   RenderSettings,
@@ -144,6 +145,7 @@ export class AppComponent {
   duration = 0;
   step = 0;
   audioSettings = 'segment';
+  overlaySettings: OverlayType = 'variant_start';
   fadeOut = false;
   demandGenAssets = true;
   analyseAudio = true;
@@ -530,6 +532,11 @@ export class AppComponent {
     this.subtitlesTrack = '';
     this.cropAreaRect = undefined;
     this.nonLandscapeInputVideo = false;
+    this.audioSettings = 'segment';
+    this.overlaySettings = 'variant_start';
+    this.fadeOut = false;
+    this.demandGenAssets = true;
+    this.analyseAudio = true;
     this.previewVideoElem.nativeElement.pause();
     this.VideoComboComponent?.videoElem.nativeElement.pause();
     this.videoMagicPanel.close();
@@ -998,6 +1005,7 @@ export class AppComponent {
       use_music_overlay: this.audioSettings === 'music',
       use_continuous_audio: this.audioSettings === 'continuous',
       fade_out: this.fadeOut,
+      overlay_type: this.overlaySettings,
     };
     const selectedScenes = selectedSegments.map(
       (segment: AvSegment) => segment.av_segment_id
@@ -1067,6 +1075,8 @@ export class AppComponent {
       : variant.render_settings.use_continuous_audio
         ? 'continuous'
         : 'segment';
+    this.fadeOut = variant.render_settings.fade_out;
+    this.overlaySettings = variant.render_settings.overlay_type;
     this.closeRenderQueueSidenav();
     setTimeout(() => {
       this.loadingVariant = false;

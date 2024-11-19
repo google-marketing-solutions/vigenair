@@ -427,6 +427,27 @@ limitations under the License.
               </mat-select>
             </mat-form-field>
           </div>
+          <div style="margin-top: 8px" *ngIf="audioSettings !== 'segment'">
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>Overlay settings:</mat-label>
+              <mat-select [(ngModel)]="overlaySettings">
+                <span matTooltip="Start from the first segment of your variant">
+                  <mat-option value="variant_start">Variant start</mat-option>
+                </span>
+                <span
+                  matTooltip="Start from the beginning of the original video"
+                >
+                  <mat-option value="video_start">Video start</mat-option>
+                </span>
+                <span matTooltip="End with the ending of the original video">
+                  <mat-option value="video_end">Video end</mat-option>
+                </span>
+                <span matTooltip="End with the last segment of your variant">
+                  <mat-option value="variant_end">Variant end</mat-option>
+                </span>
+              </mat-select>
+            </mat-form-field>
+          </div>
           <div class="user-settings" style="margin-top: 8px">
             <span matTooltip="Fades out audio at the end of the video">
               <mat-checkbox color="primary" [(ngModel)]="fadeOut">
@@ -459,7 +480,11 @@ limitations under the License.
                   : 'Click to select/unselect each format'
               }}"
             >
-              <mat-button-toggle [checked]="!nonLandscapeInputVideo" disabled value="horizontal">
+              <mat-button-toggle
+                [checked]="!nonLandscapeInputVideo"
+                disabled
+                value="horizontal"
+              >
                 <mat-icon>computer</mat-icon>
               </mat-button-toggle>
               <mat-button-toggle value="vertical">
@@ -641,9 +666,13 @@ limitations under the License.
               <b>Audio:</b>
               {{
                 (variant.render_settings.use_continuous_audio
-                  ? 'Overlay all'
+                  ? 'Overlay all (' +
+                    variant.render_settings.overlay_type.replace('_', ' ') +
+                    ')'
                   : variant.render_settings.use_music_overlay
-                    ? 'Overlay music'
+                    ? 'Overlay music (' +
+                      variant.render_settings.overlay_type.replace('_', ' ') +
+                      ')'
                     : 'Individual segments') +
                   (variant.render_settings.fade_out ? ' + Fade out' : '')
               }}
