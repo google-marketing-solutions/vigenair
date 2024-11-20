@@ -100,6 +100,12 @@ def _process_video_without_audio(
           pathlib.Path(gcs_folder, ConfigService.OUTPUT_SUBTITLES_FILE)
       ),
   )
+  _check_finalise_extract_audio(
+      total_count=1,
+      gcs_bucket_name=gcs_bucket_name,
+      gcs_folder=gcs_folder,
+      skip_analysis=True,
+  )
   logging.info(
       'TRANSCRIPTION - Empty %s written successfully!',
       ConfigService.OUTPUT_SUBTITLES_FILE,
@@ -308,9 +314,10 @@ def _check_finalise_extract_audio(
     total_count: int,
     gcs_bucket_name: str,
     gcs_folder: str,
+    skip_analysis=False,
 ):
   """Checks whether all audio chunk analyses are complete."""
-  analysed_count = len(
+  analysed_count = 1 if skip_analysis else len(
       StorageService.filter_files(
           bucket_name=gcs_bucket_name,
           prefix=f'{gcs_folder}/',

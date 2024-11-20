@@ -191,26 +191,29 @@ class Extractor:
             AudioExtractor.VIDEO_LANGUAGE_KEY]] = (
                 language_info[AudioExtractor.LANGUAGE_PROBABILITY_KEY]
             )
-    video_language = max(
+    video_language = None if not language_probability_dict else max(
         language_probability_dict, key=language_probability_dict.get
     )
-    with open(
-        str(pathlib.Path(output_dir, ConfigService.OUTPUT_LANGUAGE_FILE)),
-        'w',
-        encoding='utf8',
-    ) as f:
-      f.write(video_language)
-    logging.info(
-        'LANGUAGE - %s written successfully with language: %s!',
-        ConfigService.OUTPUT_LANGUAGE_FILE,
-        video_language,
-    )
+    if video_language:
+      with open(
+          str(pathlib.Path(output_dir, ConfigService.OUTPUT_LANGUAGE_FILE)),
+          'w',
+          encoding='utf8',
+      ) as f:
+        f.write(video_language)
+      logging.info(
+          'LANGUAGE - %s written successfully with language: %s!',
+          ConfigService.OUTPUT_LANGUAGE_FILE,
+          video_language,
+      )
 
-    transcription_dataframe = transcription_dataframes[0]
-    if len(transcription_dataframes) > 1:
+    transcription_dataframe = (
+        pd.DataFrame() if size == 0 else transcription_dataframes[0]
+    )
+    if size > 1:
       logging.info(
           'THREADING - Combining %d transcribe_audio outputs...',
-          len(transcription_dataframes),
+          size,
       )
       transcription_dataframe = AudioService.combine_analysis_chunks(
           transcription_dataframes
