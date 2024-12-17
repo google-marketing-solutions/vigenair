@@ -30,6 +30,7 @@ import {
 } from './api-calls.service.interface';
 
 const HORIZONTAL_SAMPLE_FOLDER = 'horizontal.mp4--1234567890123--abcdef';
+const COMBOS_FOLDER = 'Sample--1707812254000-combos';
 
 @Injectable({
   providedIn: 'root',
@@ -121,6 +122,16 @@ export class ApiCallsService implements ApiCalls {
       }, 1000);
     });
   }
+  getRendersFromGcs(gcsFolder: string): Observable<string[]> {
+    return new Observable(subscriber => {
+      setTimeout(() => {
+        this.ngZone.run(() => {
+          subscriber.next([COMBOS_FOLDER]);
+          subscriber.complete();
+        });
+      }, 1000);
+    });
+  }
   renderVariants(
     gcsFolder: string,
     renderQueue: RenderQueue
@@ -128,7 +139,7 @@ export class ApiCallsService implements ApiCalls {
     return new Observable(subscriber => {
       setTimeout(() => {
         this.ngZone.run(() => {
-          subscriber.next(`${gcsFolder}/12345-combos`);
+          subscriber.next(`${gcsFolder}/${COMBOS_FOLDER}`);
           subscriber.complete();
         });
       }, 1000);

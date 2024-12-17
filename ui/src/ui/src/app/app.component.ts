@@ -61,6 +61,7 @@ import {
   FormatType,
   GenerateVariantsResponse,
   OverlayType,
+  PreviousRender,
   RenderedVariant,
   RenderQueueVariant,
   RenderSettings,
@@ -150,6 +151,7 @@ export class AppComponent {
   demandGenAssets = true;
   analyseAudio = true;
   previousRuns: string[] | undefined;
+  previousRenders: PreviousRender[] | undefined;
   encodedUserId: string | undefined;
   folder = '';
   folderGcsPath = '';
@@ -159,6 +161,7 @@ export class AppComponent {
   stars: number[] = new Array(5).fill(0);
   renderQueue: RenderQueueVariant[] = [];
   renderQueueJsonArray: string[] = [];
+  renderQueueName = '';
   negativePrompt = false;
   displayObjectTracking = true;
   moveCropArea = false;
@@ -179,6 +182,7 @@ export class AppComponent {
   maxNonLandscapeHeight = CONFIG.defaultVideoHeight;
   maxRetries = CONFIG.maxRetries;
   showApprovalStatus = false;
+  allSegmentsToggle = false;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -275,6 +279,32 @@ export class AppComponent {
       next: result => {
         this.previousRuns = result.runs;
         this.encodedUserId = result.encodedUserId;
+      },
+      error: err => this.failHandler(err),
+    });
+  }
+
+  getPreviousRenders() {
+    this.apiCallsService.getRendersFromGcs(this.folder).subscribe({
+      next: result => {
+        this.previousRenders = result.map((render: string) => {
+          const hasName = render.includes(CONFIG.videoFolderNameSeparator);
+          const displayName =
+            (hasName
+              ? render.split(CONFIG.videoFolderNameSeparator)[0]
+              : 'N/A') +
+            ' (' +
+            new Date(
+              Number(
+                (hasName
+                  ? render.split(CONFIG.videoFolderNameSeparator)[1]
+                  : render
+                ).replace('-combos', '')
+              )
+            ).toLocaleString() +
+            ')';
+          return { displayName, value: render };
+        });
       },
       error: err => this.failHandler(err),
     });
@@ -404,10 +434,14 @@ export class AppComponent {
       });
   }
 
-  getAvSegments(folder: string) {
+  getAvSegments() {
     this.segmentsStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/data.json`, CONFIG.retryDelay, this.maxRetries)
+      .getFromGcs(
+        `${this.folder}/data.json`,
+        CONFIG.retryDelay,
+        this.maxRetries
+      )
       .subscribe({
         next: data => {
           const dataJson = JSON.parse(data);
@@ -422,7 +456,7 @@ export class AppComponent {
             this.generatePreviews();
           }
         },
-        error: err => this.failHandler(err, folder, true),
+        error: err => this.failHandler(err, this.folder, true),
       });
   }
 
@@ -450,10 +484,14 @@ export class AppComponent {
       });
   }
 
-  getVideoAnalysis(folder: string) {
+  getVideoAnalysis() {
     this.analysisStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/analysis.json`, CONFIG.retryDelay, this.maxRetries)
+      .getFromGcs(
+        `${this.folder}/analysis.json`,
+        CONFIG.retryDelay,
+        this.maxRetries
+      )
       .subscribe({
         next: data => {
           this.analysisJson = JSON.parse(data);
@@ -464,25 +502,29 @@ export class AppComponent {
               e.confidence > CONFIG.videoIntelligenceConfidenceThreshold
           );
           this.activeVideoObjects = this.videoObjects;
-          this.getAvSegments(folder);
+          this.getAvSegments();
         },
-        error: err => this.failHandler(err, folder, true),
+        error: err => this.failHandler(err, this.folder, true),
       });
   }
 
-  getSubtitlesTrack(folder: string) {
+  getSubtitlesTrack() {
     this.transcriptStatus = 'pending';
     this.apiCallsService
-      .getFromGcs(`${folder}/input.vtt`, CONFIG.retryDelay, this.maxRetries)
+      .getFromGcs(
+        `${this.folder}/input.vtt`,
+        CONFIG.retryDelay,
+        this.maxRetries
+      )
       .subscribe({
         next: data => {
           const dataUrl = `data:text/vtt;base64,${StringUtil.encode(data)}`;
           this.previewTrackElem.nativeElement.src = dataUrl;
           this.subtitlesTrack = this.previewTrackElem.nativeElement.src;
           this.transcriptStatus = 'check_circle';
-          this.getVideoAnalysis(folder);
+          this.getVideoAnalysis();
         },
-        error: err => this.failHandler(err, folder, true),
+        error: err => this.failHandler(err, this.folder, true),
       });
   }
 
@@ -492,13 +534,18 @@ export class AppComponent {
     this.processVideo(response[0], response[1]);
   }
 
+  loadPreviousRender(folder: string) {
+    this.combos = undefined;
+    this.getRenderedCombos(`${this.folder}/${folder}`);
+  }
+
   uploadVideo() {
     this.loading = true;
     this.apiCallsService
       .uploadVideo(this.selectedFile!, this.analyseAudio, this.encodedUserId!)
       .subscribe({
         next: response => {
-          this.processVideo(response[0], response[1]);
+          this.processVideo(response[0], response[1], false);
         },
         error: err => this.failHandler(err),
       });
@@ -524,6 +571,8 @@ export class AppComponent {
     this.segmentsStatus = 'hourglass_top';
     this.renderQueue = [];
     this.renderQueueJsonArray = [];
+    this.renderQueueName = '';
+    this.previousRenders = undefined;
     this.segmentModeToggle.value = 'preview';
     this.previewToggleGroup.value = 'toggle';
     this.displayObjectTracking = true;
@@ -535,6 +584,7 @@ export class AppComponent {
     this.audioSettings = 'segment';
     this.overlaySettings = 'variant_start';
     this.fadeOut = false;
+    this.allSegmentsToggle = false;
     this.demandGenAssets = true;
     this.analyseAudio = true;
     this.previewVideoElem.nativeElement.pause();
@@ -562,7 +612,11 @@ export class AppComponent {
     );
   }
 
-  processVideo(folder: string, videoFilePath: string) {
+  processVideo(
+    folder: string,
+    videoFilePath: string,
+    getPreviousRenders = true
+  ) {
     this.resetState();
     this.folder = folder;
     this.analyseAudio = !folder.includes(
@@ -642,7 +696,12 @@ export class AppComponent {
     };
     this.videoUploadPanel.close();
     this.videoMagicPanel.open();
-    this.getSubtitlesTrack(folder);
+    this.getSubtitlesTrack();
+    if (getPreviousRenders) {
+      this.getPreviousRenders();
+    } else {
+      this.previousRenders = [];
+    }
   }
 
   getGcsFolderPath() {
@@ -667,7 +726,6 @@ export class AppComponent {
         prompt: this.prompt,
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,
-        negativePrompt: this.negativePrompt,
       })
       .subscribe({
         next: variants => {
@@ -956,6 +1014,7 @@ export class AppComponent {
       this.avSegments = structuredClone(this.originalAvSegments);
       this.setSelectedSegments();
       this.resetVariantPreview();
+      this.allSegmentsToggle = false;
     }
   }
 
@@ -1076,7 +1135,7 @@ export class AppComponent {
         ? 'continuous'
         : 'segment';
     this.fadeOut = variant.render_settings.fade_out;
-    this.overlaySettings = variant.render_settings.overlay_type;
+    this.overlaySettings = variant.render_settings.overlay_type!;
     this.closeRenderQueueSidenav();
     setTimeout(() => {
       this.loadingVariant = false;
@@ -1096,6 +1155,7 @@ export class AppComponent {
     this.apiCallsService
       .renderVariants(this.folder, {
         queue: this.renderQueue,
+        queueName: this.renderQueueName,
         squareCropAnalysis: this.squareVideoObjects,
         verticalCropAnalysis: this.verticalVideoObjects,
         sourceDimensions: {
@@ -1204,5 +1264,11 @@ export class AppComponent {
             });
         });
     }
+  }
+
+  toggleAllSegments() {
+    this.avSegments?.forEach((segment: AvSegment) => {
+      segment.selected = this.allSegmentsToggle;
+    });
   }
 }

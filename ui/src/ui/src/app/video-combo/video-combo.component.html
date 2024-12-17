@@ -85,13 +85,15 @@ limitations under the License.
   Audio:
   {{
     (combo.render_settings.use_continuous_audio
-      ? 'Overlay all (' +
-        combo.render_settings.overlay_type.replace('_', ' ') +
-        ')'
+      ? 'Overlay all' +
+        (combo.render_settings.overlay_type
+          ? ' (' + combo.render_settings.overlay_type.replace('_', ' ') + ')'
+          : '')
       : combo.render_settings.use_music_overlay
-        ? 'Overlay music (' +
-          combo.render_settings.overlay_type.replace('_', ' ') +
-          ')'
+        ? 'Overlay music' +
+          (combo.render_settings.overlay_type
+            ? ' (' + combo.render_settings.overlay_type.replace('_', ' ') + ')'
+            : '')
         : 'Individual segments') +
       (combo.render_settings.fade_out ? ' + Fade out' : '')
   }}

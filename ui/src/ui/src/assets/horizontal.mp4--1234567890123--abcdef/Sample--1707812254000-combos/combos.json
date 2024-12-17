@@ -28,9 +28,9 @@
     "score_reasoning": "* A: The combination starts strong with the video calls and has several visual shots within the first 5 seconds.\n* B: The Lufthansa logo and tagline are prominently displayed in the last 5 seconds.\n* C: The video calls feature close-ups of people's faces, creating a personal connection with the viewer.\n* D: The \"Say yes to the world\" tagline is a clear call to action that encourages viewers to travel with Lufthansa.",
     "score": 5,
     "variants": {
-      "horizontal": "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0_h.mp4",
-      "vertical": "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0_v.mp4",
-      "square": "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0_s.mp4"
+      "horizontal": "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0_h.mp4",
+      "vertical": "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0_v.mp4",
+      "square": "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0_s.mp4"
     },
     "render_settings": {
       "use_music_overlay": true,
@@ -61,40 +61,40 @@
     ],
     "images": {
       "horizontal": [
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/1.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/2.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/3.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/4.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/5.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/6.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/7.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/8.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/9.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/horizontal/10.png"
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/1.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/2.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/3.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/4.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/5.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/6.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/7.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/8.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/9.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/horizontal/10.png"
       ],
       "vertical": [
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/1.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/2.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/3.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/4.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/5.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/6.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/7.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/8.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/9.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/vertical/10.png"
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/1.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/2.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/3.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/4.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/5.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/6.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/7.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/8.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/9.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/vertical/10.png"
       ],
       "square": [
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/1.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/2.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/3.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/4.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/5.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/6.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/7.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/8.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/9.png",
-        "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_0/assets/square/10.png"
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/1.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/2.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/3.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/4.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/5.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/6.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/7.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/8.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/9.png",
+        "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_0/assets/square/10.png"
       ]
     }
   },
@@ -132,7 +132,7 @@
     "score": 5,
     "description": "This combination starts with the heartwarming and funny video calls, immediately grabbing the viewer's attention. The off-screen speech smoothly transitions into the Lufthansa ad, showcasing the beauty of travel and the world. The combination ends with the \"Say yes to the world\" tagline, leaving a lasting impression on the viewer.",
     "variants": {
-      "horizontal": "assets/horizontal.mp4--1234567890123--abcdef/12345-combos/combo_1_h.mp4"
+      "horizontal": "assets/horizontal.mp4--1234567890123--abcdef/Sample--1707812254000-combos/combo_1_h.mp4"
     },
     "render_settings": {
       "use_music_overlay": false,

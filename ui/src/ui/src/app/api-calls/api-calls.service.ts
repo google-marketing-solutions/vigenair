@@ -219,6 +219,30 @@ export class ApiCallsService implements ApiCalls {
     );
   }
 
+  getRendersFromGcs(gcsFolder: string): Observable<string[]> {
+    return new Observable<string[]>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((response: string[]) => {
+          this.ngZone.run(() => {
+            subscriber.next(response);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Could not retrieve previous renders from GCS! Error: ',
+            error
+          );
+          subscriber.error(error);
+        })
+        .getRendersFromGcs(gcsFolder);
+    }).pipe(
+      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    );
+  }
+
   renderVariants(
     gcsFolder: string,
     renderQueue: RenderQueue

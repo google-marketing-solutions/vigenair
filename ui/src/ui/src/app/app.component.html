@@ -104,7 +104,6 @@ limitations under the License.
           <mat-label>Load existing video</mat-label>
           <mat-select
             (selectionChange)="loadPreviousRun($event.value)"
-            [disabled]="loading"
             (click)="getPreviousRuns()"
           >
             @for (run of previousRuns; track $index) {
@@ -127,9 +126,15 @@ limitations under the License.
           Loading videos
         </div>
       }
+      <div class="row" style="margin-top: 16px">
+        <span class="notice-text"
+          >Videos uploaded here and listed in the dropdown are stored within
+          your private Google Cloud Project and are not shared with others.
+        </span>
+      </div>
     </mat-expansion-panel>
 
-    <mat-expansion-panel #videoMagicPanel>
+    <mat-expansion-panel #videoMagicPanel [disabled]="!folder">
       <mat-expansion-panel-header>
         <mat-panel-title class="panel-title"
           ><mat-icon class="panel-icon">auto_fix_high</mat-icon
@@ -146,20 +151,63 @@ limitations under the License.
           >
         </mat-panel-description>
       </mat-expansion-panel-header>
+      <div class="row" style="justify-content: left; margin-top: 8px">
+        @if (previousRenders && previousRenders.length > 0) {
+          <mat-form-field style="width: 300px" subscriptSizing="dynamic">
+            <mat-label>Load rendered videos</mat-label>
+            <mat-select (selectionChange)="loadPreviousRender($event.value)">
+              @for (render of previousRenders; track $index) {
+                <mat-option [value]="render.value">{{
+                  render.displayName
+                }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        } @else if (!previousRenders) {
+          <div>
+            <mat-spinner
+              style="margin-bottom: 16px; margin-left: 4px"
+            ></mat-spinner>
+            Loading rendered videos
+          </div>
+        }
+      </div>
       <div class="row">
-        <div style="margin-right: auto">
-          <mat-slide-toggle
-            #reorderSegmentsToggle="matSlideToggle"
-            color="primary"
-            style="display: block"
-            *ngIf="variants?.length"
-            [checked]="false"
-            matTooltip="Switch off to restore original segment order"
-            (change)="restoreSegmentOrder()"
-            >Reorder segments</mat-slide-toggle
-          >
+        <div
+          class="row"
+          style="
+            margin-right: auto;
+            margin-top: 0px;
+            flex-direction: column;
+            align-items: flex-start;
+          "
+        >
+          @if (variants?.length) {
+            <mat-slide-toggle
+              #reorderSegmentsToggle="matSlideToggle"
+              color="primary"
+              style="display: block"
+              [checked]="false"
+              matTooltip="Switch off to restore original segment order"
+              (change)="restoreSegmentOrder()"
+              >Reorder segments</mat-slide-toggle
+            >
+            <mat-checkbox
+              style="margin-left: -10px"
+              matTooltip="Select a variant to restore its original segments"
+              color="primary"
+              [(ngModel)]="allSegmentsToggle"
+              (click)="toggleAllSegments()"
+            >
+              {{ allSegmentsToggle ? 'Deselect' : 'Select' }} all segments
+            </mat-checkbox>
+          }
         </div>
-        <div [style.margin-left]="variants?.length ? '330px' : '485px'">
+        <div
+          [style.margin-left]="
+            variants?.length ? (allSegmentsToggle ? '293px' : '312px') : '485px'
+          "
+        >
           <mat-button-toggle-group
             #segmentModeToggle="matButtonToggleGroup"
             value="preview"
@@ -330,21 +378,15 @@ limitations under the License.
           "
         >
           <mat-form-field style="flex: 1" subscriptSizing="dynamic">
-            <mat-label>What should your video variants be about?</mat-label>
+            <mat-label
+              >What should your video variants include or exclude?</mat-label
+            >
             <textarea
               matInput
               [(ngModel)]="prompt"
-              placeholder="e.g. 'Discovering new experiences'"
+              placeholder="e.g. 'Focus on discovering new experiences', 'Exclude food scenes', etc."
             ></textarea>
           </mat-form-field>
-          <mat-checkbox
-            style="align-self: flex-start"
-            color="primary"
-            [(ngModel)]="negativePrompt"
-            matTooltip="Prevent the content listed above from being included in your video variants"
-          >
-            Exclude from video variants
-          </mat-checkbox>
         </div>
         <div style="display: flex; flex-direction: column; margin-top: -50px">
           <div>
@@ -667,11 +709,11 @@ limitations under the License.
               {{
                 (variant.render_settings.use_continuous_audio
                   ? 'Overlay all (' +
-                    variant.render_settings.overlay_type.replace('_', ' ') +
+                    variant.render_settings.overlay_type!.replace('_', ' ') +
                     ')'
                   : variant.render_settings.use_music_overlay
                     ? 'Overlay music (' +
-                      variant.render_settings.overlay_type.replace('_', ' ') +
+                      variant.render_settings.overlay_type!.replace('_', ' ') +
                       ')'
                     : 'Individual segments') +
                   (variant.render_settings.fade_out ? ' + Fade out' : '')
@@ -695,6 +737,17 @@ limitations under the License.
       }
     </div>
     <div class="row" style="flex-direction: column">
+      <mat-form-field
+        matTooltip="The current timestamp will be added automatically."
+      >
+        <mat-label>Render queue name</mat-label>
+        <input
+          matInput
+          placeholder="e.g. ProductDemo_v1"
+          [(ngModel)]="renderQueueName"
+        />
+      </mat-form-field>
+
       <button
         type="button"
         mat-raised-button
@@ -705,8 +758,8 @@ limitations under the License.
       </button>
       <br />
       <span class="notice-text"
-        >Uploading a new video or selecting a previous one will clear the render
-        queue.
+        >Uploading a new video or selecting an existing one will clear the
+        render queue.
       </span>
     </div>
   </mat-sidenav>

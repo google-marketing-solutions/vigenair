@@ -32,6 +32,12 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [December 2024]
+  * `frontend`: Added possibility to load previously rendered videos via a new dropdown. You can now also specify a name for each render job which will be displayed alongside the render timestamp.
+  * `frontend`: Added checkbox to select/deselect all segments during variants preview.
+  * `frontend`: The ABCDs evaluation section per variant may now additionally include recommendations on how to improve the video's content to make it more engaging.
+  * `frontend`: Improved user instruction following for the variants generation prompt and simplified the input process; you no longer need a separate checkbox to include or exclude elements - just specify your requirements directly in the prompt.
+  * `frontend` + `backend`: Added support for Gemini 2.0.
 * [November 2024]
   * `frontend` + `backend`: General bug fixes and performance improvements.
   * `frontend` + `backend`: Added possibility to select the timing for audio and music overlays. Read more [here](#42-user-controls-for-video-rendering).
@@ -49,12 +55,10 @@ Update to the latest version by running `npm run update-app` after pulling the l
   * `frontend` + `backend`: We now render non-blurred vertical and square formats by dynamically framing the most prominent part of the video. Read more [here](#3-object-tracking-and-smart-framing).
   * `frontend` + `backend`: You can now reorder segments by dragging & dropping them during the variants preview. Read more [here](#42-user-controls-for-video-rendering).
   * `frontend` + `backend`: The UI now supports upload and processing of all video MIME types [supported by Gemini](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/video-understanding#video_requirements).
-  * `frontend`: You can now both focus on OR exclude (via a new checkbox) certain topics or elements of the input video during variants generation.
   * `backend`: The Demand Gen text assets generation prompt has been adjusted to better adhere to the ["Punctuation & Symbols" policy](https://support.google.com/adspolicy/answer/14847994).
 * [June 2024]
   * `frontend`: Enhanced file upload process to support >20MB files and up to browser-specific limits (~2-4GB).
-  * `frontend`: Improved variants generation prompt and enhanced its adherence to user instructions.
-  * `backend`: Improved Demand Gen text assets generation prompt.
+  * `frontend` + `backend`: Improved variants generation and Demand Gen text assets generation prompt.
 * [May 2024]: Launch! 🚀
 
 ## Overview
@@ -92,7 +96,7 @@ See [How Vigenair Works](#how-vigenair-works) for more details on the different 
 
 ### Managing Apps Script Deployments
 
-The `npm start` and `npm run update-app` scripts manage deployments for you; a new deployment is always created and existing ones get archived, so that the version of the web app you use has the latest changes from your local copy of this repository. If you would like to manually manage deployments, you may do so by navigating to the [Apps Script home page](https://script.google.com), locating and selecting the `ViGenAiR` project, then managing deployments via the *Deploy* button/drop-down in the top-right corner of the page.
+The `npm start` and `npm run update-app` scripts manage deployments for you; a new deployment is always created and existing ones get archived, so that the version of the web app you use has the latest changes from your local copy of this repository. If you would like to manually manage deployments, you may do so by navigating to the [Apps Script home page](https://script.google.com), locating and selecting the `ViGenAiR` project, then managing deployments via the *Deploy* button/dropdown in the top-right corner of the page.
 
 ### Requirements
 
@@ -225,7 +229,7 @@ Users are now ready for combination. They can view the A/V segments and generate
     <center><img src='./img/segments.png' width="600px" alt="Vigenair UI: Segments list" /></center>
 
 * User Controls for video variant generation:
-  * Users are presented with an optional prompt which they can use to steer the output towards focusing on - or excluding, via the *Exclude from video variants* checkbox - certain aspects, like certain entities or topics in the input video, or target audience of the resulting video variant.
+  * Users are presented with an optional prompt which they can use to steer the output towards focusing on - or excluding - certain aspects, like certain entities or topics in the input video, or target audience of the resulting video variant.
   * Users may also use the *Target duration* slider to set their desired target duration.
   * Users can then click `Generate` to generate variants accordingly, which will query language models on Vertex AI with a detailed script of the video to generate potential variants that fulfill the optional user-provided prompt and target duration.
 * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments.

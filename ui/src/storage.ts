@@ -61,7 +61,9 @@ export class StorageManager {
       return [];
     }
     if (delimiter) {
-      return result.prefixes.map((e: string) => e.split('/')[0]);
+      return result.prefixes.map(
+        (e: string) => e.replace(prefix ?? '', '').split('/')[0]
+      );
     }
     return result.items.map((e: GoogleCloud.Storage.Objects) => e.name);
   }

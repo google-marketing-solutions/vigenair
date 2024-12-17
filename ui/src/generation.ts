@@ -67,21 +67,12 @@ export class GenerationHelper {
       gcsFolder,
       settings.duration
     );
-
-    const promptPart = settings.negativePrompt
-      ? CONFIG.vertexAi.generationPromptUserInstructionsNegation
-      : CONFIG.vertexAi.generationPromptUserInstructions;
     const generationPrompt = CONFIG.vertexAi.generationPrompt
-      .replace(
-        '        {{userPromptPlaceholder}}\n',
-        settings.prompt
-          ? `${promptPart.replace('{{userPrompt}}', settings.prompt)}\n`
-          : settings.prompt
-      )
-      .replace('{{desiredDuration}}', String(duration))
-      .replace('{{expectedDurationRange}}', expectedDurationRange)
-      .replace('{{videoLanguage}}', videoLanguage)
-      .replace('{{videoScript}}', videoScript);
+      .replace('{{{{userPrompt}}}}', settings.prompt)
+      .replace('{{{{desiredDuration}}}}', String(duration))
+      .replace('{{{{expectedDurationRange}}}}', expectedDurationRange)
+      .replace('{{{{videoLanguage}}}}', videoLanguage)
+      .replace('{{{{videoScript}}}}', videoScript);
 
     return generationPrompt;
   }
@@ -183,7 +174,7 @@ export class GenerationHelper {
 
       const results = response.split('## Combination').filter(Boolean);
       const regex =
-        /.*Title\s?:\**(?<title>.*)\n+\**Scenes\s?:\**(?<scenes>.*)\n+\**Reasoning\s?:\**(?<description>.*)\n+\**Score\s?:\**(?<score>.*)\n+\**ABCD\s?:\**\n+(?<reasoning>[\w\W\s\S\d\D]*)/ims;
+        /.*Title\s?:\**(?<title>.*)\n+\**Scenes\s?:\**(?<scenes>.*)\n+\**Reasoning\s?:\**(?<description>.*)\n+\**Score\s?:\**(?<score>.*)\n+\**Duration\s?:\**(?<duration>.*)\n+\**ABCD\s?:\**\n+(?<reasoning>[\w\W\s\S\d\D]*)/ims;
 
       results.forEach((result, index) => {
         const matches = result.match(regex);
@@ -194,6 +185,7 @@ export class GenerationHelper {
               scenes: string;
               description: string;
               score: string;
+              duration: string;
               reasoning: string;
             };
           const trimmedScenes = String(scenes)

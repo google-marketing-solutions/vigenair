@@ -54,6 +54,14 @@ function getRunsFromGcs() {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getRendersFromGcs(gcsFolder: string) {
+  const combosFolders = StorageManager.listObjects('/', `${gcsFolder}/`).filter(
+    folderName => folderName.endsWith('-combos')
+  );
+  return combosFolders;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getUserAuthToken() {
   return ScriptUtil.getOAuthToken();
 }
@@ -103,7 +111,10 @@ function generatePreviews(
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
-  const folder = `${gcsFolder}/${Date.now()}-combos`;
+  const queueNamePrefix = renderQueue.queueName
+    ? `${renderQueue.queueName}${CONFIG.videoFolderNameSeparator}`
+    : '';
+  const folder = `${gcsFolder}/${queueNamePrefix}${Date.now()}-combos`;
 
   if (renderQueue.squareCropAnalysis) {
     const encodedSquareCropCommands = Utilities.base64Encode(

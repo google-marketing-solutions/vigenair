@@ -27,7 +27,6 @@ export interface GenerationSettings {
   prompt: string;
   duration: number;
   demandGenAssets: boolean;
-  negativePrompt: boolean;
 }
 
 export interface AvSegment {
@@ -59,6 +58,11 @@ export interface PreviousRunsResponse {
   runs: string[];
 }
 
+export interface PreviousRender {
+  value: string;
+  displayName: string;
+}
+
 export interface RenderSettings {
   generate_image_assets: boolean;
   generate_text_assets: boolean;
@@ -66,11 +70,12 @@ export interface RenderSettings {
   use_music_overlay: boolean;
   use_continuous_audio: boolean;
   fade_out: boolean;
-  overlay_type: OverlayType;
+  overlay_type?: OverlayType;
 }
 
 export interface RenderQueue {
   queue: RenderQueueVariant[];
+  queueName: string;
   squareCropAnalysis: any;
   verticalCropAnalysis: any;
   sourceDimensions: { w: number; h: number };
@@ -170,6 +175,7 @@ export interface ApiCalls {
     settings: PreviewSettings
   ): Observable<GeneratePreviewsResponse>;
   getRunsFromGcs(): Observable<PreviousRunsResponse>;
+  getRendersFromGcs(gcsFolder: string): Observable<string[]>;
   renderVariants(
     gcsFolder: string,
     renderQueue: RenderQueue
