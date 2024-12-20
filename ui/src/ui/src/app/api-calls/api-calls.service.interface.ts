@@ -183,12 +183,17 @@ export interface ApiCalls {
   getGcsFolderPath(folder: string): Observable<string>;
   getWebAppUrl(): Observable<string>;
   regenerateTextAsset(
-    gcsFolder: string,
     variantVideoPath: string,
-    textAsset: VariantTextAsset
+    textAsset: VariantTextAsset,
+    textAssetLanguage: string
   ): Observable<VariantTextAsset>;
   storeApprovalStatus(
     gcsFolder: string,
     combos: RenderedVariant[]
   ): Observable<boolean>;
+  getVideoLanguage(gcsFolder: string): Observable<string>;
+  generateTextAssets(
+    variantVideoPath: string,
+    textAssetsLanguage: string
+  ): Observable<VariantTextAsset[]>;
 }

@@ -296,9 +296,9 @@ export class ApiCallsService implements ApiCalls {
   }
 
   regenerateTextAsset(
-    gcsFolder: string,
     variantVideoPath: string,
-    textAsset: VariantTextAsset
+    textAsset: VariantTextAsset,
+    textAssetLanguage: string
   ): Observable<VariantTextAsset> {
     return new Observable<VariantTextAsset>(subscriber => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -313,10 +313,10 @@ export class ApiCallsService implements ApiCalls {
           });
         })
         .withFailureHandler((error: Error) => {
-          console.error('Could not regenerate text assets! Error: ', error);
+          console.error('Could not regenerate text asset! Error: ', error);
           subscriber.error(error);
         })
-        .regenerateTextAsset(gcsFolder, variantVideoPath, textAsset);
+        .regenerateTextAsset(variantVideoPath, textAsset, textAssetLanguage);
     }).pipe(
       retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
     );
@@ -342,5 +342,57 @@ export class ApiCallsService implements ApiCalls {
         })
         .storeApprovalStatus(folder, combos);
     });
+  }
+
+  getVideoLanguage(gcsFolder: string): Observable<string> {
+    return new Observable<string>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((videoLanguage: string) => {
+          this.ngZone.run(() => {
+            subscriber.next(videoLanguage);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Could not retrieve the video language! Error: ',
+            error
+          );
+          subscriber.error(error);
+        })
+        .getVideoLanguage(gcsFolder);
+    }).pipe(
+      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    );
+  }
+
+  generateTextAssets(
+    variantVideoPath: string,
+    textAssetsLanguage: string
+  ): Observable<VariantTextAsset[]> {
+    return new Observable<VariantTextAsset[]>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((textAssets: VariantTextAsset[]) => {
+          this.ngZone.run(() => {
+            textAssets.forEach(textAsset => {
+              textAsset.approved = true;
+              textAsset.editable = false;
+            });
+            subscriber.next(textAssets);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error('Could not generate text assets! Error: ', error);
+          subscriber.error(error);
+        })
+        .generateTextAssets(variantVideoPath, textAssetsLanguage);
+    }).pipe(
+      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    );
   }
 }

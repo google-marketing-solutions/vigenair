@@ -24,6 +24,9 @@ import {
 } from './ui/src/app/api-calls/api-calls.service.interface';
 import { VertexHelper } from './vertex';
 
+const GENERATE_TEXT_ASSETS_REGEX =
+  /.*Headline\s?:\**(?<headline>.*)\n+\**Description\s?:\**(?<description>.*)/ims;
+
 export interface AvSegment {
   av_segment_id: number;
   description: string;
@@ -57,9 +60,7 @@ export class GenerationHelper {
     gcsFolder: string,
     settings: GenerationSettings
   ): string {
-    const videoLanguage =
-      (StorageManager.loadFile(`${gcsFolder}/language.txt`, true) as string) ||
-      CONFIG.defaultVideoLanguage;
+    const videoLanguage = GenerationHelper.getVideoLanguage(gcsFolder);
     const duration = settings.duration;
     const expectedDurationRange =
       GenerationHelper.calculateExpectedDurationRange(duration);
@@ -75,6 +76,13 @@ export class GenerationHelper {
       .replace('{{{{videoScript}}}}', videoScript);
 
     return generationPrompt;
+  }
+
+  static getVideoLanguage(gcsFolder: string): string {
+    return (
+      (StorageManager.loadFile(`${gcsFolder}/language.txt`, true) as string) ||
+      CONFIG.defaultVideoLanguage
+    );
   }
 
   static calculateExpectedDurationRange(duration: number): string {
@@ -251,15 +259,18 @@ export class GenerationHelper {
   }
 
   static generateTextAsset(
-    gcsFolder: string,
     variantVideoPath: string,
-    textAsset: VariantTextAsset
+    textAsset: VariantTextAsset,
+    textAssetLanguage: string
   ): VariantTextAsset {
-    const videoLanguage =
-      (StorageManager.loadFile(`${gcsFolder}/language.txt`, true) as string) ||
-      CONFIG.defaultVideoLanguage;
-    const generationPrompt = CONFIG.vertexAi.textAssetGenerationPrompt
-      .replace('{{videoLanguage}}', videoLanguage)
+    const generationPrompt = CONFIG.vertexAi.textAssetsGenerationPrompt
+      .replace('{{videoLanguage}}', textAssetLanguage)
+      .replace('{{desiredCount}}', '1')
+      .replace('3. ', '4. ')
+      .replace(
+        '{{badExamplePromptPart}}',
+        CONFIG.textAssetsBadExamplePromptPart
+      )
       .replace('{{headline}}', textAsset.headline)
       .replace('{{description}}', textAsset.description);
 
@@ -268,9 +279,8 @@ export class GenerationHelper {
       `gs:/${decodeURIComponent(variantVideoPath)}`
     );
     AppLogger.info(`GenerateTextAsset Response: ${response}`);
-    const regex =
-      /.*Headline\s?:\**(?<headline>.*)\n+\**Description\s?:\**(?<description>.*)/ims;
-    const matches = response.match(regex);
+    const result = response.split('## Ad').filter(Boolean)[0];
+    const matches = result.match(GENERATE_TEXT_ASSETS_REGEX);
     if (matches) {
       const { headline, description } = matches.groups as {
         headline: string;
@@ -285,5 +295,52 @@ export class GenerationHelper {
       AppLogger.warn(message);
       throw new Error(message);
     }
+  }
+
+  static generateTextAssets(
+    variantVideoPath: string,
+    textAssetsLanguage: string
+  ) {
+    const count = 5;
+    const generationPrompt = CONFIG.vertexAi.textAssetsGenerationPrompt
+      .replace('{{videoLanguage}}', textAssetsLanguage)
+      .replace('{{desiredCount}}', String(count))
+      .replace('{{badExamplePromptPart}}\n    ', '');
+
+    const textAssets: VariantTextAsset[] = [];
+    let iteration = 0;
+
+    while (textAssets.length < count) {
+      iteration++;
+      const response = VertexHelper.generate(
+        generationPrompt,
+        `gs:/${decodeURIComponent(variantVideoPath)}`
+      );
+      AppLogger.info(`GenerateTextAssets Response: ${response}`);
+
+      const results = response.split('## Ad').filter(Boolean);
+
+      for (const result of results) {
+        const matches = result.match(GENERATE_TEXT_ASSETS_REGEX);
+        if (matches) {
+          const { headline, description } = matches.groups as {
+            headline: string;
+            description: string;
+          };
+          textAssets.push({
+            headline: String(headline).trim(),
+            description: String(description).trim(),
+          });
+          if (textAssets.length === count) {
+            break;
+          }
+        } else {
+          AppLogger.warn(
+            `WARNING - Received an incomplete response for iteration #${iteration} from the API!\nResponse: ${response}`
+          );
+        }
+      }
+    }
+    return textAssets;
   }
 }

@@ -338,34 +338,60 @@ limitations under the License.
         </div>
       </div>
       <div class="row">
-        <mat-chip-set>
-          <mat-chip disableRipple [ngClass]="transcriptStatus">
-            <mat-icon
-              matChipAvatar
-              fontIcon="{{ transcriptStatus }}"
-            ></mat-icon>
-            Transcribing voice-over
-          </mat-chip>
-          <mat-chip disableRipple [ngClass]="analysisStatus">
-            <mat-icon matChipAvatar fontIcon="{{ analysisStatus }}"></mat-icon>
-            Analysing video elements
-          </mat-chip>
-          <mat-chip disableRipple [ngClass]="segmentsStatus">
-            <mat-icon matChipAvatar fontIcon="{{ segmentsStatus }}"></mat-icon>
-            Analysing video segments
-          </mat-chip>
-          <mat-chip
-            *ngIf="rendering"
-            disableRipple
-            [ngClass]="combinationStatus"
-          >
-            <mat-icon
-              matChipAvatar
-              fontIcon="{{ combinationStatus }}"
-            ></mat-icon>
-            Rendering video variants
-          </mat-chip>
-        </mat-chip-set>
+        <div
+          style="margin-left: auto; margin-right: 150px"
+          *ngIf="variants && segmentModeToggle.value === 'preview'"
+        >
+          Duration:
+          <mat-chip>{{ calculateSelectedSegmentsDuration() }}s</mat-chip>
+        </div>
+        <div
+          [style.margin-left]="
+            variants && segmentModeToggle.value === 'preview' ? 'auto' : ''
+          "
+          [style.margin-right]="
+            variants && segmentModeToggle.value === 'preview' ? '200px' : ''
+          "
+        >
+          <mat-chip-set>
+            <mat-chip disableRipple [ngClass]="transcriptStatus">
+              <mat-icon
+                matChipAvatar
+                fontIcon="{{ transcriptStatus }}"
+              ></mat-icon>
+              Transcribing voice-over
+            </mat-chip>
+            <mat-chip disableRipple [ngClass]="analysisStatus">
+              <mat-icon
+                matChipAvatar
+                fontIcon="{{ analysisStatus }}"
+              ></mat-icon>
+              Analysing video elements
+            </mat-chip>
+            <mat-chip disableRipple [ngClass]="segmentsStatus">
+              <mat-icon
+                matChipAvatar
+                fontIcon="{{ segmentsStatus }}"
+              ></mat-icon>
+              Analysing video segments
+            </mat-chip>
+            <mat-chip
+              *ngIf="rendering"
+              disableRipple
+              [ngClass]="combinationStatus"
+            >
+              <mat-icon
+                matChipAvatar
+                fontIcon="{{ combinationStatus }}"
+              ></mat-icon>
+              Rendering video variants
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+        <div
+          style="margin-left: auto"
+          *ngIf="variants && segmentModeToggle.value === 'preview'"
+        ></div>
       </div>
       <mat-divider></mat-divider>
       <div class="row" style="gap: 16px">
@@ -753,6 +779,7 @@ limitations under the License.
         mat-raised-button
         color="primary"
         (click)="renderVariants()"
+        [disabled]="loading"
       >
         <mat-icon>rocket_launch</mat-icon>Render
       </button>

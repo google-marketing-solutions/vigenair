@@ -131,3 +131,11 @@ mat-table {
 .text-actions span {
   cursor: pointer;
 }
+
+.text-assets-row {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: -10px;
+  margin-top: -6px;
+  width: 100%;
+}

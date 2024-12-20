@@ -180,14 +180,25 @@ function getWebAppUrl(): string {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function regenerateTextAsset(
-  gcsFolder: string,
   variantVideoPath: string,
-  textAsset: VariantTextAsset
+  textAsset: VariantTextAsset,
+  textAssetLanguage: string
 ): VariantTextAsset {
   return GenerationHelper.generateTextAsset(
-    gcsFolder,
     variantVideoPath,
-    textAsset
+    textAsset,
+    textAssetLanguage
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function generateTextAssets(
+  variantVideoPath: string,
+  textAssetsLanguage: string
+): VariantTextAsset[] {
+  return GenerationHelper.generateTextAssets(
+    variantVideoPath,
+    textAssetsLanguage
   );
 }
 
@@ -207,6 +218,11 @@ function storeApprovalStatus(
     'application/json'
   );
   return true;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getVideoLanguage(gcsFolder: string) {
+  return GenerationHelper.getVideoLanguage(gcsFolder);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

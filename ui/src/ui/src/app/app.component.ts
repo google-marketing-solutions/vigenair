@@ -467,6 +467,7 @@ export class AppComponent {
     this.previewVideoElem.nativeElement.pause();
     this.videoMagicPanel.close();
     this.videoCombosPanel.open();
+    this.combos = undefined;
     this.apiCallsService
       .getFromGcs(`${folder}/combos.json`, CONFIG.retryDelay, this.maxRetries)
       .subscribe({
@@ -1270,5 +1271,15 @@ export class AppComponent {
     this.avSegments?.forEach((segment: AvSegment) => {
       segment.selected = this.allSegmentsToggle;
     });
+  }
+
+  calculateSelectedSegmentsDuration() {
+    return this.avSegments
+      ?.reduce(
+        (sum: number, segment: any) =>
+          segment.selected ? sum + segment.duration_s : sum,
+        0
+      )
+      .toFixed(2);
   }
 }

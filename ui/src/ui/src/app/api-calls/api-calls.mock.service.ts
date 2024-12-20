@@ -152,9 +152,9 @@ export class ApiCallsService implements ApiCalls {
     return of('');
   }
   regenerateTextAsset(
-    gcsFolder: string,
     variantVideoPath: string,
-    textAsset: VariantTextAsset
+    textAsset: VariantTextAsset,
+    textAssetLanguage: string
   ): Observable<VariantTextAsset> {
     return new Observable(subscriber => {
       setTimeout(() => {
@@ -178,6 +178,36 @@ export class ApiCallsService implements ApiCalls {
       setTimeout(() => {
         this.ngZone.run(() => {
           subscriber.next(true);
+          subscriber.complete();
+        });
+      }, 1000);
+    });
+  }
+  getVideoLanguage(gcsFolder: string): Observable<string> {
+    return new Observable(subscriber => {
+      this.ngZone.run(() => {
+        subscriber.next('German');
+        subscriber.complete();
+      });
+    });
+  }
+  generateTextAssets(
+    variantVideoPath: string,
+    textAssetsLanguage: string
+  ): Observable<VariantTextAsset[]> {
+    return new Observable(subscriber => {
+      setTimeout(() => {
+        this.ngZone.run(() => {
+          const textAssets = [];
+          for (let i = 0; i < 5; i++) {
+            textAssets.push({
+              headline: `NEW headline ${i + 1} in ${textAssetsLanguage}.`,
+              description: `NEW description ${i + 1} in ${textAssetsLanguage}`,
+              approved: true,
+              editable: false,
+            });
+          }
+          subscriber.next(textAssets);
           subscriber.complete();
         });
       }, 1000);

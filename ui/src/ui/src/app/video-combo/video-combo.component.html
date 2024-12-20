@@ -156,8 +156,29 @@ limitations under the License.
     class="row"
     style="flex-direction: column; padding-right: 8px"
   >
-    <div>
-      <span class="assets-header">Text assets</span>
+    <div class="text-assets-row">
+      <div style="margin-right: auto"></div>
+      <div>
+        <span class="assets-header">Text assets</span>
+      </div>
+      <div style="margin-left: auto">
+        <mat-form-field appearance="outline" style="margin-right: 16px">
+          <mat-label>Target Language</mat-label>
+          <input matInput [(ngModel)]="textAssetsLanguage" />
+        </mat-form-field>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="generateTextAssets()"
+          [disabled]="!textAssetsLanguage || loading || comboLoading"
+        >
+          <mat-icon fontIcon="refresh">
+            <span class="cdk-visually-hidden"
+              >Regenerate all text assets</span
+            > </mat-icon
+          >Regenerate all
+        </button>
+      </div>
     </div>
     <mat-progress-bar
       *ngIf="comboLoading"

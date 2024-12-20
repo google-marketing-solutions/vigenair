@@ -83,6 +83,7 @@ export class VideoComboComponent implements AfterViewInit {
   marked = marked;
   images: EntityApproval[] = [];
   selectedFormat: FormatType = 'horizontal';
+  textAssetsLanguage = '';
 
   constructor(
     private snackBar: MatSnackBar,
@@ -105,7 +106,16 @@ export class VideoComboComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    this.getTextAssetsLanguage();
     this.loadVideo();
+  }
+
+  getTextAssetsLanguage() {
+    this.apiCallsService
+      .getVideoLanguage(this.gcsFolder)
+      .subscribe((videoLanguage: string) => {
+        this.textAssetsLanguage = videoLanguage;
+      });
   }
 
   regenerateText(textAsset: VariantTextAsset) {
@@ -113,12 +123,12 @@ export class VideoComboComponent implements AfterViewInit {
       this.comboLoading = true;
       this.apiCallsService
         .regenerateTextAsset(
-          this.gcsFolder,
           this.combo.variants![this.selectedFormat]!.entity.replace(
             CONFIG.cloudStorage.authenticatedEndpointBase,
             ''
           ),
-          textAsset
+          textAsset,
+          this.textAssetsLanguage
         )
         .subscribe({
           next: (generatedTextAsset: VariantTextAsset) => {
@@ -151,6 +161,27 @@ export class VideoComboComponent implements AfterViewInit {
       .onAction()
       .subscribe(() => {
         this.snackBar.dismiss();
+      });
+  }
+
+  generateTextAssets() {
+    this.loading = true;
+    this.comboLoading = true;
+    this.apiCallsService
+      .generateTextAssets(
+        this.combo.variants![this.selectedFormat]!.entity.replace(
+          CONFIG.cloudStorage.authenticatedEndpointBase,
+          ''
+        ),
+        this.textAssetsLanguage
+      )
+      .subscribe({
+        next: (generatedTextAssets: VariantTextAsset[]) => {
+          this.loading = false;
+          this.comboLoading = false;
+          this.combo!.texts = generatedTextAssets;
+        },
+        error: (err: Error) => this.failHandler(err),
       });
   }
 }

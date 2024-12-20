@@ -33,8 +33,10 @@ limitations under the License.
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
 * [December 2024]
-  * `frontend`: Added possibility to load previously rendered videos via a new dropdown. You can now also specify a name for each render job which will be displayed alongside the render timestamp.
+  * `frontend`: Added functionality to generate Demand Gen text assets in a desired target language. Read more [here](#6-output-videos).
+  * `frontend`: Added possibility to load previously rendered videos via a new dropdown. You can now also specify a name for each render job which will be displayed alongside the render timestamp. Read more [here](#43-loading-previously-rendered-videos).
   * `frontend`: Added checkbox to select/deselect all segments during variants preview.
+  * `frontend`: During variants generation, users can now preview the total duration of their variant directly as they are selecting/deselecting segments.
   * `frontend`: The ABCDs evaluation section per variant may now additionally include recommendations on how to improve the video's content to make it more engaging.
   * `frontend`: Improved user instruction following for the variants generation prompt and simplified the input process; you no longer need a separate checkbox to include or exclude elements - just specify your requirements directly in the prompt.
   * `frontend` + `backend`: Added support for Gemini 2.0.
@@ -84,7 +86,7 @@ Please make sure you have fulfilled all prerequisites mentioned under [Requireme
     * First, enter your GCP Project ID.
     * Then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
         * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
-        * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domin to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
+        * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
 
     > Note: If you have already run the script and you notice that there was a typo in one of the inputs, or if you would like to change the Cloud region, GCS location, or the UI access settings for Google Workspace users, you **must** first run `git reset --hard` before rerunning `npm start`.
 
@@ -234,12 +236,13 @@ Users are now ready for combination. They can view the A/V segments and generate
   * Users can then click `Generate` to generate variants accordingly, which will query language models on Vertex AI with a detailed script of the video to generate potential variants that fulfill the optional user-provided prompt and target duration.
 * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments.
 
-  <center><img src='./img/variants.png' width="600px" alt="Vigenair UI: Variants preview" /></center>
+  <center><img src='./img/variants.png' width="800px" alt="Vigenair UI: Variants preview" /></center>
   <br />
 
   Each variant has the following information:
   * A title which is displayed in the variant's tab.
   * A duration, which is also displayed in the variant's tab.
+  * The total duration is also displayed below the segments list, so that users can preview the variant's duration as they select/deselect segments.
   * The list of A/V segments that make up the variant.
   * A description of the variant and what is happening in it.
   * An LLM-generated Score, from 1-5, representing how well the variant adheres to the input rules and guidelines, which default to a subset of [YouTubes ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/). Users are strongly encouraged to update this section of the generation prompt in [config.ts](ui/src/config.ts) to refer to their own brand voice and creative guidelines.
@@ -270,7 +273,15 @@ Users are now ready for combination. They can view the A/V segments and generate
 
   <center><img src='./img/reorder-segments.gif' alt="Vigenair's segment reordering feature" /></center>
 
-#### 4.3. Render Queue
+#### 4.3. Loading Previously Rendered Videos
+
+Users may also choose to skip the variants generation and rendering process and directly display previously rendered videos using the "Load rendered videos" dropdown.
+
+<center><img src='./img/load-rendered.png' width="600px" alt="Vigenair UI: Load previously rendered videos" /></center>
+
+The values displayed in the dropdown represent the optional custom name that the user may have provided when building their render queue (see [Rendering](#5-rendering)), along with the date and time of rendering (which is added automatically, so users don't need to manually input this information).
+
+#### 4.4. Render Queue
 
 Desired variants can be added to the render queue along with the their associated render settings:
 
@@ -284,13 +295,13 @@ Desired variants can be added to the render queue along with the their associate
 
 #### 5. Rendering
 
-Clicking on the `Render` button inside the render queue will render the variants in their desired formats and settings via the Combiner service Cloud Function (writing `render.json` to GCS, which serves as the input to the service, and the output is a `combos.json` file. Both files, along with the *rendered* variants, are stored in a `<timestamp>-combos` subfolder below the root video folder).
+Clicking on the `Render` button inside the render queue will render the variants in their desired formats and settings via the Combiner service Cloud Function (writing `render.json` to GCS, which serves as the input to the service, and the output is a `combos.json` file. Both files, along with the *rendered* variants, are stored in a `<timestamp>-combos` subfolder below the root video folder). Users may also optionally specify a name for the render queue, which will be displayed in the "Load rendered videos" dropdown (see [Loading Previosuly Rendered Videos](#43-loading-previously-rendered-videos)).
 
 <center><img src='./img/rendering.png' width="600px" alt="Vigenair UI: Rendering videos" /></center>
 
 #### 6. Output Videos
 
-The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos - in their different formats and along with all associated assets - will be displayed. Users can preview the final videos and select the ones they would like to upload into Google Ads / YouTube. Users may also share a page of the Web App containing the rendered videos and associated image & text assets via the dedicated "share" icon in the top-right corner of the "Rendered videos" panel.
+The UI continuously queries GCS for updates. Once a `combos.json` is available, the final videos - in their different formats and along with all associated assets - will be displayed. Users can preview the final videos and select the ones they would like to upload into Google Ads / YouTube. Users may also share a page of the Web App containing the rendered videos and associated image & text assets via the dedicated "share" icon in the top-right corner of the "Rendered videos" panel. Finally, users may also regenerate Demand Gen text assets, either in bulk or individually, using the auto-detected language of the video or by specifying a desired target language.
 
 <center><img src='./img/rendered.png' width="600px" alt="Vigenair UI: Rendered videos display with 'share' icon" /></center>
 <center><img src='./img/rendered-assets.png' width="600px" alt="Vigenair UI: Rendered image and text assets" /></center>
