@@ -25,12 +25,19 @@ import {
   UserConfigManager,
 } from "./common.js";
 
+const config = UserConfigManager.getUserConfig();
+
 (async () => {
   const response = await prompts([
     {
       type: "text",
       name: "gcpProjectId",
-      message: "Enter your GCP Project ID (e.g. my-project-123):",
+      message: `Enter your GCP Project ID - [${
+        config.gcpProjectId
+          ? `Current: ${config.gcpProjectId}`
+          : "e.g. my-project-123"
+      }]:`,
+      initial: config.gcpProjectId ?? "",
       validate: (value: string) => (!value ? "Required" : true),
     },
     {
@@ -46,15 +53,23 @@ import {
       type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
         values.deployGcpComponents ? "text" : null,
       name: "gcpRegion",
-      message: `Enter a GCP region for the 'vigenair' service to run in (defaults to '${DEFAULT_GCP_REGION}'):`,
-      intitial: DEFAULT_GCP_REGION,
+      message: `Enter a GCP region for the 'vigenair' service to run in - [${
+        config.gcpRegion
+          ? `Current: ${config.gcpRegion}`
+          : `Default: ${DEFAULT_GCP_REGION}`
+      }]:`,
+      intitial: config.gcpRegion ?? DEFAULT_GCP_REGION,
     },
     {
       type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
         values.deployGcpComponents ? "text" : null,
       name: "gcsLocation",
-      message: `Enter a GCS location to store videos in (can be multi-region like 'us' or 'eu' or single region like 'us-central1' or 'europe-west4' - defaults to '${DEFAULT_GCS_LOCATION}'):`,
-      intitial: DEFAULT_GCS_LOCATION,
+      message: `Enter a GCS location to store videos in (can be multi-region like 'us' or 'eu' or single region like 'us-central1' or 'europe-west4') - [${
+        config.gcsLocation
+          ? `Current: ${config.gcsLocation}`
+          : `Default: ${DEFAULT_GCS_LOCATION}`
+      }]:`,
+      intitial: config.gcsLocation ?? DEFAULT_GCS_LOCATION,
     },
     {
       type: "toggle",
@@ -78,8 +93,12 @@ import {
       type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
         values.deployUi ? "text" : null,
       name: "vertexAiRegion",
-      message: `Enter a GCP region to access Vertex AI generative models. Refer to https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions for available regions (defaults to '${DEFAULT_GCP_REGION}'):`,
-      intitial: DEFAULT_GCP_REGION,
+      message: `Enter a GCP region to access Vertex AI generative models. Refer to https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions for available regions - [${
+        config.vertexAiRegion
+          ? `Current: ${config.vertexAiRegion}`
+          : `Default: ${DEFAULT_GCP_REGION}`
+      }]:`,
+      intitial: config.vertexAiRegion ?? DEFAULT_GCP_REGION,
     },
   ]);
   UserConfigManager.setUserConfig(response);

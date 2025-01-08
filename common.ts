@@ -24,6 +24,13 @@ export const DEFAULT_GCP_REGION = "us-central1";
 export const DEFAULT_GCS_LOCATION = "us";
 const GCS_BUCKET_NAME_SUFFIX = "-vigenair";
 
+interface Config {
+  gcpProjectId?: string;
+  gcpRegion?: string;
+  gcsLocation?: string;
+  vertexAiRegion?: string;
+}
+
 interface ConfigReplace {
   regex: string;
   replacement: string;
@@ -200,6 +207,23 @@ export class UserConfigManager {
     };
 
     console.log();
+    console.log("Reverting local changes...");
+    spawn.sync("git checkout -- ./service/.env.yaml", {
+      stdio: "inherit",
+      shell: true,
+    });
+    spawn.sync("git checkout -- ./service/deploy.sh", {
+      stdio: "inherit",
+      shell: true,
+    });
+    spawn.sync("git checkout -- ./ui/src/config.ts", {
+      stdio: "inherit",
+      shell: true,
+    });
+    spawn.sync("git checkout -- ./ui/appsscript.json", {
+      stdio: "inherit",
+      shell: true,
+    });
     console.log("Setting user configuration...");
     const gcpProjectId = response.gcpProjectId;
     const gcpRegion = response.gcpRegion || DEFAULT_GCP_REGION;
@@ -252,6 +276,22 @@ export class UserConfigManager {
         paths: ["./ui/src/config.ts"],
       });
     }
+    fs.writeFileSync(
+      ".config.json",
+      JSON.stringify({
+        gcpProjectId,
+        gcpRegion,
+        gcsLocation,
+        vertexAiRegion,
+      })
+    );
     console.log();
+  }
+
+  static getUserConfig(): Config {
+    if (fs.existsSync(".config.json")) {
+      return JSON.parse(fs.readFileSync(".config.json"));
+    }
+    return {};
   }
 }
