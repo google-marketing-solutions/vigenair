@@ -353,7 +353,15 @@ class Extractor:
         optimised_av_segments,
     )
     logging.info(
-        'SEGMENTS - Final optimised segments: %r',
+        'SEGMENTS - Optimised segments with descriptions and keywords: %r',
+        optimised_av_segments.to_json(orient='records'),
+    )
+    optimised_av_segments = self.enhance_av_segments(
+        video_file_name,
+        optimised_av_segments,
+    )
+    logging.info(
+        'SEGMENTS - Final enhanced segments: %r',
         optimised_av_segments.to_json(orient='records'),
     )
 
@@ -436,6 +444,80 @@ class Extractor:
             'segment_screenshot_uri': screenshot_paths,
         }
     )
+    return optimised_av_segments
+
+  def enhance_av_segments(
+      self,
+      video_file_path: str,
+      optimised_av_segments: pd.DataFrame,
+  ) -> pd.DataFrame:
+    """Enhances A/V segment descriptions and keywords to achieve more coherence.
+
+    Args:
+      video_file_path: Path to the input video file.
+      optimised_av_segments: The A/V segments data to be enhanced.
+
+    Returns:
+      The enhanced A/V segments data as a DataFrame.
+    """
+    descriptions = [
+        f'Scene: {index+1}\n{description.strip()}' for index, description in
+        enumerate(optimised_av_segments['description'].tolist())
+    ]
+    prompt = ''.join([
+        ConfigService.ENHANCE_SEGMENT_ANNOTATIONS_PROMPT,
+        '\n\n'.join(descriptions)
+    ])
+    rows = []
+    try:
+      response = self.vision_model.generate_content(
+          [
+              Part.from_uri(
+                  f'gs://{self.gcs_bucket_name}/{video_file_path}',
+                  mime_type='video/mp4'
+              ),
+              prompt,
+          ],
+          generation_config=ConfigService.ENHANCE_SEGMENT_ANNOTATIONS_CONFIG,
+          safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
+      )
+      if (
+          response.candidates and response.candidates[0].content.parts
+          and response.candidates[0].content.parts[0].text
+      ):
+        text = response.candidates[0].content.parts[0].text
+        results = list(filter(None, text.strip().split('\n\n')))
+        for result in results:
+          result = re.findall(
+              ConfigService.ENHANCE_SEGMENT_ANNOTATIONS_PATTERN, result,
+              re.MULTILINE
+          )
+          rows.append([entry.strip() for entry in result[0]])
+      else:
+        logging.warning('ANNOTATION - Could not enhance segments!')
+    # Execution should continue regardless of the underlying exception
+    # pylint: disable=broad-exception-caught
+    except Exception:
+      logging.exception(
+          'Encountered error while enhancing segment annotations!'
+      )
+
+    if rows:
+      enhanced_segments = pd.DataFrame(
+          rows, columns=[
+              'scene_number',
+              'old_description',
+              'new_description',
+              'keywords',
+          ]
+      )
+      optimised_av_segments['description'] = enhanced_segments['new_description'
+                                                              ]
+      optimised_av_segments['keywords'] = enhanced_segments['keywords']
+      logging.info(
+          'ANNOTATION - Successfully enhanced segment descriptions '
+          'and keywords!'
+      )
     return optimised_av_segments
 
 

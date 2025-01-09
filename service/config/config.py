@@ -21,7 +21,7 @@ Vigenair.
 import os
 
 import torch
-from vertexai.preview import generative_models
+from vertexai import generative_models
 
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', 'my-gcp-project')
 GCP_LOCATION = os.environ.get('GCP_LOCATION', 'us-central1')
@@ -195,3 +195,27 @@ TRANSCRIBE_AUDIO_CONFIG = {
     'top_p': 1,
 }
 TRANSCRIBE_AUDIO_PATTERN = '.*Language: ?(.*)\n*.*Confidence: ?(.*)\n*```csv\n(.*)```\n*```vtt\n(.*)```'
+
+ENHANCE_SEGMENT_ANNOTATIONS_CONFIG = {
+    'max_output_tokens': 8192,
+    'temperature': 1,
+    'top_p': 1,
+}
+ENHANCE_SEGMENT_ANNOTATIONS_PATTERN = 'Scene: (\d+)\nOld Description: (.*)\nNew Description: (.*)\nKeywords: (.*)'
+ENHANCE_SEGMENT_ANNOTATIONS_PROMPT = """Assume the role of an expert video ad script writer specializing in creating compelling and coherent narratives that maximize viewer engagement.
+You are provided with a video ad and a list of sequential scene descriptions which were extracted and analyzed separately.
+
+Your task is to understand the collective storyline from the video and individual scenes to evaluate whether they are coherent and effective.
+Ensure each scene logically follows the previous one, maintains a consistent tone and style, and avoids any plot holes or inconsistencies in character actions.
+You are not allowed to remove scenes even if their descriptions are inaccurate, instead, fix them by incorporating the necessary elements from the previous scenes.
+
+Output exactly as follows without any additional preamble:
+
+Scene: <scene number>
+Old Description: <the current description of the scene>
+New Description: <the new description of the scene which contains any corrections to the current one. If you are not going to change anything in the scene, output the "Old Description" value here>
+Keywords: <5 comma-separated keywords for the new scene description>
+
+Descriptions:
+
+"""
