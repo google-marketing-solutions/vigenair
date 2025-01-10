@@ -731,7 +731,13 @@ def _render_video_variant(
       }
   }
   if video_variant.render_settings.generate_image_assets:
+    StorageService.upload_gcs_dir(
+        source_directory=output_dir,
+        bucket_name=gcs_bucket_name,
+        target_dir=gcs_folder_path,
+    )
     assets = _generate_image_assets(
+        vision_model=vision_model,
         video_file_path=horizontal_combo_path,
         gcs_bucket_name=gcs_bucket_name,
         gcs_folder_path=gcs_folder_path,
@@ -774,6 +780,7 @@ def _render_video_variant(
           continuous_audio_select_filter=continuous_audio_select_filter,
       )
     rendered_paths[format_type] = _render_format(
+        vision_model=vision_model,
         input_video_path=horizontal_combo_path,
         output_path=output_dir,
         gcs_bucket_name=gcs_bucket_name,
@@ -865,6 +872,7 @@ def _get_variant_ffmpeg_commands(
 
 
 def _render_format(
+    vision_model: GenerativeModel,
     input_video_path: str,
     output_path: str,
     gcs_bucket_name: str,
@@ -878,6 +886,7 @@ def _render_format(
   """Renders a video variant in a specific format.
 
   Args:
+    vision_model: The generative vision model to use.
     input_video_path: The path to the input video to render.
     output_path: The path to output to.
     gcs_bucket_name: The name of the GCS bucket to upload to.
@@ -925,7 +934,13 @@ def _render_format(
       'path': format_name,
   }
   if generate_image_assets:
+    StorageService.upload_gcs_dir(
+        source_directory=output_path,
+        bucket_name=gcs_bucket_name,
+        target_dir=gcs_folder_path,
+    )
     assets = _generate_image_assets(
+        vision_model=vision_model,
         video_file_path=output_video_path,
         gcs_bucket_name=gcs_bucket_name,
         gcs_folder_path=gcs_folder_path,
@@ -1095,6 +1110,7 @@ def _generate_video_script(
 
 
 def _generate_image_assets(
+    vision_model: GenerativeModel,
     video_file_path: str,
     gcs_bucket_name: str,
     gcs_folder_path: str,
@@ -1105,6 +1121,7 @@ def _generate_image_assets(
   """Generates image ad assets for a video variant in a specific format.
 
   Args:
+    vision_model: The generative vision model to use.
     video_file_path: The path to the input video to use.
     gcs_bucket_name: The name of the GCS bucket to upload the assets to.
     gcs_folder_path: The path to the GCS folder to upload the assets to.
@@ -1125,30 +1142,32 @@ def _generate_image_assets(
   assets = []
   try:
     os.makedirs(image_assets_path, exist_ok=True)
-    Utils.execute_subprocess_commands(
-        cmds=[
-            'ffmpeg',
-            '-i',
-            video_file_path,
-            '-vf',
-            'thumbnail',
-            '-vsync',
-            'vfr',
-            str(pathlib.Path(image_assets_path, '%d.png')),
-        ],
-        description=(
-            f'extract image assets for {format_type} type for '
-            f'variant with id {variant_id} using ffmpeg'
-        ),
+    _extract_video_thumbnails(
+        video_file_path=video_file_path,
+        image_assets_path=image_assets_path,
+        variant_id=variant_id,
+        format_type=format_type,
+    )
+    _identify_and_extract_key_frames(
+        vision_model=vision_model,
+        video_file_path=video_file_path,
+        image_assets_path=image_assets_path,
+        gcs_bucket_name=gcs_bucket_name,
+        gcs_folder_path=gcs_folder_path,
+        output_path=output_path,
+        variant_id=variant_id,
+        format_type=format_type,
     )
     assets = [
         f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/'
         f'{parse.quote(gcs_folder_path)}/'
         f'{variant_folder}/{ConfigService.OUTPUT_COMBINATION_ASSETS_DIR}/'
-        f'{format_type}/{image_asset}'
-        for image_asset in os.listdir(image_assets_path)
-        if image_asset.endswith('.png')
+        f'{format_type}/{image_asset}' for image_asset in sorted(
+            os.listdir(image_assets_path), key=lambda asset:
+            int(asset.split('/')[-1].replace('.png', '').replace('.jpg', ''))
+        ) if image_asset.endswith('.png') or image_asset.endswith('.jpg')
     ]
+
     logging.info(
         'ASSETS - Generated %d image assets for variant %d in %s format',
         len(assets),
@@ -1163,6 +1182,110 @@ def _generate_image_assets(
         'in format %s! Continuing...', variant_id, format_type
     )
   return assets
+
+
+def _extract_video_thumbnails(
+    video_file_path: str,
+    image_assets_path: str,
+    variant_id: int,
+    format_type: str,
+):
+  """Extracts video thumbnails as image assets for a video in a specific format.
+
+  Args:
+    video_file_path: The path to the input video to use.
+    image_assets_path: The path to store image assets in.
+    variant_id: The id of the variant to render.
+    format_type: The type of the output format (horizontal, vertical, square).
+  """
+  Utils.execute_subprocess_commands(
+      cmds=[
+          'ffmpeg',
+          '-i',
+          video_file_path,
+          '-vf',
+          'thumbnail',
+          '-vsync',
+          'vfr',
+          str(pathlib.Path(image_assets_path, '%d.png')),
+      ],
+      description=(
+          f'extract thumbnails for {format_type} type for '
+          f'variant with id {variant_id} using ffmpeg'
+      ),
+  )
+
+
+def _identify_and_extract_key_frames(
+    vision_model: GenerativeModel,
+    video_file_path: str,
+    image_assets_path: str,
+    gcs_bucket_name: str,
+    gcs_folder_path: str,
+    output_path: str,
+    variant_id: int,
+    format_type: str,
+):
+  """Identifies key frames via Gemini and extracts them from the given video.
+
+  Args:
+    vision_model: The generative vision model to use.
+    video_file_path: The path to the input video to use.
+    image_assets_path: The path to store image assets in.
+    gcs_bucket_name: The name of the GCS bucket to upload the assets to.
+    gcs_folder_path: The path to the GCS folder to upload the assets to.
+    output_path: The path to output to.
+    variant_id: The id of the variant to render.
+    format_type: The type of the output format (horizontal, vertical, square).
+  """
+  results = []
+  try:
+    gcs_video_file_path = video_file_path.replace(f'{output_path}/', '')
+    response = vision_model.generate_content(
+        [
+            Part.from_uri(
+                f'gs://{gcs_bucket_name}/{gcs_folder_path}/'
+                f'{gcs_video_file_path}',
+                mime_type='video/mp4',
+            ),
+            ConfigService.KEY_FRAMES_PROMPT,
+        ],
+        generation_config=ConfigService.KEY_FRAMES_CONFIG,
+        safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
+    )
+    if (
+        response.candidates and response.candidates[0].content.parts
+        and response.candidates[0].content.parts[0].text
+    ):
+      text = response.candidates[0].content.parts[0].text
+      results = re.findall(ConfigService.KEY_FRAMES_PATTERN, text, re.MULTILINE)
+    else:
+      logging.warning('ASSETS - Could not identify key frames!')
+  # Execution should continue regardless of the underlying exception
+  # pylint: disable=broad-exception-caught
+  except Exception:
+    logging.exception('Encountered error while identifying key frames!')
+
+  if results:
+    for index, key_frame_timestamp in enumerate(results):
+      Utils.execute_subprocess_commands(
+          cmds=[
+              'ffmpeg',
+              '-ss',
+              key_frame_timestamp,
+              '-i',
+              video_file_path,
+              '-frames:v',
+              '1',
+              '-q:v',
+              '2',
+              str(pathlib.Path(image_assets_path, f'{index+1}.jpg')),
+          ],
+          description=(
+              f'extract key frames for {format_type} type for '
+              f'variant with id {variant_id} using ffmpeg'
+          ),
+      )
 
 
 def _group_consecutive_segments(

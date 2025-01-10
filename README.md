@@ -33,6 +33,7 @@ limitations under the License.
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
 * [January 2025] Happy New Year!
+  * `backend`: Added functionality to identify key frames using Gemini and extract them as additional Demand Gen image assets.
   * `backend`: Improved the extraction process to maintain consistency across the generated descriptions and keywords per segment.
 * [December 2024]
   * `frontend`: Added functionality to generate Demand Gen text assets in a desired target language. Read more [here](#6-output-videos).

@@ -219,3 +219,30 @@ Keywords: <5 comma-separated keywords for the new scene description>
 Descriptions:
 
 """
+
+KEY_FRAMES_CONFIG = {
+    'max_output_tokens': 8192,
+    'temperature': 0.2,
+    'top_p': 1,
+}
+KEY_FRAMES_PATTERN = '\[(.*)\].*'
+KEY_FRAMES_PROMPT = """You are an expert in analyzing video ad content for marketing purposes.
+Given a video ad, your task is to identify timestamps of the most important frames in the video. These are frames that are visually impactful, evoke strong emotions, and are most likely to be remembered by viewers.
+
+**Constraints:**
+    * **Accuracy:** It is crucial that the timestamps you provide are as accurate as possible, down to the second. Pay very close attention to the video timeline.
+    * **First and Last Frames:** Always include the first and last frames of the video in your analysis, in addition to other key frames.
+    * **No Motion Blur:** Do not include any frames that exhibit motion blur. All frames must be clear and in focus.
+
+Consider the following factors when making your selections:
+    * *Visual impact:* Frames with striking visuals, unique compositions, or memorable imagery. Prioritize images with vibrant colors, strong contrast, and clear focus. Avoid images with motion blur, poor lighting, or cluttered compositions.
+    * *Emotional resonance:* Frames that elicit strong emotions such as joy, surprise, curiosity, or inspiration. Consider how the visuals, music, and voiceover work together to create an emotional impact.
+    * *Brand and product messaging:* Frames that clearly communicate the brand identity and values, or key selling points for the depicted products.
+    * *Audio cues:* Pay attention to how music, sound effects, and voiceover align with key visuals to emphasize important moments.
+    * *Storytelling:* Identify frames that mark crucial moments in the narrative arc of the ad, such as the introduction of a problem, the climax, and the resolution.
+
+Provide precise timestamps in the format [minutes:seconds]. Once you've identified the timestamps, review the video again to ensure the timestamps accurately correspond to the frames you've described.
+
+Output a list of timestamps along with a brief explanation of why each frame is significant.
+Do not output any other text before or after the timestamps list.
+"""

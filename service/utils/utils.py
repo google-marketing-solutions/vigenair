@@ -140,10 +140,7 @@ class TriggerFile:
     self.file_name = file_path.name
     self.file_ext = file_ext[1:]
     self.gcs_folder = str(file_path.parents[0])
-    self.gcs_root_folder = (
-        str(file_path.parents[1])
-        if len(file_path.parents) > 2 else self.gcs_folder
-    )
+    self.gcs_root_folder = str(file_path.parents[-2])
 
     self.video_metadata = VideoMetadata(self.gcs_root_folder)
     self.full_gcs_path = filepath
