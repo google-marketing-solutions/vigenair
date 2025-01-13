@@ -80,7 +80,9 @@ export class ApiCallsService implements ApiCalls {
   ): Observable<string[]> {
     const videoFolderTranscriptionSuffix =
       CONFIG.defaultTranscriptionService.charAt(0);
-    const folder = `${file.name}${CONFIG.videoFolderNameSeparator}${analyseAudio ? videoFolderTranscriptionSuffix : CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
+    // eslint-disable-next-line no-useless-escape
+    const sanitisedFileName = file.name.replace(/[#\[\]*?:"<>|]/g, ''); // See https://cloud.google.com/storage/docs/objects#naming
+    const folder = `${sanitisedFileName}${CONFIG.videoFolderNameSeparator}${analyseAudio ? videoFolderTranscriptionSuffix : CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
     const fullName = encodeURIComponent(`${folder}/${filename}`);
     const url = `${CONFIG.cloudStorage.uploadEndpointBase}/b/${CONFIG.cloudStorage.bucket}/o?uploadType=media&name=${fullName}`;
 
