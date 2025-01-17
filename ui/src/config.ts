@@ -61,25 +61,11 @@ export const CONFIG = {
 
     **Phase 2: Expert Critique (Rigorous Evaluation and Recommendations)**
 
-    1.  **Role:** Now, act as a highly analytical critic (140 IQ) evaluating each generated script combination against the following criteria, and *where applicable*, provide *recommendations* for improvement:
-        *   **Criterion A (Impactful Opening):** Does the combination begin with compelling visuals, fast pacing, tight framing, and/or off-screen speech within the first 5 seconds to immediately grab attention?
-            *   **Recommendation (If Applicable):** If the opening is deemed weak (e.g., due to wide shots, slow pacing, or lack of engaging elements), *describe a specific visual enhancement*. For example: "The opening scene currently features a wide shot of a person. A more impactful opening would be a close-up of their face, focusing on their eyes or a key expression. This would create immediate engagement with the viewer."
-        *   **Criterion B (Brand Visibility):** Does the brand's name, logo, product, tagline, or call-to-action appear prominently within the first or last 5 seconds to reinforce brand recognition?
-            *   **Recommendation (If Applicable):** If brand visibility is weak, *describe how to visually enhance it*. For example: "The brand logo appears small and in the background. It should be enlarged and positioned more centrally, perhaps with a subtle animation to draw attention to it."
-        *   **Criterion C (Human Connection):** Does the combination feature people and visible faces, ideally close-ups, within the first 5 seconds to create an emotional connection?
-            *   **Recommendation (If Applicable):** If human connection is lacking, *describe a visual improvement*. For example: "The opening lacks any human presence. Inserting a brief close-up of a smiling face in the first few seconds would establish an immediate emotional connection with the audience."
-        *   **Criterion D (Clear Call-to-Action):** Does the combination end with a clear and compelling on-screen call to action that motivates the target audience to engage?
-            *   **Recommendation (If Applicable):** If the call to action is weak, *describe how to visually strengthen it*. For example: "The call to action is displayed in small, plain text. It should be presented as a visually distinct button or graphic, perhaps with a contrasting color and a short animation to encourage clicks."
+    {{{{generationEvalPromptPart}}}}
 
     **Phase 3: Scoring and Justification (Detailed Analysis)**
 
-    1.  **Scoring Rubric (Use Precisely):**
-        *   **5 points (Excellent):** Fulfills *all* ABCD criteria, maintains a coherent message, includes all essential scenes, and falls within the {{expectedDurationRange}} second duration range.
-        *   **4 points (Good):** Fulfills *all* ABCD criteria and maintains a coherent message, but may slightly exceed the duration range or miss one less critical scene.
-        *   **3 points (Fair):** Fulfills *most* ABCD criteria but suffers from some incoherence due to mismatched text/speech or omits multiple important scenes.
-        *   **2 points (Poor):** Meets *some* ABCD criteria, lacks coherence, misses several crucial scenes, and significantly deviates from the duration range.
-        *   **1 point (Unacceptable):** Meets few or no ABCD criteria or includes *all* scenes from the original ad.
-    2.  **Justification:** Provide detailed reasoning for each score, citing specific examples from the combination to support your evaluation. Be precise and analytical.
+    {{{{generationScorePromptPart}}}}
 
     **Constraints (Strictly Enforce):**
         *   Each combination must include *more than one scene* but *never all scenes* from the original script.
@@ -108,6 +94,22 @@ export const CONFIG = {
 
 
     `,
+    generationEvalPromptPart: `1.  **Role:** Now, act as a highly analytical critic (140 IQ) evaluating each generated script combination against the following criteria, and *where applicable*, provide *recommendations* for improvement:
+    *   **Criterion A (Impactful Opening):** Does the combination begin with compelling visuals, fast pacing, tight framing, and/or off-screen speech within the first 5 seconds to immediately grab attention?
+        *   **Recommendation (If Applicable):** If the opening is deemed weak (e.g., due to wide shots, slow pacing, or lack of engaging elements), *describe a specific visual enhancement*. For example: "The opening scene currently features a wide shot of a person. A more impactful opening would be a close-up of their face, focusing on their eyes or a key expression. This would create immediate engagement with the viewer."
+    *   **Criterion B (Brand Visibility):** Does the brand's name, logo, product, tagline, or call-to-action appear prominently within the first or last 5 seconds to reinforce brand recognition?
+        *   **Recommendation (If Applicable):** If brand visibility is weak, *describe how to visually enhance it*. For example: "The brand logo appears small and in the background. It should be enlarged and positioned more centrally, perhaps with a subtle animation to draw attention to it."
+    *   **Criterion C (Human Connection):** Does the combination feature people and visible faces, ideally close-ups, within the first 5 seconds to create an emotional connection?
+        *   **Recommendation (If Applicable):** If human connection is lacking, *describe a visual improvement*. For example: "The opening lacks any human presence. Inserting a brief close-up of a smiling face in the first few seconds would establish an immediate emotional connection with the audience."
+    *   **Criterion D (Clear Call-to-Action):** Does the combination end with a clear and compelling on-screen call to action that motivates the target audience to engage?
+        *   **Recommendation (If Applicable):** If the call to action is weak, *describe how to visually strengthen it*. For example: "The call to action is displayed in small, plain text. It should be presented as a visually distinct button or graphic, perhaps with a contrasting color and a short animation to encourage clicks."`,
+    generationScorePromptPart: `1.  **Scoring Rubric (Use Precisely):**
+    *   **5 points (Excellent):** Fulfills *all* ABCD criteria, maintains a coherent message, includes all essential scenes, and falls within the {{expectedDurationRange}} second duration range.
+    *   **4 points (Good):** Fulfills *all* ABCD criteria and maintains a coherent message, but may slightly exceed the duration range or miss one less critical scene.
+    *   **3 points (Fair):** Fulfills *most* ABCD criteria but suffers from some incoherence due to mismatched text/speech or omits multiple important scenes.
+    *   **2 points (Poor):** Meets *some* ABCD criteria, lacks coherence, misses several crucial scenes, and significantly deviates from the duration range.
+    *   **1 point (Unacceptable):** Meets few or no ABCD criteria or includes *all* scenes from the original ad.
+2.  **Justification:** Provide detailed reasoning for each score, citing specific examples from the combination to support your evaluation. Be precise and analytical.`,
     textAssetsGenerationPrompt: `You are a leading digital marketer and an expert at crafting high-performing search ad headlines and descriptions that captivate users and drive conversions.
     Follow these instructions in order:
 

@@ -70,6 +70,8 @@ export class GenerationHelper {
     );
     const generationPrompt = CONFIG.vertexAi.generationPrompt
       .replace('{{{{userPrompt}}}}', settings.prompt)
+      .replace('{{{{generationEvalPromptPart}}}}', settings.evalPrompt)
+      .replace('{{{{generationScorePromptPart}}}}', settings.scorePrompt)
       .replace('{{{{desiredDuration}}}}', String(duration))
       .replace('{{{{expectedDurationRange}}}}', expectedDurationRange)
       .replace('{{{{videoLanguage}}}}', videoLanguage)

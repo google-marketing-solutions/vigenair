@@ -52,6 +52,7 @@ import { environment } from '../environments/environment';
 
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
+import { marked } from 'marked';
 import { CONFIG } from '../../../config';
 import { StringUtil } from '../../../string-util';
 import { TimeUtil } from '../../../time-util';
@@ -73,6 +74,8 @@ import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
+type PromptType = 'eval' | 'score';
+
 export type FramingDialogData = {
   weightsPersonFaceIndex: number;
   weightsTextIndex: number;
@@ -143,6 +146,8 @@ export class AppComponent {
   frameInterval?: number;
   currentSegmentId?: number;
   prompt = '';
+  evalPrompt = CONFIG.vertexAi.generationEvalPromptPart;
+  scorePrompt = CONFIG.vertexAi.generationScorePromptPart;
   duration = 0;
   step = 0;
   audioSettings = 'segment';
@@ -162,7 +167,6 @@ export class AppComponent {
   renderQueue: RenderQueueVariant[] = [];
   renderQueueJsonArray: string[] = [];
   renderQueueName = '';
-  negativePrompt = false;
   displayObjectTracking = true;
   moveCropArea = false;
   weightsTextIndex = 3;
@@ -183,6 +187,7 @@ export class AppComponent {
   maxRetries = CONFIG.maxRetries;
   showApprovalStatus = false;
   allSegmentsToggle = false;
+  marked = marked;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -203,6 +208,14 @@ export class AppComponent {
   @ViewChild('canvasDragElement')
   canvasDragElement?: ElementRef<HTMLDivElement>;
   @ViewChild('renderFormatsToggle') renderFormatsToggle!: MatButtonToggleGroup;
+  @ViewChild('evalPromptTextarea')
+  evalPromptTextarea?: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('scorePromptTextarea')
+  scorePromptTextarea?: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('evalPromptPlaceholder')
+  evalPromptPlaceholder?: ElementRef<HTMLDivElement>;
+  @ViewChild('scorePromptPlaceholder')
+  scorePromptPlaceholder?: ElementRef<HTMLDivElement>;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -725,6 +738,8 @@ export class AppComponent {
     this.apiCallsService
       .generateVariants(this.folder, {
         prompt: this.prompt,
+        evalPrompt: this.evalPrompt,
+        scorePrompt: this.scorePrompt,
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,
       })
@@ -1281,5 +1296,39 @@ export class AppComponent {
         0
       )
       .toFixed(2);
+  }
+
+  resetEvalPrompt() {
+    this.evalPrompt = CONFIG.vertexAi.generationEvalPromptPart;
+  }
+
+  resetScorePrompt() {
+    this.scorePrompt = CONFIG.vertexAi.generationScorePromptPart;
+  }
+
+  parseContentMarkdown(target: PromptType) {
+    if (target === 'eval') {
+      this.evalPromptTextarea!.nativeElement.style.display = 'none';
+      this.evalPromptPlaceholder!.nativeElement.innerHTML = marked.parse(
+        this.evalPrompt
+      ) as string;
+      this.evalPromptPlaceholder!.nativeElement.style.display = 'block';
+    } else {
+      this.scorePromptTextarea!.nativeElement.style.display = 'none';
+      this.scorePromptPlaceholder!.nativeElement.innerHTML = marked.parse(
+        this.scorePrompt
+      ) as string;
+      this.scorePromptPlaceholder!.nativeElement.style.display = 'block';
+    }
+  }
+
+  toggleContentDisplay(target: PromptType) {
+    if (target === 'eval') {
+      this.evalPromptTextarea!.nativeElement.style.display = 'block';
+      this.evalPromptPlaceholder!.nativeElement.style.display = 'none';
+    } else {
+      this.scorePromptTextarea!.nativeElement.style.display = 'block';
+      this.scorePromptPlaceholder!.nativeElement.style.display = 'none';
+    }
   }
 }

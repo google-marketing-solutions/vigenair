@@ -394,7 +394,7 @@ limitations under the License.
         ></div>
       </div>
       <mat-divider></mat-divider>
-      <div class="row" style="gap: 16px">
+      <div class="row" style="gap: 16px; margin-top: 16px">
         <div
           style="
             display: flex;
@@ -414,7 +414,7 @@ limitations under the License.
             ></textarea>
           </mat-form-field>
         </div>
-        <div style="display: flex; flex-direction: column; margin-top: -50px">
+        <div style="display: flex; flex-direction: column; margin-top: -16px">
           <div>
             <mat-label>Target duration:</mat-label>
             <mat-slider
@@ -438,6 +438,72 @@ limitations under the License.
             <mat-icon>auto_awesome</mat-icon>Generate variants
           </button>
         </div>
+      </div>
+      <div class="row" style="margin-top: 0px">
+        <mat-expansion-panel [disabled]="loading" style="width: 100%">
+          <mat-expansion-panel-header>
+            <mat-panel-title class="prompts-panel">
+              <mat-icon class="panel-icon">settings_suggest</mat-icon>
+              <span>Advanced settings</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <span class="notice-text prompt-notice-text"
+            >Use Markdown syntax for better results.</span
+          >
+          <div class="prompt-container">
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>Evaluation prompt part</mat-label>
+              <textarea
+                #evalPromptTextarea
+                matInput
+                class="prompt-textarea"
+                (blur)="parseContentMarkdown('eval')"
+                [(ngModel)]="evalPrompt"
+              >
+              </textarea>
+              <div
+                #evalPromptPlaceholder
+                class="prompt-placeholder"
+                contenteditable="true"
+                (focus)="toggleContentDisplay('eval')"
+                [innerHTML]="marked.parse(evalPrompt)"
+              ></div>
+            </mat-form-field>
+            <button
+              mat-icon-button
+              matTooltip="Reset prompt"
+              (click)="resetEvalPrompt()"
+            >
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+          <div class="prompt-container">
+            <mat-form-field style="margin-top: 16px" subscriptSizing="dynamic">
+              <mat-label>Scoring prompt part</mat-label>
+              <textarea
+                #scorePromptTextarea
+                matInput
+                class="prompt-textarea"
+                (blur)="parseContentMarkdown('score')"
+                [(ngModel)]="scorePrompt"
+              ></textarea>
+              <div
+                #scorePromptPlaceholder
+                class="prompt-placeholder"
+                contenteditable="true"
+                (focus)="toggleContentDisplay('score')"
+                [innerHTML]="marked.parse(scorePrompt)"
+              ></div>
+            </mat-form-field>
+            <button
+              mat-icon-button
+              matTooltip="Reset prompt"
+              (click)="resetScorePrompt()"
+            >
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </div>
+        </mat-expansion-panel>
       </div>
       <div class="row" style="margin-top: 16px">
         <span class="notice-text"

@@ -237,3 +237,40 @@ mat-divider {
 .mat-expansion-panel-header-description a {
   margin-left: auto;
 }
+
+.prompts-panel {
+  color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: row;
+  align-items: end;
+}
+
+.prompt-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.prompt-container mat-form-field {
+  display: flex;
+  margin-right: auto;
+  width: 100%;
+}
+
+.prompt-placeholder {
+  margin-top: -16px;
+}
+
+.prompt-textarea {
+  min-height: 2rem;
+  field-sizing: content;
+  display: none;
+}
+
+.prompt-notice-text {
+  display: flex;
+  flex-direction: row;
+  margin-top: 0px;
+  margin-bottom: 16px;
+  justify-content: start;
+}

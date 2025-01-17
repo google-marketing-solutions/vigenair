@@ -343,16 +343,6 @@ class Combiner:
         bucket_name=self.gcs_bucket_name,
         fetch_contents=True,
     )
-    av_segments_file_contents = StorageService.download_gcs_file(
-        file_path=Utils.TriggerFile(
-            str(pathlib.Path(root_video_folder, ConfigService.OUTPUT_DATA_FILE))
-        ),
-        bucket_name=self.gcs_bucket_name,
-        fetch_contents=True,
-    )
-    optimised_av_segments = (
-        json.loads(av_segments_file_contents.decode('utf-8'))
-    )
     video_variant = list(
         map(
             _video_variant_mapper,
@@ -373,9 +363,7 @@ class Combiner:
         music_track_path=music_track_path,
         video_variant=video_variant,
         vision_model=self.vision_model,
-        text_model=self.text_model,
         video_language=video_language,
-        optimised_av_segments=optimised_av_segments,
     )
     combo = dataclasses.asdict(video_variant)
     combo.update(rendered_variant_paths)
@@ -650,9 +638,7 @@ def _render_video_variant(
     music_track_path: Optional[str],
     video_variant: VideoVariant,
     vision_model: GenerativeModel,
-    text_model: GenerativeModel,
     video_language: str,
-    optimised_av_segments: pd.DataFrame,
 ) -> Dict[str, str]:
   """Renders a video variant in all formats.
 
@@ -669,9 +655,7 @@ def _render_video_variant(
     music_track_path: The path to the video's music track, or None.
     video_variant: The video variant to be rendered.
     vision_model: The vision model to use.
-    text_model: The text model to use.
     video_language: The video language.
-    optimised_av_segments: The extracted AV segments of the video.
 
   Returns:
     The rendered paths keyed by the format type.
@@ -803,12 +787,10 @@ def _render_video_variant(
   if video_variant.render_settings.generate_text_assets:
     text_assets = _generate_text_assets(
         vision_model=vision_model,
-        text_model=text_model,
         gcs_video_path=(
             f'gs://{gcs_bucket_name}/{gcs_folder_path}/{horizontal_combo_name}'
         ),
         video_language=video_language,
-        optimised_av_segments=optimised_av_segments,
         video_variant=video_variant,
     )
     if text_assets:
@@ -956,58 +938,34 @@ def _render_format(
 
 def _generate_text_assets(
     vision_model: GenerativeModel,
-    text_model: GenerativeModel,
     gcs_video_path: str,
     video_language: str,
-    optimised_av_segments: pd.DataFrame,
     video_variant: VideoVariant,
 ) -> Optional[Sequence[Dict[str, str]]]:
   """Generates text ad assets for a video variant.
 
   Args:
     vision_model: The vision model to use for text generation.
-    text_model: The text model to use for text generation.
     gcs_video_path: The path to the video to generate text assets for.
     video_language: The language of the video.
-    optimised_av_segments: The optimised AV segments to use for text generation.
     video_variant: The video variant to use for text generation.
 
   Returns:
     The generated text assets.
   """
-  prompt = [
-      ConfigService.GENERATE_ASSETS_PROMPT.format(
-          prompt_text_suffix=(
-              '' if ConfigService.CONFIG_MULTIMODAL_ASSET_GENERATION else
-              ConfigService.GENERATE_ASSETS_PROMPT_TEXT_PART
-          ), video_language=video_language
-      )
-  ]
+  prompt = ConfigService.GENERATE_ASSETS_PROMPT.format(
+      video_language=video_language
+  )
   assets = None
   try:
-    if ConfigService.CONFIG_MULTIMODAL_ASSET_GENERATION:
-      response = vision_model.generate_content(
-          [
-              Part.from_uri(gcs_video_path, mime_type='video/mp4'),
-              ''.join(prompt)
-          ],
-          generation_config=ConfigService.GENERATE_ASSETS_CONFIG,
-          safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
-      )
-    else:
-      prompt.append('\n\nScript:')
-      prompt.append(
-          _generate_video_script(
-              optimised_av_segments,
-              video_variant,
-          )
-      )
-      prompt.append('\n\n')
-      response = text_model.generate_content(
-          '\n'.join(prompt),
-          generation_config=ConfigService.GENERATE_ASSETS_CONFIG,
-          safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
-      )
+    response = vision_model.generate_content(
+        [
+            Part.from_uri(gcs_video_path, mime_type='video/mp4'),
+            prompt,
+        ],
+        generation_config=ConfigService.GENERATE_ASSETS_CONFIG,
+        safety_settings=ConfigService.CONFIG_DEFAULT_SAFETY_CONFIG,
+    )
     if (
         response.candidates and response.candidates[0].content.parts
         and response.candidates[0].content.parts[0].text

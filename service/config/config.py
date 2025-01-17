@@ -38,9 +38,6 @@ CONFIG_TRANSCRIPTION_MODEL_GEMINI = os.environ.get(
 CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD = float(
     os.environ.get('CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD', '0.7')
 )
-CONFIG_MULTIMODAL_ASSET_GENERATION = os.environ.get(
-    'CONFIG_MULTIMODAL_ASSET_GENERATION', 'true'
-) == 'true'
 CONFIG_MAX_VIDEO_CHUNK_SIZE = float(
     os.environ.get(
         'CONFIG_MAX_VIDEO_CHUNK_SIZE',
@@ -136,7 +133,7 @@ GENERATE_ASSETS_PATTERN = '.*Headline:\**\n?(.*)\n*\**Description:\**\n?(.*)'
 GENERATE_ASSETS_SEPARATOR = '## Ad'
 GENERATE_ASSETS_PROMPT = f"""You are a leading digital marketer and an expert at crafting high-performing search ad headlines and descriptions that captivate users and drive conversions.
 Follow these instructions in order:
-1. **Analyze the Video**: Carefully analyze the video ad{{prompt_text_suffix}} to identify the brand, key products or services, unique selling points, and the core message conveyed.
+1. **Analyze the Video**: Carefully analyze the video ad to identify the brand, key products or services, unique selling points, and the core message conveyed.
 2. **Target Audience**: Consider the target audience of the video ad. What are their interests, needs, and pain points? How can the search ads resonate with them?
 3. **Craft Headlines and Descriptions**: Generate 5 compelling search ad headlines and descriptions based on your analysis. Adhere to these guidelines:
     - **Headlines (Max 40 Characters)**:
@@ -160,7 +157,6 @@ Description: The accompanying description.
 Separate each search ad you output by the value "{GENERATE_ASSETS_SEPARATOR}".
 Output in {{video_language}}.
 """
-GENERATE_ASSETS_PROMPT_TEXT_PART = ' script'
 GENERATE_ASSETS_CONFIG = {
     'max_output_tokens': 2048,
     'temperature': 0.2,

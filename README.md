@@ -33,6 +33,7 @@ limitations under the License.
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
 * [January 2025] Happy New Year!
+  * `frontend`: You can now input your own guidelines for evaluation and scoring of generated variants using the *Advanced settings* section. Read more [here](#41-variants-generation).
   * `backend`: Added functionality to identify key frames using Gemini and extract them as additional Demand Gen image assets.
   * `backend`: Improved the extraction process to maintain consistency across the generated descriptions and keywords per segment.
 * [December 2024]
@@ -154,7 +155,6 @@ The generated variants may follow the original Ad's storyline - and thus serve a
 * The current audio analysis and understanding tech is unable to differentiate between voice-over and any singing voices in the video. The *Analyse voice-over* checkbox in the UI's *Video selection* card can be used to counteract this; uncheck the checkbox for videos where there is no voice-over, rather just background song and/or effects.
 * When generating video variants, segments selected by the LLM might not follow user prompt instructions, and the overall variant might not follow the desired target duration. It is recommended to review and potentially modify the preselected segments of the variant before adding it to the *render queue*.
 * When previewing generated video variants, audio overlay settings are not applied; they are only available for fully rendered variants.
-* Evaluating video variants' adherence to creative rules and guidelines is done via additional instructions within the generation prompt to Vertex AI foundational models (e.g. `Gemini 1.0 Pro`). To increase adherence and quality, consider [distilling](https://cloud.google.com/vertex-ai/generative-ai/docs/models/distill-text-models) a language model on your brand's own creative best practices, rules and guidelines first, then use this distilled model for the variants generation instead of the foundational model.
 
 ### Solution Details
 
@@ -184,7 +184,7 @@ New uploads into GCS trigger the Extractor service Cloud Function, which extract
 * First, background music and voice-over (if available) are separated via the [spleeter](https://github.com/deezer/spleeter) library, and the voice-over is transcribed.
 * Transcription is done via the [faster-whisper](https://github.com/SYSTRAN/faster-whisper) library and the output is stored in an `input.vtt` file, along with a `language.txt` file containing the video's primary language, in the same folder as the input video.
 * Video analysis is done via the Cloud [Video Intelligence API](https://cloud.google.com/video-intelligence), where visual shots, detected objects - with tracking, labels, people and faces, and recognised logos and any on-screen text within the input video are extracted. The output is stored in an `analysis.json` file in the same folder as the input video.
-* Finally, *coherent* audio/video segments are created using the transcription and video intelligence outputs and then cut into individual video files and stored on GCS in an `av_segments_cuts` subfolder under the root video folder. These cuts are then annotated via multimodal models on Vertex AI, which provide a description and a set of associated keywords / topics per segment. The fully annotated segments (including all information from the Video Intelligence API) are then compiled into a `data.json` file that is stored in the same folder as the input video.
+* Finally, *coherent* audio/video segments are created using the transcription and video intelligence outputs and then cut into individual video files and stored on GCS in an `av_segments_cuts` subfolder under the root video folder. These cuts are then annotated via Gemini, which provides a description and a set of associated keywords / topics per segment. The fully annotated segments (including all information from the Video Intelligence API) are then compiled into a `data.json` file that is stored in the same folder as the input video.
 
 #### 3. Object Tracking and Smart Framing
 
@@ -232,9 +232,17 @@ Users are now ready for combination. They can view the A/V segments and generate
     <center><img src='./img/segments.png' width="600px" alt="Vigenair UI: Segments list" /></center>
 
 * User Controls for video variant generation:
+
+    <center><img src='./img/prompts.png' width="600px" alt="Vigenair UI: Segments list" /></center>
+
   * Users are presented with an optional prompt which they can use to steer the output towards focusing on - or excluding - certain aspects, like certain entities or topics in the input video, or target audience of the resulting video variant.
   * Users may also use the *Target duration* slider to set their desired target duration.
-  * Users can then click `Generate` to generate variants accordingly, which will query language models on Vertex AI with a detailed script of the video to generate potential variants that fulfill the optional user-provided prompt and target duration.
+  * The expandable *Advanced settings* section (collapsed by default) contains two additional prompts that users can optionally modify:
+    * **Evaluation prompt**: Contains the criteria upon which the generated variant should be evaluated, which defaults to the [YouTube ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/). Users can input details about their own brand and creative guidelines here, either alongside or instead of the default ABCDs.
+    * **Scoring prompt**: Contains the scoring rubric for the evaluation critera listed in the evaluation prompt (defaults to a score between 1-5). Users should modify the scoring rubric to match any changes they make in the evaluation prompt.
+    * Clicking the *reset* button next to each prompt will reset the input to the default value (ABCDs and scoring rubric, respectively).
+    * Use Markdown syntax as shown in the default prompts to emphasize information and provide a more concise structure for Gemini.
+  * Users can then click `Generate` to generate variants accordingly, which will query Gemini with a detailed script of the video to generate potential variants that fulfill the optional user-provided prompts and target duration.
 * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments.
 
   <center><img src='./img/variants.png' width="800px" alt="Vigenair UI: Variants preview" /></center>
@@ -267,7 +275,7 @@ Users are now ready for combination. They can view the A/V segments and generate
   * **Variant end**: Audio will end with the ending of the last segment in the variant.
 
 * Whether to fade out audio at the end of generated videos. When selected, videos will be faded out for `1s` (configured by the `CONFIG_DEFAULT_FADE_OUT_DURATION` environment variable for the Combiner service).
-* Whether to generate [Demand Gen](https://support.google.com/google-ads/answer/13695777) campaign text and image assets alongside the variant or not. Defaults to generating Demand Gen assets using *multimodal* models on Vertex AI, which offers the highest quality of output assets.
+* Whether to generate [Demand Gen](https://support.google.com/google-ads/answer/13695777) campaign text and image assets alongside the variant or not.
 * Which formats (horizontal, vertical and square) assets to render. Defaults to rendering horizontal assets only.
 * Users can also select the individual segments that each variant is comprised of. This selection is available in both the *video preview* and *segments list* views. Please note that switching between variant tabs will clear any changes to the selection.
 * Users may also change the order of segments via the *Reorder segments* toggle, allowing the preview and rendering of more advanced and customised variations. Please note that reodering segments will reset the variant playback, and switching the toggle *off* will restore the original order.
