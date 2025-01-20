@@ -126,9 +126,9 @@ export class GenerationHelper {
         videoScript.push(
           `Duration: ${(avSegment.end_s - avSegment.start_s).toFixed(2)}s`
         );
-        const description = avSegment.description.trim();
+        const description = avSegment.description;
         if (description) {
-          videoScript.push(`Description: ${description}`);
+          videoScript.push(`Description: ${description.trim()}`);
         }
         videoScript.push(
           `Number of visual shots: ${avSegment.visual_segment_ids.length}`
@@ -137,7 +137,7 @@ export class GenerationHelper {
         const details = avSegment.labels.concat(avSegment.objects);
         const text = avSegment.text.map((t: string) => `"${t}"`);
         const logos = avSegment.logos;
-        const keywords = avSegment.keywords.trim();
+        const keywords = avSegment.keywords;
 
         if (transcript) {
           videoScript.push(`Off-screen speech: "${transcript.join(' ')}"`);
@@ -152,7 +152,7 @@ export class GenerationHelper {
           videoScript.push(`Logos: ${logos.join(', ')}`);
         }
         if (keywords) {
-          videoScript.push(`Keywords: ${keywords}`);
+          videoScript.push(`Keywords: ${keywords.trim()}`);
         }
         videoScript.push('');
       }
