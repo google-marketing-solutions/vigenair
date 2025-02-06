@@ -27,7 +27,7 @@ export const CONFIG = {
     projectId: '<gcp-project-id>',
     location: '<vertexai-region>',
     quotaLimitDelay: 10 * 1000, // 10s,
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.0-flash-001',
     modelParams: {
       temperature: 1,
       topP: 1,
