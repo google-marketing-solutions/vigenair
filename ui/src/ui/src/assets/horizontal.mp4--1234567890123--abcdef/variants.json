@@ -1,72 +1,80 @@
 [
   {
-    "description": "This combination starts with the heartwarming and funny video calls, immediately grabbing the viewer's attention. The off-screen speech smoothly transitions into the Lufthansa ad, showcasing the beauty of travel and the world. The combination ends with the \"Say yes to the world\" tagline, leaving a lasting impression on the viewer.",
     "av_segments": [
       {
-        "start_s": 0,
         "av_segment_id": 1,
-        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/1.jpg",
-        "end_s": 17
+        "end_s": 17,
+        "start_s": 0,
+        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/1.jpg"
       },
       {
+        "start_s": 17.04,
         "av_segment_id": 2,
         "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/2.jpg",
-        "start_s": 17.04,
         "end_s": 26.4
       },
       {
-        "end_s": 29.24,
-        "start_s": 27.28,
-        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/4.jpg",
-        "av_segment_id": 4
-      },
-      {
         "av_segment_id": 6,
-        "end_s": 44.96,
         "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/6.jpg",
+        "end_s": 44.96,
         "start_s": 36.8
       }
     ],
-    "duration": "0:36",
-    "title": "Entdecke die Welt mit Lufthansa",
-    "reasoning": "* A: The combination starts strong with the video calls and has several visual shots within the first 5 seconds.\n* B: The Lufthansa logo and tagline are prominently displayed in the last 5 seconds.\n* C: The video calls feature close-ups of people's faces, creating a personal connection with the viewer.\n* D: The \"Say yes to the world\" tagline is a clear call to action that encourages viewers to travel with Lufthansa.",
-    "combo_id": 0,
     "score": 5,
-    "scenes": [1, 2, 4, 6]
+    "scenes": [1, 2, 6],
+    "reasoning": "A (Impactful Opening): Scene 1's series of fast video calls with different people immediately grabs attention.\nB (Brand Visibility): The brand's name and logo appear in the last scene, reinforcing brand recognition.\nC (Human Connection): Scene 1 features people in different types of video calls, starting with an infant, creating an immediate emotional connection with the audience.\nD (Clear Call-to-Action): The combination ends with \"Say yes to the world\", a clear and compelling call to action displayed with the Lufthansa logo.",
+    "title": "Die Welt neu entdecken",
+    "description": "This combination merges the initial theme of connecting virtually with the desire to explore the world physically. It starts with the current reality of video calls and transitions to the possibilities of traveling. The inclusion of the last scene ensures the brand message and tagline are clearly communicated.",
+    "duration": "0:35"
   },
   {
-    "description": "This combination focuses on the beauty and diversity of the world, showcasing stunning visuals of the flamingos, the pink lake, and various travel destinations. The off-screen speech about leaving our boxes and exploring the world reinforces the ad's message of adventure and discovery. The combination ends with the powerful tagline \"Say yes to the world,\" prompting viewers to take action and book their next adventure with Lufthansa.",
+    "score": 4,
+    "scenes": [3, 5, 6],
+    "description": "This combination focuses on showcasing travel destinations and experiences offered by Lufthansa, connecting visuals of landscapes with the final brand message. The last scene provides a strong brand and tagline reinforcement.",
+    "reasoning": "A (Impactful Opening): Scene 3 featuring the aerial shot of a pink lake is visually appealing.\nB (Brand Visibility): The brand's logo appear in the openning and closing scene, reinforcing brand recognition.\nC (Human Connection): Scene 5 has multiple shorts that featuring people enjoying different activities and smiling, creating emotional connection.\nD (Clear Call-to-Action): The combination ends with \"Say yes to the world\", clearly and compelling call to action displayed.",
+    "title": "Lufthansa: Neue Horizonte",
     "av_segments": [
       {
-        "av_segment_id": 2,
-        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/2.jpg",
-        "start_s": 17.04,
-        "end_s": 26.4
-      },
-      {
         "av_segment_id": 3,
-        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/3.jpg",
+        "end_s": 27.24,
         "start_s": 26.44,
-        "end_s": 27.24
+        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/3.jpg"
       },
       {
-        "end_s": 29.24,
-        "start_s": 27.28,
-        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/4.jpg",
-        "av_segment_id": 4
+        "av_segment_id": 5,
+        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/5.jpg",
+        "end_s": 36.76,
+        "start_s": 29.28
       },
       {
-        "av_segment_id": 6,
-        "end_s": 44.96,
+        "start_s": 36.8,
         "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/6.jpg",
-        "start_s": 36.8
+        "end_s": 44.96,
+        "av_segment_id": 6
       }
     ],
-    "duration": "0:20",
-    "title": "Reise mit Lufthansa",
-    "reasoning": "* A: The combination starts with the couple's dinner scene and off-screen speech within the first 5 seconds.\n* B: The Lufthansa logo and tagline are prominently displayed throughout the ad.\n* C: The dinner scene features close-up shots of the couple's faces.\n* D: The ad ends with a clear call-to-action, \"Say yes to the world,\" encouraging viewers to visit the Lufthansa website or book a flight.",
-    "combo_id": 1,
-    "score": 5,
-    "scenes": [2, 3, 4, 6]
+    "duration": "0:16"
+  },
+  {
+    "reasoning": "A (Impactful Opening): The combination starts with a series of fast video calls with people, which immediately grabs attention.\nB (Brand Visibility): The brand logo appears in the last scene of the combination.\nC (Human Connection): The video begins with a human connection.\nD (Clear Call-to-Action): The combination ends with the tagline \"Say yes to the world\".",
+    "duration": "0:25",
+    "av_segments": [
+      {
+        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/1.jpg",
+        "start_s": 0,
+        "end_s": 17,
+        "av_segment_id": 1
+      },
+      {
+        "start_s": 36.8,
+        "end_s": 44.96,
+        "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/6.jpg",
+        "av_segment_id": 6
+      }
+    ],
+    "score": 3,
+    "title": "Verbindung und Abenteuer mit Lufthansa",
+    "scenes": [1, 6],
+    "description": "This combination highlights both the current state of virtual connection and Lufthansa's invitation to adventure. The initial scene introduces people in differenct video call scene. The last scene features a Lufthansa airplane flying in the sky, with the Lufthansa logo and the tagline \"Say yes to the world\"."
   }
 ]
