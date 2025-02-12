@@ -331,7 +331,7 @@ export class AppComponent {
     return true;
   }
 
-  onFileSelected(file: File) {
+  onFileSelected(file?: File) {
     this.selectedFile = file;
   }
 

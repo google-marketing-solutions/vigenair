@@ -42,12 +42,15 @@ export class FileChooserComponent {
   onFileChange(event: Event) {
     const files = (event.target as HTMLInputElement).files;
     if (!files || !files.length) {
-      this.selectedFile = undefined;
+      this.selectedFile = this.selectedFileUrl = undefined;
+      this.file.emit(undefined);
       return;
     }
     this.selectedFile = files[0];
     this.selectedFileUrl = URL.createObjectURL(this.selectedFile);
-    this.videoElem.nativeElement.load();
     this.file.emit(files[0]);
+    setTimeout(() => {
+      this.videoElem.nativeElement.load();
+    }, 50);
   }
 }
