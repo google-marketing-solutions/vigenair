@@ -53,7 +53,7 @@ class ClaspManager {
   }
 
   static async login() {
-    const loggedIn = await this.isLoggedIn();
+    const loggedIn = await ClaspManager.isLoggedIn();
 
     if (!loggedIn) {
       console.log("Logging in via clasp...");
@@ -68,14 +68,8 @@ class ClaspManager {
     );
   }
 
-  static extractSheetsLink(output: string) {
-    const sheetsLink = output.match(/Google Sheet: ([^\n]*)/);
-
-    return sheetsLink?.length ? sheetsLink[1] : "Not found";
-  }
-
   static extractScriptLink(output: string) {
-    const scriptLink = output.match(/Google Sheets Add-on script: ([^\n]*)/);
+    const scriptLink = output.match(/Created new standalone script: ([^\n]*)/);
 
     return scriptLink?.length ? scriptLink[1] : "Not found";
   }
@@ -91,7 +85,7 @@ class ClaspManager {
       [
         "create",
         "--type",
-        "sheets",
+        "standalone",
         "--rootDir",
         scriptRootDir,
         "--title",
@@ -111,10 +105,7 @@ class ClaspManager {
     await fs.remove(path.join(scriptRootDir, "appsscript.json"));
     const output = res.output.join();
 
-    return {
-      sheetLink: this.extractSheetsLink(output),
-      scriptLink: this.extractScriptLink(output),
-    };
+    return ClaspManager.extractScriptLink(output);
   }
 }
 
@@ -167,10 +158,9 @@ export class UiDeploymentHandler {
     }
     console.log();
     console.log("Creating Apps Script Project...");
-    const res = await ClaspManager.create("ViGenAiR", "./dist", "./ui");
+    const scriptLink = await ClaspManager.create("ViGenAiR", "./dist", "./ui");
     console.log();
-    console.log("IMPORTANT -> Google Sheets Link:", res.sheetLink);
-    console.log("IMPORTANT -> Apps Script Link:", res.scriptLink);
+    console.log("IMPORTANT -> Apps Script Link:", scriptLink);
     console.log();
   }
 
