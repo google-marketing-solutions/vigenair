@@ -94,15 +94,6 @@ export const CONFIG = {
 
 
     `,
-    generationEvalPromptPart: `1.  **Role:** Now, act as a highly analytical critic (140 IQ) evaluating each generated script combination against the following criteria, and *where applicable*, provide *recommendations* for improvement:
-    *   **Criterion A (Impactful Opening):** Does the combination begin with compelling visuals, fast pacing, tight framing, and/or off-screen speech within the first 5 seconds to immediately grab attention?
-        *   **Recommendation (If Applicable):** If the opening is deemed weak (e.g., due to wide shots, slow pacing, or lack of engaging elements), *describe a specific visual enhancement*. For example: "The opening scene currently features a wide shot of a person. A more impactful opening would be a close-up of their face, focusing on their eyes or a key expression. This would create immediate engagement with the viewer."
-    *   **Criterion B (Brand Visibility):** Does the brand's name, logo, product, tagline, or call-to-action appear prominently within the first or last 5 seconds to reinforce brand recognition?
-        *   **Recommendation (If Applicable):** If brand visibility is weak, *describe how to visually enhance it*. For example: "The brand logo appears small and in the background. It should be enlarged and positioned more centrally, perhaps with a subtle animation to draw attention to it."
-    *   **Criterion C (Human Connection):** Does the combination feature people and visible faces, ideally close-ups, within the first 5 seconds to create an emotional connection?
-        *   **Recommendation (If Applicable):** If human connection is lacking, *describe a visual improvement*. For example: "The opening lacks any human presence. Inserting a brief close-up of a smiling face in the first few seconds would establish an immediate emotional connection with the audience."
-    *   **Criterion D (Clear Call-to-Action):** Does the combination end with a clear and compelling on-screen call to action that motivates the target audience to engage?
-        *   **Recommendation (If Applicable):** If the call to action is weak, *describe how to visually strengthen it*. For example: "The call to action is displayed in small, plain text. It should be presented as a visually distinct button or graphic, perhaps with a contrasting color and a short animation to encourage clicks."`,
     generationScorePromptPart: `1.  **Scoring Rubric (Use Precisely):**
     *   **5 points (Excellent):** Fulfills *all* ABCD criteria, maintains a coherent message, includes all essential scenes, and falls within the {{expectedDurationRange}} second duration range.
     *   **4 points (Good):** Fulfills *all* ABCD criteria and maintains a coherent message, but may slightly exceed the duration range or miss one less critical scene.
@@ -110,6 +101,155 @@ export const CONFIG = {
     *   **2 points (Poor):** Meets *some* ABCD criteria, lacks coherence, misses several crucial scenes, and significantly deviates from the duration range.
     *   **1 point (Unacceptable):** Meets few or no ABCD criteria or includes *all* scenes from the original ad.
 2.  **Justification:** Provide detailed reasoning for each score, citing specific examples from the combination to support your evaluation. Be precise and analytical.`,
+    abcdBusinessObjectives: {
+      awareness: {
+        displayName: 'Awareness',
+        value: 'awareness',
+        promptPart: `1.  **Role:** Act as a highly analytical critic (140 IQ), meticulously evaluating each generated script combination against the following Awareness ABCD criteria. *Where applicable*, provide clear and actionable *recommendations* for improvement.
+
+    **A - Attention**
+    *   **Criterion A1 (Impactful Opening):** Does the video hook viewers within the first 5 seconds using compelling visuals like close-ups, fast pacing, and/or off-screen speech?
+        *   **Recommendation (If Applicable):** If not, suggest specific visual enhancements. For example, replace a wide shot with a close-up of a person's face, focusing on their eyes or a key expression.
+    *   **Criterion A2 (Audio Engagement):** Does the video effectively use audio elements like a narrator, dialogue, music, and/or sound effects to amplify the story and sustain attention?
+        *   **Recommendation (If Applicable):** If audio is underutilized, suggest adding a voiceover, relevant sound effects, or background music to enhance the viewing experience. Ensure audio elements complement each other and don't compete.
+    *   **Criterion A3 (Visual Interest):** Does the video maintain visual interest throughout with dynamic visuals, varied framing, and captivating imagery?
+        *   **Recommendation (If Applicable):** If visuals are static or repetitive, recommend incorporating more dynamic elements like camera movements, transitions, and visually engaging scenes.
+
+    **B - Branding**
+    *   **Criterion B1 (Early Branding):** Does the video prominently feature the brand's name, logo, product, or tagline within the first 5 seconds?
+        *   **Recommendation (If Applicable):** If not, suggest ways to enhance early brand visibility. For example, enlarge the logo, position it more centrally, or add a subtle animation.
+    *   **Criterion B2 (Frequent Branding):** Is the brand integrated at least 3+ times throughout the ad, including the last 5 seconds, using various branding elements like visuals, audio mentions, and product shots?
+        *   **Recommendation (If Applicable):** If branding is infrequent or limited, suggest additional ways to integrate the brand, such as through audio cues, product placement, or tagline displays.
+    *   **Criterion B3 (Branding Variety):** Does the video utilize a variety of branding assets, including the logo, product, tagline, color palette, audio cues, and even mascots or spokespeople?
+        *   **Recommendation (If Applicable):** If branding is monotonous, recommend diversifying the use of brand assets. For example, incorporate a brand jingle, use a recognizable brand color scheme, or feature a brand mascot.
+
+    **C - Connection**
+    *   **Criterion C1 (Human Presence):** Does the video feature people, ideally with close-ups of faces, to create an immediate and relatable connection with viewers?
+        *   **Recommendation (If Applicable):** If human presence is lacking, suggest adding close-ups of expressive faces or scenes of people interacting with the product.
+    *   **Criterion C2 (Context and Relevance):** Does the video clearly show how the product or service fits into people's lives by featuring relatable scenarios and diverse characters?
+        *   **Recommendation (If Applicable):** If context is unclear, suggest adding scenes that demonstrate the product's use in everyday situations or highlight its benefits for different demographics.
+    *   **Criterion C3 (Simplicity and Differentiation):** Does the video convey a single, focused message in a simple and casual language, while also highlighting what makes the brand or product unique?
+        *   **Recommendation (If Applicable):** If the message is complex or lacks differentiation, suggest simplifying the language, focusing on a key benefit, and emphasizing the brand's unique selling points.
+
+    **D - Direction**
+    *   **Criterion D1 (Clear Call to Action):** Does the video end with a clear and compelling on-screen call to action that motivates viewers to take the desired next step?
+        *   **Recommendation (If Applicable):** If the call to action is weak or unclear, suggest making it more visually prominent, using action-oriented language, and providing specific instructions.
+
+    **Remember:** These criteria are interconnected. A strong Awareness video ad excels in all four areas - Attention, Branding, Connection, and Direction. By critically evaluating each aspect and providing specific recommendations, you can help create more effective and impactful video ads.`,
+      },
+      consideration: {
+        displayName: 'Consideration',
+        value: 'consideration',
+        promptPart: `1.  **Role:** Act as a highly analytical critic (140 IQ), meticulously evaluating each generated script combination against the following Consideration ABCD criteria. *Where applicable*, provide clear and actionable *recommendations* for improvement.
+
+    **A - Attention**
+    *   **Criterion A1 (Immersive Storytelling):** Does the video hook and sustain attention with an immersive story that goes beyond simply showcasing the product?
+        *   **Recommendation (If Applicable):** If the storytelling is weak or product-centric, suggest ways to create a more engaging narrative. For example, introduce a relatable character, build suspense, or incorporate an emotional element.
+    *   **Criterion A2 (Visual Engagement):** Does the video maintain visual interest throughout with dynamic visuals, varied framing, and captivating imagery?
+        *   **Recommendation (If Applicable):** If visuals are static or repetitive, recommend incorporating more dynamic elements like camera movements, transitions, and visually engaging scenes.
+    *   **Criterion A3 (Audio Engagement):** Does the video effectively use audio elements like a narrator, dialogue, music, and/or sound effects to amplify the story and sustain attention?
+        *   **Recommendation (If Applicable):** If audio is underutilized, suggest adding a voiceover, relevant sound effects, or background music to enhance the viewing experience. Ensure audio elements complement each other and don't compete.
+
+    **B - Branding**
+    *   **Criterion B1 (Product as Hero):** Does the video shift the branding focus from the company to the product itself, showcasing its features and benefits in detail?
+        *   **Recommendation (If Applicable):** If the product isn't the main focus, suggest ways to highlight it. For example, use close-up shots of the product, demonstrate its functionality, and emphasize its key features.
+    *   **Criterion B2 (Consistent Branding):** Does the video maintain strong and consistent branding throughout, especially in the last 5 seconds, by featuring the product, logo, and/or audio mentions?
+        *   **Recommendation (If Applicable):** If branding is inconsistent or weak, suggest reinforcing it by closing on the product/logo and using audio mentions in the last 5 seconds.
+
+    **C - Connection**
+    *   **Criterion C1 (Show, Don't Just Tell):** Does the video clearly demonstrate how the product works and the benefits it offers through product demos, before/afters, or how-to segments?
+        *   **Recommendation (If Applicable):** If the video relies heavily on telling instead of showing, recommend incorporating visual demonstrations of the product in action.
+    *   **Criterion C2 (Relatable Scenarios):** Does the video feature relatable scenarios and diverse characters that resonate with the target audience and allow them to envision themselves using the product?
+        *   **Recommendation (If Applicable):** If scenarios are unrealistic or characters are unrelatable, suggest making them more authentic and representative of the target audience.
+    *   **Criterion C3 (Direct Engagement):** Does the video speak directly to the consumer, break the fourth wall, or use other techniques to create a sense of authenticity and invite viewers into the story?
+        *   **Recommendation (If Applicable):** If the video feels distant or impersonal, suggest incorporating techniques like direct address, testimonials, or user-generated content to foster a stronger connection.
+
+    **D - Direction**
+    *   **Criterion D1 (Clear Call to Action):** Does the video include a clear and specific call to action, such as "visit site," "sign up," or "buy now," using both visual and audio cues?
+        *   **Recommendation (If Applicable):** If the call to action is weak or unclear, suggest making it more prominent, using action-oriented language, and amplifying it with audio.
+    *   **Criterion D2 (Sense of Urgency):** Does the video create a sense of urgency by highlighting limited-time offers, limited availability, or specific release dates?
+        *   **Recommendation (If Applicable):** If there is no sense of urgency, suggest incorporating elements like deadlines, limited stock, or exclusive deals to encourage immediate action.
+
+    **Remember:** These criteria are designed to help you critically evaluate YouTube Consideration video ads. By analyzing each element and providing specific recommendations, you can help ensure that these ads effectively move viewers further down the marketing funnel towards conversion.
+`,
+      },
+      action: {
+        displayName: 'Action',
+        value: 'action',
+        promptPart: `1.  **Role:** Act as a highly analytical critic (140 IQ), meticulously evaluating each generated script combination against the following Action ABCD criteria. *Where applicable*, provide clear and actionable *recommendations* for improvement.
+
+    **A - Attention**
+    *   **Criterion A1 (Viewable Area):** Are all essential visuals, including text and key elements, kept within the viewable area of the screen, especially on mobile devices?
+        *   **Recommendation (If Applicable):** If crucial information falls outside the viewable area, suggest repositioning elements to ensure visibility on different screen sizes.
+    *   **Criterion A2 (Immersive Storytelling):** Does the video hook and sustain attention with an immersive story that goes beyond simply showcasing the product?
+        *   **Recommendation (If Applicable):** If the storytelling is weak or product-centric, suggest ways to create a more engaging narrative. For example, introduce a relatable character, build suspense, or incorporate an emotional element.
+    *   **Criterion A3 (Visual Engagement):** Does the video maintain visual interest throughout with dynamic visuals, varied framing, and captivating imagery?
+        *   **Recommendation (If Applicable):** If visuals are static or repetitive, recommend incorporating more dynamic elements like camera movements, transitions, and visually engaging scenes.
+
+    **B - Branding**
+    *   **Criterion B1 (Product Focus):** Is the product the star of the ad, with minimal distractions from the selling moment?
+        *   **Recommendation (If Applicable):** If other elements overshadow the product, suggest ways to make it the primary focus. For example, use extreme close-ups of the product, ensure its visibility from the start, and integrate branding elements subtly within the product's context.
+    *   **Criterion B2 (Seamless Branding):** Is branding integrated seamlessly into the ad, supporting the product story rather than distracting from it?
+        *   **Recommendation (If Applicable):** If branding feels forced or intrusive, suggest more natural ways to incorporate brand elements. For example, use subtle product placement, integrate brand colors into the scene, or feature the logo on the product itself.
+
+    **C - Connection**
+    *   **Criterion C1 (Clarity and Credibility):** Is the value proposition clear, precise, and credible? Does the ad avoid overselling and focus on a single, strong message?
+        *   **Recommendation (If Applicable):** If the message is unclear or overwhelming, suggest simplifying the value proposition, focusing on one key benefit, and using clear and concise language.
+    *   **Criterion C2 (Tangible Benefits):** Does the ad illustrate specific benefits and show how the product can enhance the consumer's life, rather than relying on nebulous claims?
+        *   **Recommendation (If Applicable):** If benefits are not clearly demonstrated, suggest adding scenes that show the product in action, highlight its problem-solving capabilities, or feature testimonials from satisfied customers.
+    *   **Criterion C3 (Trust and Authenticity):** Does the ad build trust by showcasing the product in a relatable context, using a confident tone, and providing supporting evidence for claims?
+        *   **Recommendation (If Applicable):** If the ad lacks trust signals, suggest incorporating elements like user reviews, expert endorsements, or data points to support claims.
+
+    **D - Direction**
+    *   **Criterion D1 (Contextual Call to Action):** Is the call to action presented after the product and its benefits have been established, ensuring that viewers have sufficient context before being asked to act?
+        *   **Recommendation (If Applicable):** If the call to action appears too early, suggest repositioning it to come after the product story has been fully developed.
+    *   **Criterion D2 (Enticing Incentives):** Does the ad motivate viewers to take action by offering enticing incentives, such as freebies, discounts, or limited-time offers?
+        *   **Recommendation (If Applicable):** If incentives are weak or missing, suggest adding compelling offers to drive conversions.
+    *   **Criterion D3 (Clear Instructions):** Does the ad demystify the process by clearly explaining how to interact with the brand and under what terms (access, offers, pricing, CTAs)?
+        *   **Recommendation (If Applicable):** If the process is unclear, suggest adding specific instructions, visual cues, or demonstrations to guide viewers towards the desired action.
+
+    **Remember:** Action ads are all about driving conversions. By critically evaluating each element and providing specific recommendations, you can help ensure that these ads effectively persuade viewers to take the final step and become customers.
+`,
+      },
+      shorts: {
+        displayName: 'YouTube Shorts',
+        value: 'shorts',
+        promptPart: `1.  **Role:** Act as a highly analytical critic (140 IQ), meticulously evaluating each generated script combination against the following YouTube Shorts ABCD criteria, keeping in mind Shorts' compound nature across Awareness, Consideration, and Action objectives. *Where applicable*, provide clear and actionable *recommendations* for improvement.
+
+    **A - Attention**
+    *   **Criterion A1 (Authenticity):** Does the ad feel native to the Shorts experience, blending seamlessly with organic content and avoiding an overly polished or "ad-like" feel?
+        *   **Recommendation (If Applicable):** If the ad feels too polished or disruptive, suggest incorporating more unpolished, "homemade" elements, like user-generated content, spontaneous moments, or lo-fi visuals.
+    *   **Criterion A2 (Personalization):** Does the ad adopt a personal, peer-to-peer approach, with talent speaking directly to the viewer using casual language and relatable scenarios?
+        *   **Recommendation (If Applicable):** If the ad feels impersonal or overly scripted, suggest having talent address the viewer directly, use casual language, and showcase relatable situations.
+    *   **Criterion A3 (Upbeat Tone):** Does the ad maintain an upbeat, fun, and entertaining tone, aligning with the overall Shorts experience?
+        *   **Recommendation (If Applicable):** If the ad lacks energy or feels too serious, suggest incorporating humor, spontaneous moments, or a faster pace to create a more engaging experience.
+    *   **Criterion A4 (Social Elements):** Does the ad encourage social interaction by being shareable, likeable, and participatory?
+        *   **Recommendation (If Applicable):** If the ad lacks social elements, suggest incorporating interactive elements like polls, challenges, or calls to comment and share.
+
+    **B - Branding**
+    *   **Criterion B1 (Organic Branding):** Is branding integrated organically into the ad, avoiding a forced or disruptive presence?
+        *   **Recommendation (If Applicable):** If branding feels intrusive, suggest more subtle ways to integrate it, like through product placement, brand colors, or featuring the logo on the product itself.
+    *   **Criterion B2 (Enduring Branding):** Does the ad reinforce branding throughout, particularly at the end, to ensure the brand is remembered?
+        *   **Recommendation (If Applicable):** If branding is weak, especially at the end, suggest adding a strong brand presence in the final scene, using elements like the logo, product, or tagline.
+
+    **C - Connection**
+    *   **Criterion C1 (Talent as Connector):** Does the ad feature relatable talent, like influencers, creators, or everyday people, who connect with the audience authentically?
+        *   **Recommendation (If Applicable):** If the talent feels disconnected or inauthentic, suggest using more relatable individuals who embody the target audience.
+    *   **Criterion C2 (Product Integration):** Is the product seamlessly integrated into the ad, with talent demonstrating its use and benefits in a natural and engaging way?
+        *   **Recommendation (If Applicable):** If the product feels forced or out of place, suggest having talent interact with it more naturally, showcasing its benefits through demos, stories, or personal experiences.
+    *   **Criterion C3 (Clear Value Proposition):** Does the ad clearly and concisely communicate the product's value proposition and benefits, avoiding overwhelming viewers with information?
+        *   **Recommendation (If Applicable):** If the value proposition is unclear or overwhelming, suggest focusing on a single key benefit and communicating it in a simple and engaging way.
+
+    **D - Direction**
+    *   **Criterion D1 (Compelling Call to Action):** Does the ad include a clear, specific, and relevant call to action that encourages viewers to take the desired next step?
+        *   **Recommendation (If Applicable):** If the call to action is weak or unclear, suggest making it more prominent, using action-oriented language, and aligning it with the specific marketing objective (awareness, consideration, or action).
+    *   **Criterion D2 (Visual Support):** Is the call to action visually supported with elements like text, icons, or graphics to make it more engaging and noticeable?
+        *   **Recommendation (If Applicable):** If the call to action is purely textual or lacks visual appeal, suggest adding visual elements like buttons, arrows, or animations to make it more prominent.
+
+    **Remember:** Effective YouTube Shorts ads are tailored to the platform's unique DNA, leveraging authenticity, personalization, and an upbeat tone to connect with viewers. By critically evaluating each element and providing specific recommendations, you can help ensure that these ads effectively achieve their marketing objectives, whether it's building awareness, driving consideration, or ultimately leading to action.
+`,
+      },
+    },
     textAssetsGenerationPrompt: `You are a leading digital marketer and an expert at crafting high-performing search ad headlines and descriptions that captivate users and drive conversions.
     Follow these instructions in order:
 
@@ -138,9 +278,9 @@ export const CONFIG = {
     Separate each search ad you output by the value: "## Ad".
     Output in {{videoLanguage}}.
     `,
+    textAssetsBadExamplePromptPart:
+      "3. **Unwanted Example**: Here's an example of a Headline and Description that I DO NOT want you to generate: Headline: {{headline}} Description: {{description}}",
   },
-  textAssetsBadExamplePromptPart:
-    "3. **Unwanted Example**: Here's an example of a Headline and Description that I DO NOT want you to generate: Headline: {{headline}} Description: {{description}}",
   defaultVideoLanguage: 'English',
   defaultVideoWidth: 1280,
   defaultVideoHeight: 720,

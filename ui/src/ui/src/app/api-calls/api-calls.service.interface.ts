@@ -22,6 +22,13 @@ export type OverlayType =
   | 'variant_end'
   | 'video_start'
   | 'video_end';
+export type AbcdType = 'awareness' | 'consideration' | 'action' | 'shorts';
+export type AbcdBusinessObjective = {
+  displayName: string;
+  value: string;
+  promptPart: string;
+};
+export type AbcdBusinessObjectives = Map<AbcdType, AbcdBusinessObjective>;
 
 export interface GenerationSettings {
   prompt: string;

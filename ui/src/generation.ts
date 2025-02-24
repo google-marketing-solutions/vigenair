@@ -271,7 +271,7 @@ export class GenerationHelper {
       .replace('3. ', '4. ')
       .replace(
         '{{badExamplePromptPart}}',
-        CONFIG.textAssetsBadExamplePromptPart
+        CONFIG.vertexAi.textAssetsBadExamplePromptPart
       )
       .replace('{{headline}}', textAsset.headline)
       .replace('{{description}}', textAsset.description);

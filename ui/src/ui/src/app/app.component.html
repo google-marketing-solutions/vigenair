@@ -450,6 +450,17 @@ limitations under the License.
           <span class="notice-text prompt-notice-text"
             >Use Markdown syntax for better results.</span
           >
+          <mat-form-field style="width: 300px" subscriptSizing="dynamic">
+            <mat-label>Select Business Objective</mat-label>
+            <mat-select
+              [(ngModel)]="selectedAbcdType"
+              (selectionChange)="setEvalPrompt()"
+            >
+              @for (bo of businessObjectives; track $index) {
+                <mat-option [value]="bo.value">{{ bo.displayName }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
           <div class="prompt-container">
             <mat-form-field subscriptSizing="dynamic">
               <mat-label>Evaluation prompt part</mat-label>
@@ -472,7 +483,7 @@ limitations under the License.
             <button
               mat-icon-button
               matTooltip="Reset prompt"
-              (click)="resetEvalPrompt()"
+              (click)="setEvalPrompt()"
             >
               <mat-icon>refresh</mat-icon>
             </button>

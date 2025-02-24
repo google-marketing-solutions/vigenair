@@ -32,6 +32,8 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [February 2025]
+  * `frontend`: You can now choose objective-specific ABCDs (Awareness, Consideration, Action, or Shorts) in the *Advanced settings* section of variants generation. Read more [here](#41-variants-generation).
 * [January 2025] Happy New Year!
   * `frontend`: You can now input your own guidelines for evaluation and scoring of generated variants using the *Advanced settings* section. Read more [here](#41-variants-generation).
   * `backend`: Added functionality to identify key frames using Gemini and extract them as additional Demand Gen image assets.
@@ -238,8 +240,8 @@ Users are now ready for combination. They can view the A/V segments and generate
 
   * Users are presented with an optional prompt which they can use to steer the output towards focusing on - or excluding - certain aspects, like certain entities or topics in the input video, or target audience of the resulting video variant.
   * Users may also use the *Target duration* slider to set their desired target duration.
-  * The expandable *Advanced settings* section (collapsed by default) contains two additional prompts that users can optionally modify:
-    * **Evaluation prompt**: Contains the criteria upon which the generated variant should be evaluated, which defaults to the [YouTube ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/). Users can input details about their own brand and creative guidelines here, either alongside or instead of the default ABCDs.
+  * The expandable *Advanced settings* section (collapsed by default) contains a dropdown to choose the [YouTube ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/) evaluation objective (Awareness, Consideration, Action, or Shorts), along with two additional prompts that users can optionally modify:
+    * **Evaluation prompt**: Contains the criteria upon which the generated variant should be evaluated, which defaults to the *Awareness* ABCDs. Users can input details about their own brand and creative guidelines here, either alongside or instead of the ABCDs.
     * **Scoring prompt**: Contains the scoring rubric for the evaluation critera listed in the evaluation prompt (defaults to a score between 1-5). Users should modify the scoring rubric to match any changes they make in the evaluation prompt.
     * Clicking the *reset* button next to each prompt will reset the input to the default value (ABCDs and scoring rubric, respectively).
     * Use Markdown syntax as shown in the default prompts to emphasize information and provide a more concise structure for Gemini.
@@ -255,7 +257,7 @@ Users are now ready for combination. They can view the A/V segments and generate
   * The total duration is also displayed below the segments list, so that users can preview the variant's duration as they select/deselect segments.
   * The list of A/V segments that make up the variant.
   * A description of the variant and what is happening in it.
-  * An LLM-generated Score, from 1-5, representing how well the variant adheres to the input rules and guidelines, which default to a subset of [YouTubes ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/). Users are strongly encouraged to update this section of the generation prompt in [config.ts](ui/src/config.ts) to refer to their own brand voice and creative guidelines.
+  * An LLM-generated Score, from 1-5, representing how well the variant adheres to the input rules and guidelines. Users are strongly encouraged to update this section of the generation prompt in [config.ts](ui/src/config.ts) to refer to their own brand voice and creative guidelines.
   * Reasoning for the provided score, with examples of adherence / inadherence.
 
 #### 4.2. User Controls for Video Rendering

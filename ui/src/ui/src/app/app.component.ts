@@ -58,6 +58,7 @@ import { StringUtil } from '../../../string-util';
 import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
 import {
+  AbcdType,
   AvSegment,
   FormatType,
   GenerateVariantsResponse,
@@ -146,7 +147,8 @@ export class AppComponent {
   frameInterval?: number;
   currentSegmentId?: number;
   prompt = '';
-  evalPrompt = CONFIG.vertexAi.generationEvalPromptPart;
+  selectedAbcdType: AbcdType = 'awareness';
+  evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
   scorePrompt = CONFIG.vertexAi.generationScorePromptPart;
   duration = 0;
   step = 0;
@@ -188,6 +190,7 @@ export class AppComponent {
   showApprovalStatus = false;
   allSegmentsToggle = false;
   marked = marked;
+  businessObjectives = Object.values(CONFIG.vertexAi.abcdBusinessObjectives);
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -1298,8 +1301,9 @@ export class AppComponent {
       .toFixed(2);
   }
 
-  resetEvalPrompt() {
-    this.evalPrompt = CONFIG.vertexAi.generationEvalPromptPart;
+  setEvalPrompt() {
+    this.evalPrompt =
+      CONFIG.vertexAi.abcdBusinessObjectives[this.selectedAbcdType].promptPart;
   }
 
   resetScorePrompt() {
