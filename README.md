@@ -236,15 +236,11 @@ Users are now ready for combination. They can view the A/V segments and generate
 
 * User Controls for video variant generation:
 
-    <center><img src='./img/prompts.png' width="600px" alt="Vigenair UI: Segments list" /></center>
+    <center><img src='./img/prompts.png' width="800px" alt="Vigenair UI: Segments list" /></center>
 
   * Users are presented with an optional prompt which they can use to steer the output towards focusing on - or excluding - certain aspects, like certain entities or topics in the input video, or target audience of the resulting video variant.
   * Users may also use the *Target duration* slider to set their desired target duration.
-  * The expandable *Advanced settings* section (collapsed by default) contains a dropdown to choose the [YouTube ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/) evaluation objective (Awareness, Consideration, Action, or Shorts), along with two additional prompts that users can optionally modify:
-    * **Evaluation prompt**: Contains the criteria upon which the generated variant should be evaluated, which defaults to the *Awareness* ABCDs. Users can input details about their own brand and creative guidelines here, either alongside or instead of the ABCDs.
-    * **Scoring prompt**: Contains the scoring rubric for the evaluation critera listed in the evaluation prompt (defaults to a score between 1-5). Users should modify the scoring rubric to match any changes they make in the evaluation prompt.
-    * Clicking the *reset* button next to each prompt will reset the input to the default value (ABCDs and scoring rubric, respectively).
-    * Use Markdown syntax as shown in the default prompts to emphasize information and provide a more concise structure for Gemini.
+  * The expandable *Advanced settings* section (collapsed by default) contains a dropdown to choose the [YouTube ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/) evaluation objective (Awareness, Consideration, Action, or Shorts), along with an additional **Evaluation prompt** prompt that users can optionally modify. This prompt contains the criteria upon which the generated variant should be evaluated, which defaults to the *Awareness* ABCDs. Users can input details about their own brand and creative guidelines here, either alongside or instead of the ABCDs, and may click the *reset* button next to the prompt to reset the input back to the default ABCDs value. We recommend using Markdown syntax to emphasize information and provide a more concise structure for Gemini.
   * Users can then click `Generate` to generate variants accordingly, which will query Gemini with a detailed script of the video to generate potential variants that fulfill the optional user-provided prompts and target duration.
 * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments.
 
@@ -259,6 +255,8 @@ Users are now ready for combination. They can view the A/V segments and generate
   * A description of the variant and what is happening in it.
   * An LLM-generated Score, from 1-5, representing how well the variant adheres to the input rules and guidelines. Users are strongly encouraged to update this section of the generation prompt in [config.ts](ui/src/config.ts) to refer to their own brand voice and creative guidelines.
   * Reasoning for the provided score, with examples of adherence / inadherence.
+
+  Variants are sorted in descending order, first by the proximity of their duration to the user's target duration, and then by score for variants with the same duration.
 
 #### 4.2. User Controls for Video Rendering
 

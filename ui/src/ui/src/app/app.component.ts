@@ -75,7 +75,6 @@ import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
-type PromptType = 'eval' | 'score';
 
 export type FramingDialogData = {
   weightsPersonFaceIndex: number;
@@ -149,7 +148,6 @@ export class AppComponent {
   prompt = '';
   selectedAbcdType: AbcdType = 'awareness';
   evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
-  scorePrompt = CONFIG.vertexAi.generationScorePromptPart;
   duration = 0;
   step = 0;
   audioSettings = 'segment';
@@ -213,12 +211,8 @@ export class AppComponent {
   @ViewChild('renderFormatsToggle') renderFormatsToggle!: MatButtonToggleGroup;
   @ViewChild('evalPromptTextarea')
   evalPromptTextarea?: ElementRef<HTMLTextAreaElement>;
-  @ViewChild('scorePromptTextarea')
-  scorePromptTextarea?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('evalPromptPlaceholder')
   evalPromptPlaceholder?: ElementRef<HTMLDivElement>;
-  @ViewChild('scorePromptPlaceholder')
-  scorePromptPlaceholder?: ElementRef<HTMLDivElement>;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -742,7 +736,6 @@ export class AppComponent {
       .generateVariants(this.folder, {
         prompt: this.prompt,
         evalPrompt: this.evalPrompt,
-        scorePrompt: this.scorePrompt,
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,
       })
@@ -1306,33 +1299,16 @@ export class AppComponent {
       CONFIG.vertexAi.abcdBusinessObjectives[this.selectedAbcdType].promptPart;
   }
 
-  resetScorePrompt() {
-    this.scorePrompt = CONFIG.vertexAi.generationScorePromptPart;
+  parseContentMarkdown() {
+    this.evalPromptTextarea!.nativeElement.style.display = 'none';
+    this.evalPromptPlaceholder!.nativeElement.innerHTML = marked.parse(
+      this.evalPrompt
+    ) as string;
+    this.evalPromptPlaceholder!.nativeElement.style.display = 'block';
   }
 
-  parseContentMarkdown(target: PromptType) {
-    if (target === 'eval') {
-      this.evalPromptTextarea!.nativeElement.style.display = 'none';
-      this.evalPromptPlaceholder!.nativeElement.innerHTML = marked.parse(
-        this.evalPrompt
-      ) as string;
-      this.evalPromptPlaceholder!.nativeElement.style.display = 'block';
-    } else {
-      this.scorePromptTextarea!.nativeElement.style.display = 'none';
-      this.scorePromptPlaceholder!.nativeElement.innerHTML = marked.parse(
-        this.scorePrompt
-      ) as string;
-      this.scorePromptPlaceholder!.nativeElement.style.display = 'block';
-    }
-  }
-
-  toggleContentDisplay(target: PromptType) {
-    if (target === 'eval') {
-      this.evalPromptTextarea!.nativeElement.style.display = 'block';
-      this.evalPromptPlaceholder!.nativeElement.style.display = 'none';
-    } else {
-      this.scorePromptTextarea!.nativeElement.style.display = 'block';
-      this.scorePromptPlaceholder!.nativeElement.style.display = 'none';
-    }
+  toggleContentDisplay() {
+    this.evalPromptTextarea!.nativeElement.style.display = 'block';
+    this.evalPromptPlaceholder!.nativeElement.style.display = 'none';
   }
 }

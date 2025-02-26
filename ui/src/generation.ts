@@ -71,7 +71,6 @@ export class GenerationHelper {
     const generationPrompt = CONFIG.vertexAi.generationPrompt
       .replace('{{{{userPrompt}}}}', settings.prompt)
       .replace('{{{{generationEvalPromptPart}}}}', settings.evalPrompt)
-      .replace('{{{{generationScorePromptPart}}}}', settings.scorePrompt)
       .replace('{{{{desiredDuration}}}}', String(duration))
       .replace('{{{{expectedDurationRange}}}}', expectedDurationRange)
       .replace('{{{{videoLanguage}}}}', videoLanguage)
@@ -160,6 +159,14 @@ export class GenerationHelper {
     return videoScript.join('\n');
   }
 
+  static promptLogger(gcsFolder: string, settings: GenerationSettings) {
+    const prompt = GenerationHelper.resolveGenerationPrompt(
+      gcsFolder,
+      settings
+    );
+    return prompt;
+  }
+
   static generateVariants(gcsFolder: string, settings: GenerationSettings) {
     const prompt = GenerationHelper.resolveGenerationPrompt(
       gcsFolder,
@@ -239,9 +246,10 @@ export class GenerationHelper {
     }
     return variants.sort(
       (a, b) =>
-        b.score - a.score ||
-        TimeUtil.timeStringToSeconds(a.duration) -
-          TimeUtil.timeStringToSeconds(b.duration)
+        Math.abs(settings.duration - TimeUtil.timeStringToSeconds(a.duration)) -
+          Math.abs(
+            settings.duration - TimeUtil.timeStringToSeconds(b.duration)
+          ) || b.score - a.score
     );
   }
 

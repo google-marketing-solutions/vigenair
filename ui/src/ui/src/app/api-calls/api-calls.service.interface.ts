@@ -33,7 +33,6 @@ export type AbcdBusinessObjectives = Map<AbcdType, AbcdBusinessObjective>;
 export interface GenerationSettings {
   prompt: string;
   evalPrompt: string;
-  scorePrompt: string;
   duration: number;
   demandGenAssets: boolean;
 }

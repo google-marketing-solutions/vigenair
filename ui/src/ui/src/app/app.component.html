@@ -468,7 +468,7 @@ limitations under the License.
                 #evalPromptTextarea
                 matInput
                 class="prompt-textarea"
-                (blur)="parseContentMarkdown('eval')"
+                (blur)="parseContentMarkdown()"
                 [(ngModel)]="evalPrompt"
               >
               </textarea>
@@ -476,7 +476,7 @@ limitations under the License.
                 #evalPromptPlaceholder
                 class="prompt-placeholder"
                 contenteditable="true"
-                (focus)="toggleContentDisplay('eval')"
+                (focus)="toggleContentDisplay()"
                 [innerHTML]="marked.parse(evalPrompt)"
               ></div>
             </mat-form-field>
@@ -484,32 +484,6 @@ limitations under the License.
               mat-icon-button
               matTooltip="Reset prompt"
               (click)="setEvalPrompt()"
-            >
-              <mat-icon>refresh</mat-icon>
-            </button>
-          </div>
-          <div class="prompt-container">
-            <mat-form-field style="margin-top: 16px" subscriptSizing="dynamic">
-              <mat-label>Scoring prompt part</mat-label>
-              <textarea
-                #scorePromptTextarea
-                matInput
-                class="prompt-textarea"
-                (blur)="parseContentMarkdown('score')"
-                [(ngModel)]="scorePrompt"
-              ></textarea>
-              <div
-                #scorePromptPlaceholder
-                class="prompt-placeholder"
-                contenteditable="true"
-                (focus)="toggleContentDisplay('score')"
-                [innerHTML]="marked.parse(scorePrompt)"
-              ></div>
-            </mat-form-field>
-            <button
-              mat-icon-button
-              matTooltip="Reset prompt"
-              (click)="resetScorePrompt()"
             >
               <mat-icon>refresh</mat-icon>
             </button>
