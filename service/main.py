@@ -24,8 +24,10 @@ import logging
 from typing import Any, Dict
 
 import combiner as CombinerService
+import config as ConfigService
 import extractor as ExtractorService
 import functions_framework
+from google.api_core.client_info import ClientInfo
 from google.cloud import logging as cloudlogging
 import utils as Utils
 
@@ -37,7 +39,8 @@ def gcs_file_uploaded(cloud_event: Dict[str, Any]):
   Args:
     cloud_event: The Eventarc trigger event.
   """
-  lg_client = cloudlogging.Client()
+  lg_client = cloudlogging.Client(
+    client_info=ClientInfo(user_agent=ConfigService.USER_AGENT_ID))
   lg_client.setup_logging()
 
   data = cloud_event.data

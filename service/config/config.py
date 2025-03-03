@@ -53,6 +53,12 @@ CONFIG_DEFAULT_FADE_OUT_DURATION = os.environ.get(
     '1'  # seconds
 )
 
+CONFIG_BACKEND_VERSION = os.environ.get(
+    'CONFIG_BACKEND_VERSION', 'v1'
+)
+
+USER_AGENT_ID = f'cloud-solutions/mas-vigenair-backend-{CONFIG_BACKEND_VERSION}'
+
 # 10ms silence at the end of the fade out makes it "sound" better
 # https://en.wikipedia.org/wiki/Fade_(audio_engineering)#:~:text=Appropriate%20fade%2Din%20time,10ms.%5B14%5D
 CONFIG_DEFAULT_FADE_OUT_BUFFER = 0.1
