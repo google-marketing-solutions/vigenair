@@ -29,6 +29,8 @@
     "node": ">=12"
   },
   "dependencies": {
+    "@google-cloud/service-usage": "^3.4.1",
+    "@google-cloud/storage": "^7.15.2",
     "cross-spawn": "^7.0.3",
     "fs-extra": "^11.2.0",
     "prompts": "^2.4.2",

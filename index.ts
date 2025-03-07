@@ -105,7 +105,7 @@ const config = UserConfigManager.getUserConfig();
 
   if (response.deployGcpComponents) {
     await GcpDeploymentHandler.checkGcloudAuth();
-    GcpDeploymentHandler.deployGcpComponents();
+    GcpDeploymentHandler.deployGcpComponents(UserConfigManager.getUserConfig());
   }
 
   if (response.deployUi) {

@@ -19,6 +19,8 @@ const os = require("os");
 const path = require("path");
 const replace = require("replace");
 const spawn = require("cross-spawn");
+const { Storage } = require("@google-cloud/storage")
+const { ServiceUsageClient } = require("@google-cloud/service-usage");
 
 export const DEFAULT_GCP_REGION = "us-central1";
 export const DEFAULT_GCS_LOCATION = "us";
@@ -29,6 +31,7 @@ interface Config {
   gcpRegion?: string;
   gcsLocation?: string;
   vertexAiRegion?: string;
+  gcsBucket?: string;
 }
 
 interface ConfigReplace {
@@ -139,11 +142,149 @@ export class GcpDeploymentHandler {
     }
   }
 
-  static deployGcpComponents() {
+  static async deployGcpComponents(config: Config) {
+    GcloudCliHandler.setupGcloudCli(config);
+    await GcpServiceUsageHandler.enableProjectAPIs(config);
+    await GCSDeploymentHandler.createBackendBucket(config);
     console.log(
       "Deploying the 'vigenair' service on Cloud Run / Cloud Functions..."
     );
     spawn.sync("npm run deploy-service", { stdio: "inherit", shell: true });
+  }
+}
+
+class GcloudCliHandler {
+  static setupGcloudCli(config: Config) {
+    console.log(
+      "INFO - Setup gcloud..."
+    );
+    spawn.sync(`gcloud config set project ${config.gcpProjectId}`, {
+      stdio: "inherit",
+      shell: true,
+    });
+    spawn.sync("gcloud services enable cloudresourcemanager.googleapis.com", {
+      stdio: "inherit",
+      shell: true,
+    });
+    spawn.sync(`gcloud auth application-default set-quota-project ${config.gcpProjectId}`, {
+      stdio: "inherit",
+      shell: true,
+    });
+    console.log(
+      `INFO - gcloud project set to '${config.gcpProjectId}' succesfully!`
+    )
+  }
+}
+
+class UserAgentTagHandler {
+  private static _USER_AGENT_PREFIX: string = "cloud-solutions/mas-vigenair-deploy-";
+  private static _SOFTWARE_VERSION: string = "-1";
+  private static _getSoftwareVersion(): string {
+    if(UserAgentTagHandler._SOFTWARE_VERSION === "-1") {
+      var CONFIG_KEY = "CONFIG_BACKEND_VERSION";
+      var configLines = fs.readFileSync("./service/.env.yaml").toString().split("\n");
+      var softwareVersionLine = configLines.filter((line: string) => line.includes(CONFIG_KEY))[0];
+      UserAgentTagHandler._SOFTWARE_VERSION = softwareVersionLine.match(/\'(.+)\'/)[1];
+    }
+    return UserAgentTagHandler._SOFTWARE_VERSION;
+  }
+  static get USER_AGENT_TRACKING_ID(): string {
+    return `${UserAgentTagHandler._USER_AGENT_PREFIX}${UserAgentTagHandler._getSoftwareVersion()}`;
+  }
+}
+
+class GcpServiceUsageHandler {
+  private static _SERVICE_USAGE_CLIENT: typeof ServiceUsageClient;
+  private static _readAPIList(): string[] {
+    return fs.readFileSync("./service/project_apis.txt").toString().split("\n");
+  }
+  private static _getServiceUsageClient(config: Config): typeof ServiceUsageClient{
+    if(typeof GcpServiceUsageHandler._SERVICE_USAGE_CLIENT === "undefined") {
+      GcpServiceUsageHandler._SERVICE_USAGE_CLIENT = new ServiceUsageClient({
+        projectId: config.gcpProjectId,
+        userAgent: UserAgentTagHandler.USER_AGENT_TRACKING_ID
+      });
+    }
+    return GcpServiceUsageHandler._SERVICE_USAGE_CLIENT;
+  }
+  private static async _getEnabledAPIs(config: Config) {
+    const client = GcpServiceUsageHandler._getServiceUsageClient(config);
+    const parent = `projects/${config.gcpProjectId}`;
+    const filter = "state:ENABLED";
+    const result: string[] = [];
+    for await (const service of client.listServicesAsync({
+      parent,
+      filter,
+    })) {
+      result.push(service.name);
+    }
+    return result;
+  }
+
+  private static async _batchEnableServices(config: Config, serviceIds: string[]) {
+    const client = GcpServiceUsageHandler._getServiceUsageClient(config);
+    const parent = `projects/${config.gcpProjectId}`;
+    const [operation] = await client.batchEnableServices({
+      parent,
+      serviceIds,
+    });
+    const [response] = await operation.promise();
+    console.log(response);
+  }
+
+  static async enableProjectAPIs(config: Config){
+    const requiredEnabledAPIs: string[] = GcpServiceUsageHandler._readAPIList();
+    const enabledProjectAPIs = await GcpServiceUsageHandler._getEnabledAPIs(config);
+    const enabledAPIs: string[] = enabledProjectAPIs
+      // Extract service api name from the full service resource name: projects/xxxxxx/services/[service-api-name]
+      .map((fullServiceName: string) => fullServiceName.split("/services/")[1]);
+    const apisToBeEnabled: string[] = [];
+    for(const serviceName of requiredEnabledAPIs) {
+      if (!enabledAPIs.includes(serviceName)) {
+        apisToBeEnabled.push(serviceName);
+      }
+    }
+    if (apisToBeEnabled.length > 0) {
+      console.log('INFO - Enabling GCP APIs:');
+      apisToBeEnabled.forEach((api) => console.log(api));
+      GcpServiceUsageHandler._batchEnableServices(config, apisToBeEnabled);
+    } else {
+      console.log("All required APIs are already enabled.");
+    }
+  }
+}
+
+class GCSDeploymentHandler {
+  static async createBackendBucket(config: Config) {
+    try {
+      const storage = new Storage({
+        projectId: config.gcpProjectId,
+        userAgent: UserAgentTagHandler.USER_AGENT_TRACKING_ID
+      });
+      const bucket = storage.bucket(config.gcsBucket);
+      const bucketExists = await bucket.exists();
+      if (!bucketExists[0]) {
+        await storage.createBucket(config.gcsBucket, {
+          location: config.gcsLocation,
+        });
+        await storage.bucket(config.gcsBucket).setMetadata({
+          iamConfiguration: {
+            uniformBucketLevelAccess: {
+              enabled: true,
+            },
+          },
+        });
+        console.log(
+          `INFO - Bucket '${config.gcsBucket}' created successfully in location '${config.gcsLocation}'!`
+        )
+      } else {
+        console.log(
+          `WARN - Bucket '${config.gcsBucket}' already exists. Skipping bucket creation...`
+        )
+      }
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
 
@@ -273,6 +414,7 @@ export class UserConfigManager {
         gcpRegion,
         gcsLocation,
         vertexAiRegion,
+        gcsBucket,
       })
     );
     console.log();

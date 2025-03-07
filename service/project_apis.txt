@@ -1,0 +1,13 @@
+aiplatform.googleapis.com
+artifactregistry.googleapis.com
+cloudbuild.googleapis.com
+cloudfunctions.googleapis.com
+compute.googleapis.com
+eventarc.googleapis.com
+logging.googleapis.com
+pubsub.googleapis.com
+run.googleapis.com
+script.googleapis.com
+serviceusage.googleapis.com
+storage.googleapis.com
+videointelligence.googleapis.com
