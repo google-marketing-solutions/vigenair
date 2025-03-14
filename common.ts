@@ -218,6 +218,10 @@ export class UserConfigManager {
       stdio: "inherit",
       shell: true,
     });
+    spawn.sync("git checkout -- ./terraform/pre_deploy.sh", {
+      stdio: "inherit",
+      shell: true,
+    });
     spawn.sync("cp ./terraform/terraform.tfvars.template ./terraform/terraform.tfvars", {
       stdio: "inherit",
       shell: true

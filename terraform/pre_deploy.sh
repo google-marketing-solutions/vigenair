@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-gcloud config set project maj-int-ee46670
+gcloud config set project <gcp-project-id>
 gcloud services enable cloudresourcemanager.googleapis.com
-gcloud auth application-default set-quota-project maj-int-ee46670
-printf "\nINFO - GCP project set to 'maj-int-ee46670' succesfully!\n"
+gcloud auth application-default set-quota-project <gcp-project-id>
+printf "\nINFO - GCP project set to '<gcp-project-id>' succesfully!\n"
 
 test $? -eq 0 || exit
