@@ -27,3 +27,9 @@ variable "gcs_location" {
   description = "GCS location to store videos in (can be multi-region like 'us' or 'eu' or single region like 'us-central1' or 'europe-west4')"
   default     = "us"
 }
+
+variable "force_destroy_tf_remote_state" {
+  type = bool
+  description = "Controls whether the Terraform remote state bucket can be forcibly destroyed (deleted even if it contains objects). Defaults to 'false' to safeguard against accidental state loss. Only set this to 'true' when you intend to permanently remove the infrastructure and its state bucket."
+  default = false
+}

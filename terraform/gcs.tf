@@ -20,7 +20,7 @@ resource "google_storage_bucket" "tf_backend" {
   name     = "${module.project_services.project_id}-vigenair-tf-backend"
   location = var.region
 
-  force_destroy               = false
+  force_destroy               = var.force_destroy_tf_remote_state
   public_access_prevention    = "enforced"
   uniform_bucket_level_access = true
 
