@@ -15,6 +15,7 @@
 
 gcloud config set project <gcp-project-id>
 gcloud services enable cloudresourcemanager.googleapis.com
+gcloud services enable compute.googleapis.com
 gcloud auth application-default set-quota-project <gcp-project-id>
 printf "\nINFO - GCP project set to '<gcp-project-id>' succesfully!\n"
 
