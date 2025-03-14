@@ -3,3 +3,11 @@ dist/
 build/
 **/.DS_Store
 .config.json
+
+# terraform files
+**/.terraform/*
+**/backend.tf
+*.tfstate
+*.tfstate.*
+*.tfvars
+terraform/*.zip

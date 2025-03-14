@@ -23,12 +23,15 @@ const spawn = require("cross-spawn");
 export const DEFAULT_GCP_REGION = "us-central1";
 export const DEFAULT_GCS_LOCATION = "us";
 const GCS_BUCKET_NAME_SUFFIX = "-vigenair";
+const GCP_BASH_DEPLOYMENT_SCRIPT = "deploy-service";
+const GCP_TERRAFORM_DEPLOYMENT_SCRIPT = "tf-deploy-service";
 
 interface Config {
   gcpProjectId?: string;
   gcpRegion?: string;
   gcsLocation?: string;
   vertexAiRegion?: string;
+  gcpDeploymentScript?: string;
 }
 
 interface ConfigReplace {
@@ -45,6 +48,7 @@ export interface PromptsResponse {
   gcsLocation?: string;
   webappDomainAccess?: boolean;
   vertexAiRegion?: string;
+  useTerraform?: boolean;
 }
 
 class ClaspManager {
@@ -139,11 +143,11 @@ export class GcpDeploymentHandler {
     }
   }
 
-  static deployGcpComponents() {
+  static deployGcpComponents(config: Config) {
     console.log(
       "Deploying the 'vigenair' service on Cloud Run / Cloud Functions..."
     );
-    spawn.sync("npm run deploy-service", { stdio: "inherit", shell: true });
+    spawn.sync(`npm run ${config.gcpDeploymentScript}`, { stdio: "inherit", shell: true });
   }
 }
 
@@ -214,6 +218,14 @@ export class UserConfigManager {
       stdio: "inherit",
       shell: true,
     });
+    spawn.sync("git checkout -- ./terraform/pre_deploy.sh", {
+      stdio: "inherit",
+      shell: true,
+    });
+    spawn.sync("cp ./terraform/terraform.tfvars.template ./terraform/terraform.tfvars", {
+      stdio: "inherit",
+      shell: true
+    });
     console.log("Setting user configuration...");
     const gcpProjectId = response.gcpProjectId;
     const gcpRegion = response.gcpRegion || DEFAULT_GCP_REGION;
@@ -223,7 +235,7 @@ export class UserConfigManager {
       .replace(".", "-")
       .replace(":", "-")}${GCS_BUCKET_NAME_SUFFIX}`;
     const vertexAiRegion = response.vertexAiRegion || DEFAULT_GCP_REGION;
-
+    const gcpDeploymentScript = response.useTerraform ? GCP_TERRAFORM_DEPLOYMENT_SCRIPT : GCP_BASH_DEPLOYMENT_SCRIPT;
     configReplace({
       regex: "<gcp-project-id>",
       replacement: gcpProjectId,
@@ -231,6 +243,8 @@ export class UserConfigManager {
         "./service/.env.yaml",
         "./service/deploy.sh",
         "./ui/src/config.ts",
+        "./terraform/terraform.tfvars",
+        "./terraform/pre_deploy.sh",
       ],
     });
 
@@ -238,13 +252,17 @@ export class UserConfigManager {
       configReplace({
         regex: "<gcp-region>",
         replacement: gcpRegion,
-        paths: ["./service/.env.yaml", "./service/deploy.sh"],
+        paths: [
+          "./service/.env.yaml",
+          "./service/deploy.sh",
+          "./terraform/terraform.tfvars",
+        ],
       });
 
       configReplace({
         regex: "<gcs-location>",
         replacement: gcsLocation,
-        paths: ["./service/deploy.sh"],
+        paths: ["./service/deploy.sh", "./terraform/terraform.tfvars"],
       });
     }
     configReplace({
@@ -273,6 +291,7 @@ export class UserConfigManager {
         gcpRegion,
         gcsLocation,
         vertexAiRegion,
+        gcpDeploymentScript,
       })
     );
     console.log();
