@@ -64,6 +64,19 @@ limitations under the License.
   justify-content: center;
 }
 
+.segment-spinner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.25);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
 .segments-row {
   display: flex;
   flex-direction: column;
@@ -82,6 +95,27 @@ img {
   width: 512px;
 }
 
+video {
+  width: 800px;
+}
+
+.video-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 99%;
+}
+
+.marker-buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-items: center;
+  gap: 8px;
+}
+
 .filmstrip-img {
   display: flex;
   width: var(--filmstrip-image-width);
@@ -91,7 +125,7 @@ img {
   border: solid #81c784;
 }
 
-mat-icon {
+.selection-icon {
   position: absolute;
   color: #3f51b5;
   filter: drop-shadow(2px 2px 3px black);

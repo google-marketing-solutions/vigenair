@@ -26,6 +26,7 @@ import {
   PreviousRunsResponse,
   RenderedVariant,
   RenderQueue,
+  SegmentMarker,
   VariantTextAsset,
 } from './api-calls.service.interface';
 
@@ -208,6 +209,19 @@ export class ApiCallsService implements ApiCalls {
             });
           }
           subscriber.next(textAssets);
+          subscriber.complete();
+        });
+      }, 1000);
+    });
+  }
+  splitSegment(
+    gcsFolder: string,
+    segmentMarkers: SegmentMarker[]
+  ): Observable<string> {
+    return new Observable(subscriber => {
+      setTimeout(() => {
+        this.ngZone.run(() => {
+          subscriber.next('split complete');
           subscriber.complete();
         });
       }, 1000);

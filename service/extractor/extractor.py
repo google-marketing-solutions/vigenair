@@ -19,6 +19,7 @@ input video file and create coherent audio/video segments.
 """
 
 import concurrent.futures
+import dataclasses
 import json
 import logging
 import os
@@ -39,6 +40,32 @@ import utils as Utils
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
 import video as VideoService
+
+
+@dataclasses.dataclass(init=False)
+class AvSegmentSplitMarker:
+  """Represents all information required to split a segment at a specified marker.
+
+  Attributes:
+    av_segment_id: The ID of the A/V segment to split.
+    marker_cut_time_s: The time in seconds at which to split the segment.
+  """
+
+  av_segment_id: str
+  marker_cut_time_s: float
+
+  def __init__(self, **kwargs):
+    field_names = set([f.name for f in dataclasses.fields(self)])
+    for k, v in kwargs.items():
+      if k in field_names:
+        setattr(self, k, v)
+
+  def __str__(self):
+    return (
+        'AvSegmentSplitMarker('
+        f'av_segment_id={self.av_segment_id}, '
+        f'marker_cut_time_s={self.marker_cut_time_s})'
+    )
 
 
 class Extractor:
@@ -346,7 +373,22 @@ class Extractor:
         'SEGMENTS - Optimised segments: %r',
         optimised_av_segments.to_json(orient='records')
     )
+    self.finalise_av_segments(
+        tmp_dir,
+        input_video_file_path,
+        video_file_name,
+        optimised_av_segments,
+    )
+    logging.info('EXTRACTOR - Extraction completed successfully!')
 
+  def finalise_av_segments(
+      self,
+      tmp_dir: str,
+      input_video_file_path: str,
+      video_file_name: str,
+      optimised_av_segments: pd.DataFrame,
+  ):
+    """Cuts, annotates and enhances A/V segments."""
     optimised_av_segments = self.cut_and_annotate_av_segments(
         tmp_dir,
         input_video_file_path,
@@ -373,7 +415,6 @@ class Extractor:
         bucket_name=self.gcs_bucket_name,
         target_dir=self.media_file.gcs_root_folder,
     )
-    logging.info('EXTRACTOR - Extraction completed successfully!')
 
   def cut_and_annotate_av_segments(
       self,
@@ -397,6 +438,7 @@ class Extractor:
         f'gs://{self.gcs_bucket_name}/{self.media_file.gcs_root_folder}/'
         f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}'
     )
+    _, video_ext = os.path.splitext(video_file_path)
     size = len(optimised_av_segments)
     descriptions = [None] * size
     keywords = [None] * size
@@ -407,13 +449,12 @@ class Extractor:
       futures_dict = {
           thread_executor.submit(
               _cut_and_annotate_av_segment,
-              index=index + 1,
               row=row,
               video_file_path=video_file_path,
               cuts_path=cuts_path,
               vision_model=self.vision_model,
               gcs_cut_path=(
-                  f'{gcs_cuts_folder_path}/{index+1}.{self.media_file.file_ext}'
+                  f"{gcs_cuts_folder_path}/{row['av_segment_id']}{video_ext}"
               ),
               bucket_name=self.gcs_bucket_name,
           ): index
@@ -429,9 +470,10 @@ class Extractor:
             f'{ConfigService.GCS_BASE_URL}/'
             f'{self.gcs_bucket_name}/'
             f'{parse.quote(self.media_file.gcs_root_folder)}/'
-            f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/{index + 1}'
+            f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/'
+            f"{optimised_av_segments.loc[index, 'av_segment_id']}"
         )
-        cut_paths[index] = f'{resources_base_path}.{self.media_file.file_ext}'
+        cut_paths[index] = f'{resources_base_path}{video_ext}'
         screenshot_paths[index] = (
             f'{resources_base_path}{ConfigService.SEGMENT_SCREENSHOT_EXT}'
         )
@@ -520,9 +562,161 @@ class Extractor:
       )
     return optimised_av_segments
 
+  def split_av_segment(self):
+    """Splits A/V segment at given markers."""
+    logging.info(
+        'SPLITTING - Starting split operation: %s',
+        self.media_file.full_gcs_path
+    )
+    tmp_dir = tempfile.mkdtemp()
+    video_file_name = next(
+        iter(
+            StorageService.filter_video_files(
+                prefix=(
+                    f'{self.media_file.gcs_root_folder}/'
+                    f'{ConfigService.INPUT_FILENAME}'
+                ),
+                bucket_name=self.gcs_bucket_name,
+                first_only=True,
+            )
+        ), None
+    )
+    input_video_file_path = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(video_file_name),
+        output_dir=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+    )
+
+    av_segments_file_path = StorageService.download_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(
+                pathlib.Path(
+                    self.media_file.gcs_root_folder,
+                    ConfigService.OUTPUT_PRESPLIT_DATA_FILE
+                )
+            )
+        ),
+        output_dir=tmp_dir,
+        bucket_name=self.gcs_bucket_name,
+    )
+    av_segments = pd.read_json(
+        av_segments_file_path,
+        orient='records',
+    )
+    av_segments['av_segment_id'] = av_segments['av_segment_id'].astype(str)
+    logging.info(
+        'SPLITTING - Current segments: %r',
+        av_segments.to_json(orient='records')
+    )
+
+    split_file_contents = StorageService.download_gcs_file(
+        file_path=self.media_file,
+        bucket_name=self.gcs_bucket_name,
+        fetch_contents=True,
+    )
+    av_segment_markers = [
+        AvSegmentSplitMarker(**segment_marker)
+        for segment_marker in json.loads(split_file_contents.decode('utf-8'))
+    ]
+    av_segments = _finalise_split(av_segments, av_segment_markers)
+    self.finalise_av_segments(
+        tmp_dir,
+        input_video_file_path,
+        video_file_name,
+        av_segments,
+    )
+    StorageService.delete_gcs_file(
+        file_path=Utils.TriggerFile(
+            str(
+                pathlib.Path(
+                    self.media_file.gcs_root_folder,
+                    ConfigService.OUTPUT_PRESPLIT_DATA_FILE
+                )
+            )
+        ),
+        bucket_name=self.gcs_bucket_name,
+    )
+    logging.info('SPLITTING - Split operation completed successfully!')
+
+
+def _finalise_split(
+    av_segments: pd.DataFrame,
+    av_segment_markers: Sequence[AvSegmentSplitMarker],
+) -> pd.DataFrame:
+  """Splits A/V segments at the specified markers and returns the resulting DF.
+
+  Args:
+    av_segments: The original A/V segments.
+    av_segment_markers: The markers at which to split.
+
+  Returns:
+    The updated av_segments dataframe.
+  """
+  grouped_markers = {}
+  for marker in av_segment_markers:
+    if marker.av_segment_id not in grouped_markers:
+      grouped_markers[marker.av_segment_id] = []
+    grouped_markers[marker.av_segment_id].append(marker)
+
+  av_segments['cut'] = False
+
+  for av_segment_id, markers in grouped_markers.items():
+    logging.info('SPLITTING - Segment: %r', av_segment_id)
+    row_to_split = av_segments[av_segments['av_segment_id'] == av_segment_id]
+
+    if row_to_split.empty:
+      print(f'Warning: Segment {av_segment_id} not found. Skipping splits...')
+      continue
+
+    row_to_split = row_to_split.iloc[0].copy()
+
+    current_segment_id = f'{av_segment_id}.1'
+    current_start_s = row_to_split['start_s']
+
+    av_segments.loc[av_segments['av_segment_id'] == av_segment_id,
+                    'av_segment_id'] = current_segment_id
+
+    for i, marker in enumerate(markers):
+      marker_cut_time_s = marker.marker_cut_time_s
+
+      new_row_end_s = row_to_split[
+          'end_s'] if i == len(markers) - 1 else marker_cut_time_s
+      new_row_duration_s = new_row_end_s - marker_cut_time_s
+
+      av_segments.loc[av_segments['av_segment_id'] == current_segment_id,
+                      'end_s'] = marker_cut_time_s
+      av_segments.loc[av_segments['av_segment_id'] == current_segment_id,
+                      'duration_s'] = marker_cut_time_s - current_start_s
+
+      av_segments.loc[av_segments['av_segment_id'] == current_segment_id,
+                      'cut'] = True
+
+      new_row_id = f'{av_segment_id}.{i + 2}'
+
+      new_row = pd.DataFrame({
+          'av_segment_id': [new_row_id],
+          'visual_segment_ids': [row_to_split['visual_segment_ids']],
+          'audio_segment_ids': [row_to_split['audio_segment_ids']],
+          'start_s': [marker_cut_time_s],
+          'end_s': [new_row_end_s],
+          'duration_s': [new_row_duration_s],
+          'transcript': [row_to_split['transcript']],
+          'labels': [row_to_split['labels']],
+          'objects': [row_to_split['objects']],
+          'logos': [row_to_split['logos']],
+          'text': [row_to_split['text']],
+          'cut': [True],
+      })
+
+      av_segments = pd.concat([av_segments, new_row], ignore_index=True)
+
+      current_segment_id = new_row_id
+      current_start_s = marker_cut_time_s
+
+  return av_segments
+
 
 def _cut_and_annotate_av_segment(
-    index: int,
     row: pd.Series,
     video_file_path: str,
     cuts_path: str,
@@ -533,7 +727,6 @@ def _cut_and_annotate_av_segment(
   """Cuts a single A/V segment with ffmpeg and annotates it with Gemini.
 
   Args:
-    index: The index of the A/V segment in the DataFrame.
     row: The A/V segment data as a row in a DataFrame.
     video_file_path: Path to the input video file.
     cuts_path: The local directory to store the A/V segment cuts.
@@ -544,11 +737,23 @@ def _cut_and_annotate_av_segment(
   Returns:
     A tuple of the A/V segment description and keywords.
   """
+  av_segment_id = row['av_segment_id']
   _, video_ext = os.path.splitext(video_file_path)
-  full_cut_path = str(pathlib.Path(cuts_path, f'{index}{video_ext}'))
+  full_cut_path = str(pathlib.Path(cuts_path, f'{av_segment_id}{video_ext}'))
   full_screenshot_path = str(
-      pathlib.Path(cuts_path, f'{index}{ConfigService.SEGMENT_SCREENSHOT_EXT}')
+      pathlib.Path(
+          cuts_path, f'{av_segment_id}{ConfigService.SEGMENT_SCREENSHOT_EXT}'
+      )
   )
+  cut = True
+  try:
+    cut = row['cut']
+  except KeyError:
+    pass
+
+  if not cut:
+    return row['description'], row['keywords']
+
   Utils.execute_subprocess_commands(
       cmds=[
           'ffmpeg',
@@ -563,7 +768,7 @@ def _cut_and_annotate_av_segment(
           'copy',
           full_cut_path,
       ],
-      description=f'cut segment {index} with ffmpeg',
+      description=f'cut segment {av_segment_id} with ffmpeg',
   )
   os.chmod(full_cut_path, 777)
   gcs_cut_dest_file = gcs_cut_path.replace(f'gs://{bucket_name}/', '')
@@ -585,7 +790,7 @@ def _cut_and_annotate_av_segment(
           '2',
           full_screenshot_path,
       ],
-      description=f'screenshot mid-segment {index} with ffmpeg',
+      description=f'screenshot mid-segment {av_segment_id} with ffmpeg',
   )
   os.chmod(full_screenshot_path, 777)
   gcs_cut_dest_file_prefix, _ = os.path.splitext(gcs_cut_dest_file)
@@ -613,17 +818,21 @@ def _cut_and_annotate_av_segment(
     ):
       text = response.candidates[0].content.parts[0].text
       result = re.search(ConfigService.SEGMENT_ANNOTATIONS_PATTERN, text)
-      logging.info('ANNOTATION - Annotating segment %s: %s', index, text)
+      logging.info(
+          'ANNOTATION - Annotating segment %s: %s', av_segment_id, text
+      )
       description = result.group(2)
       keywords = result.group(3)
     else:
-      logging.warning('ANNOTATION - Could not annotate segment %s!', index)
+      logging.warning(
+          'ANNOTATION - Could not annotate segment %s!', av_segment_id
+      )
   # Execution should continue regardless of the underlying exception
   # pylint: disable=broad-exception-caught
   except Exception:
     logging.exception(
         'Encountered error during segment %s annotation! Continuing...',
-        index,
+        av_segment_id,
     )
   return description, keywords
 
@@ -735,7 +944,7 @@ def _create_optimised_av_segments(
       end = max([entry[2] for entry in current_visual_segments])
       duration = end - start
       optimised_av_segments.loc[index] = [
-          index,
+          str(index + 1),
           visual_segment_ids,
           list(current_audio_segment_ids),
           start,
@@ -763,7 +972,7 @@ def _create_optimised_av_segments(
   end = max([entry[2] for entry in current_visual_segments])
   duration = end - start
   optimised_av_segments.loc[index] = [
-      index,
+      str(index + 1),
       visual_segment_ids,
       list(current_audio_segment_ids),
       start,
@@ -786,7 +995,7 @@ def _annotate_segments(
     objects_dataframe,
     logos_dataframe,
     text_dataframe,
-    av_segment_id_key: str = 'av_segment_id',
+    av_segment_id_key='av_segment_id',
 ) -> pd.DataFrame:
   """Annotates the A/V segments with data from the Video AI API.
 

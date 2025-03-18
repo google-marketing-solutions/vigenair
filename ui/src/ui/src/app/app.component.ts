@@ -67,6 +67,7 @@ import {
   RenderedVariant,
   RenderQueueVariant,
   RenderSettings,
+  SegmentMarker,
   VariantTextAsset,
 } from './api-calls/api-calls.service.interface';
 import { FileChooserComponent } from './file-chooser/file-chooser.component';
@@ -189,6 +190,8 @@ export class AppComponent {
   allSegmentsToggle = false;
   marked = marked;
   businessObjectives = Object.values(CONFIG.vertexAi.abcdBusinessObjectives);
+  segmentMarkers: Record<string, SegmentMarker[]> = {};
+  segmentSplitting = false;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -213,6 +216,7 @@ export class AppComponent {
   evalPromptTextarea?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('evalPromptPlaceholder')
   evalPromptPlaceholder?: ElementRef<HTMLDivElement>;
+  @ViewChild(FileChooserComponent) fileChooserComponent!: FileChooserComponent;
 
   constructor(
     private apiCallsService: ApiCallsService,
@@ -448,17 +452,22 @@ export class AppComponent {
     this.segmentsStatus = 'pending';
     this.apiCallsService
       .getFromGcs(
-        `${this.folder}/data.json`,
+        `${this.folder}/${CONFIG.cloudStorage.files.data}`,
         CONFIG.retryDelay,
         this.maxRetries
       )
       .subscribe({
         next: data => {
           const dataJson = JSON.parse(data);
-          this.avSegments = dataJson.map((e: AvSegment) => {
-            e.selected = false;
-            return e;
-          });
+          this.avSegments = (
+            dataJson.map((e: AvSegment) => {
+              e.selected = false;
+              e.splitting = false;
+              return e;
+            }) as AvSegment[]
+          ).sort((a: AvSegment, b: AvSegment) =>
+            String(a.av_segment_id).localeCompare(String(b.av_segment_id))
+          );
           this.originalAvSegments = structuredClone(this.avSegments);
           this.segmentsStatus = 'check_circle';
           this.loading = false;
@@ -479,7 +488,11 @@ export class AppComponent {
     this.videoCombosPanel.open();
     this.combos = undefined;
     this.apiCallsService
-      .getFromGcs(`${folder}/combos.json`, CONFIG.retryDelay, this.maxRetries)
+      .getFromGcs(
+        `${folder}/${CONFIG.cloudStorage.files.combos}`,
+        CONFIG.retryDelay,
+        this.maxRetries
+      )
       .subscribe({
         next: data => {
           this.combosJson = JSON.parse(data);
@@ -499,7 +512,7 @@ export class AppComponent {
     this.analysisStatus = 'pending';
     this.apiCallsService
       .getFromGcs(
-        `${this.folder}/analysis.json`,
+        `${this.folder}/${CONFIG.cloudStorage.files.analysis}`,
         CONFIG.retryDelay,
         this.maxRetries
       )
@@ -523,7 +536,7 @@ export class AppComponent {
     this.transcriptStatus = 'pending';
     this.apiCallsService
       .getFromGcs(
-        `${this.folder}/input.vtt`,
+        `${this.folder}/${CONFIG.cloudStorage.files.subtitles}`,
         CONFIG.retryDelay,
         this.maxRetries
       )
@@ -556,6 +569,7 @@ export class AppComponent {
       .uploadVideo(this.selectedFile!, this.analyseAudio, this.encodedUserId!)
       .subscribe({
         next: response => {
+          this.fileChooserComponent.stopVideo();
           this.processVideo(response[0], response[1], false);
         },
         error: err => this.failHandler(err),
@@ -598,6 +612,7 @@ export class AppComponent {
     this.allSegmentsToggle = false;
     this.demandGenAssets = true;
     this.analyseAudio = true;
+    this.segmentMarkers = {};
     this.previewVideoElem.nativeElement.pause();
     this.VideoComboComponent?.videoElem.nativeElement.pause();
     this.videoMagicPanel.close();
@@ -957,10 +972,10 @@ export class AppComponent {
     }
     const allSelected = this.avSegments
       .filter((segment: AvSegment) => segment.selected)
-      .map((segment: AvSegment) => segment.av_segment_id + 1);
+      .map((segment: AvSegment) => segment.av_segment_id);
     const allPlayed = this.avSegments
       .filter((segment: AvSegment) => segment.played)
-      .map((segment: AvSegment) => segment.av_segment_id + 1);
+      .map((segment: AvSegment) => segment.av_segment_id);
 
     const lastSelectedSegmentToBePlayed = this.avSegments.findLast(
       (segment: AvSegment) => segment.selected
@@ -982,7 +997,7 @@ export class AppComponent {
       timestamp >= lastSelectedSegmentToBePlayed.end_s;
     const currentSegmentAlreadyPlayed =
       currentSegment.played &&
-      allPlayed.indexOf(currentSegment.av_segment_id + 1) !==
+      allPlayed.indexOf(currentSegment.av_segment_id) !==
         allPlayed.length - 1 &&
       nextPlayableSegment &&
       nextPlayableSegment.av_segment_id !== currentSegment.av_segment_id;
@@ -1005,19 +1020,24 @@ export class AppComponent {
     return skipSegment;
   }
 
-  seekToSegment(index: number) {
-    const segment = this.avSegments![index];
+  seekToSegment(av_segment_id: string) {
+    const segment = this.avSegments.find(
+      (segment: AvSegment) => segment.av_segment_id === av_segment_id
+    );
     this.previewVideoElem.nativeElement.currentTime = segment.start_s;
   }
 
-  setSelectedSegments(segments?: number[]) {
+  setSelectedSegments(segments?: string[]) {
     for (const segment of this.avSegments) {
       segment.selected = false;
     }
     const segmentsToSelect =
       segments ?? this.variants?.[this.selectedVariant].scenes ?? [];
-    for (const segment of segmentsToSelect) {
-      this.avSegments[segment - 1].selected = true;
+    for (const segmentId of segmentsToSelect) {
+      const avSegment = this.avSegments.find(
+        (segment: AvSegment) => segment.av_segment_id === String(segmentId)
+      );
+      avSegment.selected = true;
     }
   }
 
@@ -1036,7 +1056,11 @@ export class AppComponent {
     );
     const firstSelectedSegment =
       this.avSegments && this.variants
-        ? this.avSegments[this.variants[this.selectedVariant].scenes[0] - 1]
+        ? this.avSegments?.find(
+            (segment: AvSegment) =>
+              segment.av_segment_id ===
+              this.variants![this.selectedVariant].scenes[0]
+          )
         : null;
     this.previewVideoElem.nativeElement.currentTime = firstUnplayedSegment
       ? firstUnplayedSegment.start_s
@@ -1063,7 +1087,7 @@ export class AppComponent {
       (segment: AvSegment) => segment.selected
     ).map((segment: AvSegment) => {
       return {
-        av_segment_id: segment.av_segment_id + 1,
+        av_segment_id: segment.av_segment_id,
         start_s: segment.start_s,
         end_s: segment.end_s,
         segment_screenshot_uri: segment.segment_screenshot_uri,
@@ -1310,5 +1334,28 @@ export class AppComponent {
   toggleContentDisplay() {
     this.evalPromptTextarea!.nativeElement.style.display = 'block';
     this.evalPromptPlaceholder!.nativeElement.style.display = 'none';
+  }
+
+  updateVideoPreview() {
+    if (this.segmentModeToggle.value === 'segments') {
+      this.previewVideoElem.nativeElement.pause();
+    } else if (
+      this.segmentModeToggle.value === 'preview' &&
+      this.previewVideoElem.nativeElement.currentTime > 0
+    ) {
+      this.previewVideoElem.nativeElement.play();
+    }
+  }
+
+  splitSegment(segmentMarkers: SegmentMarker[]) {
+    console.log(segmentMarkers);
+    this.loading = true;
+    this.apiCallsService.splitSegment(this.folder, segmentMarkers).subscribe({
+      next: result => {
+        console.log(result);
+        this.getAvSegments();
+      },
+      error: err => this.failHandler(err),
+    });
   }
 }

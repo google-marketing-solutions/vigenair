@@ -32,6 +32,8 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [March 2025]
+  * `frontend` + `backend`: Added functionality to cut segments by adding *split markers* and re-running the extraction process. Read more [here](#22-segment-splitting).
 * [February 2025]
   * `frontend`: You can now choose objective-specific ABCDs (Awareness, Consideration, Action, or Shorts) in the *Advanced settings* section of variants generation. Read more [here](#41-variants-generation).
 * [January 2025] Happy New Year!
@@ -167,7 +169,7 @@ The diagram below shows how Vigenair's components interact and communicate with 
 
 #### 1. Video Selection
 
-Users upload or select videos they have previously analysed via the UI's `Video selection` card ([step #2](#2-video-processing-and-extraction) is skipped for already analysed videos).
+Users upload or select videos they have previously analysed via the UI's `Video selection` card ([step #2](#21-video-processing-and-extraction) is skipped for already analysed videos).
 
 <center><img src='./img/upload.png' width="600px" alt="Vigenair UI: Upload or select a video" /></center>
 
@@ -180,7 +182,7 @@ Users upload or select videos they have previously analysed via the UI's `Video 
   * `timestamp`: Current timestamp in **microseconds** (e.g. 1234567890123)
   * `encoded_user_id`: Base64 encoded version of the [user's email](https://developers.google.com/apps-script/reference/base/user#getemail) - if available - otherwise Apps Script's [temp User ID](https://developers.google.com/apps-script/reference/base/session#gettemporaryactiveuserkey).
 
-#### 2. Video Processing and Extraction
+#### 2.1. Video Processing and Extraction
 
 New uploads into GCS trigger the Extractor service Cloud Function, which extracts all video information and stores the results on GCS (`input.vtt`, `analysis.json` and `data.json`).
 
@@ -188,6 +190,24 @@ New uploads into GCS trigger the Extractor service Cloud Function, which extract
 * Transcription is done via the [faster-whisper](https://github.com/SYSTRAN/faster-whisper) library and the output is stored in an `input.vtt` file, along with a `language.txt` file containing the video's primary language, in the same folder as the input video.
 * Video analysis is done via the Cloud [Video Intelligence API](https://cloud.google.com/video-intelligence), where visual shots, detected objects - with tracking, labels, people and faces, and recognised logos and any on-screen text within the input video are extracted. The output is stored in an `analysis.json` file in the same folder as the input video.
 * Finally, *coherent* audio/video segments are created using the transcription and video intelligence outputs and then cut into individual video files and stored on GCS in an `av_segments_cuts` subfolder under the root video folder. These cuts are then annotated via Gemini, which provides a description and a set of associated keywords / topics per segment. The fully annotated segments (including all information from the Video Intelligence API) are then compiled into a `data.json` file that is stored in the same folder as the input video.
+* A/V segments are displayed in two ways:
+  * In the *video preview* view: A single frame of each segment, cut mid-segment, is displayed in a filmstrip and scrolls into view while the user is previewing the video, indicating the segment that is *currently playing*. Clicking on a segment will also automatically seek to it in the video preview.
+
+    <center><img src='./img/preview-complete.png' width="600px" alt="Vigenair UI: Segments in preview" /></center>
+
+  * A detailed *segments list* view: Which shows additional information per segment; the segment's duration, description and extracted keywords, along with a video preview of the segment.
+
+    <center><img src='./img/segments.png' width="800px" alt="Vigenair UI: Segments list" /></center>
+
+#### 2.2. Segment Splitting
+
+For some videos, the Video Intelligence API is not able to extract the individual shots that make up the video, or the spoken audio overlaps individual visual segments - which is very common in product explainer videos - and so users end up with long segments that make shortening largely infeasible.
+
+To solve this, users can add **split markers** to individual segments in the *segments list* view by first pausing the associated video preview and seeking to the desired point in the video via the media player controls.
+
+<center><img src='./img/segment-split.gif' width="600px" alt="Vigenair UI: A segment being split" /></center>
+
+Once ready, clicking on *Split segment* will upload a <code>\<timestamp\>_split.json</code> file to GCS, which will trigger the `vigenair` Cloud Function to split the segment and adjust the `data.json` file accordingly. The UI will display a loading spinner until the segment split operation is complete.
 
 #### 3. Object Tracking and Smart Framing
 
@@ -224,15 +244,6 @@ The crop area will be adjusted automatically for all preceding and subsequent vi
 #### 4.1. Variants Generation
 
 Users are now ready for combination. They can view the A/V segments and generate / iterate on variants via a *preview* while modifying user controls, adding desired variants to the render queue.
-
-* A/V segments are displayed in two ways:
-  * In the *video preview* view: A single frame of each segment, cut mid-segment, is displayed in a filmstrip and scrolls into view while the user is previewing the video, indicating the segment that is *currently playing*. Clicking on a segment will also automatically seek to it in the video preview.
-
-    <center><img src='./img/preview-complete.png' width="600px" alt="Vigenair UI: Segments in preview" /></center>
-
-  * A detailed *segments list* view: Which shows additional information per segment; the segment's duration, description and extracted keywords.
-
-    <center><img src='./img/segments.png' width="600px" alt="Vigenair UI: Segments list" /></center>
 
 * User Controls for video variant generation:
 

@@ -21,6 +21,20 @@ export const CONFIG = {
     uploadEndpointBase: 'https://storage.googleapis.com/upload/storage/v1',
     authenticatedEndpointBase: 'https://storage.mtls.cloud.google.com',
     browsingEndpointBase: 'https://console.cloud.google.com/storage/browser',
+    files: {
+      subtitles: 'input.vtt',
+      analysis: 'analysis.json',
+      data: 'data.json',
+      presplit: 'presplit_data.json',
+      split: '_split.json',
+      combos: 'combos.json',
+      render: 'render.json',
+      approval: 'approval.json',
+      formats: {
+        square: 'square.txt',
+        vertical: 'vertical.txt',
+      },
+    },
   },
   vertexAi: {
     endpoint: 'aiplatform.googleapis.com',

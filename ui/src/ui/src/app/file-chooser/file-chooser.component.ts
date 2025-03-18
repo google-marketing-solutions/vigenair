@@ -36,7 +36,6 @@ export class FileChooserComponent {
   selectedFileUrl?: string;
 
   @ViewChild('videoElem') videoElem!: ElementRef<HTMLVideoElement>;
-  @ViewChild('trackElem') trackElem!: ElementRef<HTMLTrackElement>;
   @Output() file = new EventEmitter<File>();
 
   onFileChange(event: Event) {
@@ -52,5 +51,10 @@ export class FileChooserComponent {
     setTimeout(() => {
       this.videoElem.nativeElement.load();
     }, 50);
+  }
+
+  stopVideo() {
+    this.videoElem.nativeElement.pause();
+    this.videoElem.nativeElement.currentTime = 0;
   }
 }

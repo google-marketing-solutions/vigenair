@@ -34,6 +34,7 @@ import {
   PreviewSettings,
   RenderedVariant,
   RenderQueue,
+  SegmentMarker,
   VariantTextAsset,
 } from './ui/src/app/api-calls/api-calls.service.interface';
 
@@ -131,7 +132,7 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
     StorageManager.uploadFile(
       encodedSquareCropCommands,
       folder,
-      'square.txt',
+      CONFIG.cloudStorage.files.formats.square,
       'text/plain'
     );
   }
@@ -154,7 +155,7 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
     StorageManager.uploadFile(
       encodedVerticalCropCommands,
       folder,
-      'vertical.txt',
+      CONFIG.cloudStorage.files.formats.vertical,
       'text/plain'
     );
   }
@@ -166,7 +167,7 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
   StorageManager.uploadFile(
     encodedRenderQueueJson,
     folder,
-    'render.json',
+    CONFIG.cloudStorage.files.render,
     'application/json'
   );
 
@@ -214,7 +215,7 @@ function storeApprovalStatus(
   StorageManager.uploadFile(
     encodedJson,
     gcsFolder,
-    'approval.json',
+    CONFIG.cloudStorage.files.approval,
     'application/json'
   );
   return true;
@@ -223,6 +224,28 @@ function storeApprovalStatus(
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getVideoLanguage(gcsFolder: string) {
   return GenerationHelper.getVideoLanguage(gcsFolder);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function splitSegment(
+  gcsFolder: string,
+  segmentMarkers: SegmentMarker[]
+): string {
+  const encodedJson = Utilities.base64Encode(
+    JSON.stringify(segmentMarkers),
+    Utilities.Charset.UTF_8
+  );
+  StorageManager.renameFile(
+    `${gcsFolder}/${CONFIG.cloudStorage.files.data}`,
+    `${gcsFolder}/${CONFIG.cloudStorage.files.presplit}`
+  );
+  StorageManager.uploadFile(
+    encodedJson,
+    gcsFolder,
+    `${Date.now()}${CONFIG.cloudStorage.files.split}`,
+    'application/json'
+  );
+  return String(segmentMarkers[0].av_segment_id);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

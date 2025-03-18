@@ -216,3 +216,33 @@ def filter_files(
       else:
         result.append(blob.download_as_bytes() if fetch_content else blob.name)
   return result
+
+
+def delete_gcs_file(
+    file_path: Utils.TriggerFile,
+    bucket_name: str,
+):
+  """Deletes a file from the given GCS bucket.
+
+  Args:
+    file_path: The path of the file to download.
+    bucket_name: The name of the bucket to retrieve the file from.
+  """
+  storage_client = storage.Client()
+  bucket = storage_client.bucket(bucket_name)
+
+  blob = bucket.blob(file_path.full_gcs_path)
+
+  if not blob.exists():
+    logging.warning(
+        'DELETE - Could not find file "%s" in bucket "%s".',
+        file_path.full_gcs_path,
+        bucket_name,
+    )
+  else:
+    blob.delete()
+    logging.info(
+        'DELETE - Deleted file "%s" from bucket "%s".',
+        file_path.full_gcs_path,
+        bucket_name,
+    )
