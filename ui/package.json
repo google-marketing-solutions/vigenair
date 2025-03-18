@@ -24,7 +24,7 @@
     "node": ">=12"
   },
   "dependencies": {
-    "@google/clasp": "^2.4.2",
+    "@google/clasp": "2.4.2",
     "@types/google-apps-script": "^1.0.79",
     "@types/jest": "^29.5.11",
     "@typescript-eslint/eslint-plugin": "^6.20.0",

@@ -82,7 +82,7 @@ Update to the latest version by running `npm run update-app` after pulling the l
 Please make sure you have fulfilled all prerequisites mentioned under [Requirements](#requirements) first.
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`, then login via `clasp login`.
+1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp@2.4.2 -g`, then login via `clasp login`.
 1. Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
 1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install), then login via `gcloud auth login`.
 1. Make sure your system has an up-to-date installation of `git` and use it to clone this repository:
@@ -345,7 +345,7 @@ Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), yo
 ### Build and Serve the Angular UI
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`, then login via `clasp login`.
+1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp@2.4.2 -g`, then login via `clasp login`.
 1. Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
 1. Navigate to the directory where the source code lives and run `cd ui`
 1. Run `npm install` to install dependencies.
