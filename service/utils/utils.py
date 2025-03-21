@@ -193,6 +193,11 @@ class TriggerFile:
   def is_extractor_finalise_trigger(self) -> bool:
     return self.file_name_ext == ConfigService.INPUT_EXTRACTION_FINALISE_FILE
 
+  def is_extractor_split_segment_trigger(self) -> bool:
+    return self.file_name_ext.endswith(
+        ConfigService.INPUT_EXTRACTION_SPLIT_SEGMENT_SUFFIX
+    )
+
   def is_combiner_initial_trigger(self) -> bool:
     return self.file_name_ext == ConfigService.INPUT_RENDERING_FILE
 

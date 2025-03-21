@@ -213,6 +213,7 @@ limitations under the License.
             value="preview"
             [disabled]="loading && !generatingVariants"
             hideSingleSelectionIndicator
+            (change)="updateVideoPreview()"
           >
             <mat-button-toggle value="preview" matTooltip="Video preview">
               <mat-icon>play_arrow</mat-icon>
@@ -304,7 +305,9 @@ limitations under the License.
           [allowSelection]="variants !== undefined"
           [draggable]="reorderSegmentsToggle?.checked ?? false"
           [currentSegmentId]="currentSegmentId || 0"
+          [segmentMarkers]="segmentMarkers"
           (seekToSegmentEvent)="seekToSegment($event)"
+          (segmentSplitEvent)="splitSegment($event)"
         ></segments-list>
         <div
           [hidden]="segmentModeToggle.value !== 'preview'"

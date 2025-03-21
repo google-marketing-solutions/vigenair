@@ -31,83 +31,165 @@ limitations under the License.
     (cdkDropListDropped)="drop($event)"
   >
     @for (segment of segmentList; track segment; let i = $index) {
-      <div
-        class="segment"
-        [class.active-segment]="
-          segmentMode === 'preview' &&
-          currentSegmentId === segment.av_segment_id
-        "
-        [style.margin-bottom]="segmentMode !== 'preview' ? '16px' : ''"
-      >
+      <div style="position: relative">
         <div
-          [ngClass]="segmentMode === 'preview' ? 'drag-element' : ''"
-          style="display: flex"
-          [style.cursor]="
-            this.draggable &&
-            this.segmentMode === 'preview' &&
-            this.allowSelection
-              ? 'move'
-              : segmentMode === 'preview'
-                ? 'pointer'
-                : 'default'
-          "
-          (click)="
-            allowSelection
-              ? toggleSegmentSelection(i)
-              : segmentMode === 'preview'
-                ? seekToSegment(segment.av_segment_id)
-                : ''
-          "
-          [matTooltip]="
-            !allowSelection && segmentMode === 'preview'
-              ? 'Seek to segment'
-              : ''
-          "
-          cdkDrag
-          cdkDragLockAxis="y"
-          cdkDragBoundary=".filmstrip"
-          [cdkDragDisabled]="
-            !draggable || this.segmentMode !== 'preview' || !this.allowSelection
-          "
+          *ngIf="segment.splitting && segmentMode === 'segments'"
+          class="segment-spinner"
         >
-          <img
-            attr.id="segment-{{ segment.av_segment_id }}"
-            [class.filmstrip-img]="segmentMode === 'preview'"
-            [class.current-segment]="
-              segmentMode === 'preview' &&
-              currentSegmentId === segment.av_segment_id
-            "
-            src="{{ segment.segment_screenshot_uri }}"
-          />
-          <mat-icon *ngIf="allowSelection">
-            {{ segment.selected ? 'check_box' : 'check_box_outline_blank' }}
-          </mat-icon>
-          <mat-chip *ngIf="segmentMode === 'preview'" class="duration-chip"
-            >{{ segment.duration_s.toFixed(2) }}s</mat-chip
-          >
+          <mat-spinner></mat-spinner>
         </div>
-        <div class="current-segment-info" *ngIf="segmentMode === 'segments'">
-          <span class="segment-number">
-            <strong>Segment:</strong>
-            {{ segment.av_segment_id + 1 }}
-          </span>
-          <span class="description">
-            <strong>Description:</strong>
-            {{ segment.description }}
-          </span>
-          <span class="duration"
-            ><strong>Duration: </strong
-            >{{ segment.duration_s.toFixed(2) }} seconds</span
+        <div
+          class="segment"
+          [class.active-segment]="
+            segmentMode === 'preview' &&
+            currentSegmentId === segment.av_segment_id
+          "
+          [style.margin-bottom]="segmentMode !== 'preview' ? '16px' : ''"
+        >
+          <div
+            [ngClass]="segmentMode === 'preview' ? 'drag-element' : ''"
+            style="display: flex"
+            [style.cursor]="
+              this.draggable &&
+              this.segmentMode === 'preview' &&
+              this.allowSelection
+                ? 'move'
+                : segmentMode === 'preview'
+                  ? 'pointer'
+                  : 'default'
+            "
+            (click)="
+              allowSelection
+                ? toggleSegmentSelection(segment.av_segment_id)
+                : segmentMode === 'preview'
+                  ? seekToSegment(segment.av_segment_id)
+                  : ''
+            "
+            [matTooltip]="
+              !allowSelection && segmentMode === 'preview'
+                ? 'Seek to segment'
+                : ''
+            "
+            cdkDrag
+            cdkDragLockAxis="y"
+            cdkDragBoundary=".filmstrip"
+            [cdkDragDisabled]="
+              !draggable ||
+              this.segmentMode !== 'preview' ||
+              !this.allowSelection
+            "
           >
-          <span class="keywords">
-            <strong>Keywords: </strong>
-            <mat-chip-set>
-              <mat-chip
-                *ngFor="let keyword of segment.keywords.trim().split(', ')"
-                >{{ keyword }}</mat-chip
-              >
-            </mat-chip-set>
-          </span>
+            @if (segmentMode === 'preview' || allowSelection) {
+              <img
+                [class.filmstrip-img]="segmentMode === 'preview'"
+                [class.current-segment]="
+                  segmentMode === 'preview' &&
+                  currentSegmentId === segment.av_segment_id
+                "
+                attr.id="segment-{{ segment.av_segment_id }}"
+                [class.current-segment]="
+                  currentSegmentId === segment.av_segment_id
+                "
+                src="{{ segment.segment_screenshot_uri }}"
+              />
+            } @else {
+              <div style="position: relative">
+                <video
+                  #segmentVideoElem
+                  attr.id="vid-{{ segment.av_segment_id }}"
+                  src="{{ segment.segment_uri }}"
+                  oncanplay="this.muted=true"
+                  controls
+                  muted
+                  autoplay
+                  loop
+                ></video>
+                <canvas
+                  #segmentCanvas
+                  class="video-canvas"
+                  attr.id="vid-{{ segment.av_segment_id }}"
+                ></canvas>
+              </div>
+            }
+            <mat-icon class="selection-icon" *ngIf="allowSelection">
+              {{ segment.selected ? 'check_box' : 'check_box_outline_blank' }}
+            </mat-icon>
+            <mat-chip *ngIf="segmentMode === 'preview'" class="duration-chip"
+              >{{ segment.duration_s.toFixed(2) }}s</mat-chip
+            >
+          </div>
+          <div class="current-segment-info" *ngIf="segmentMode === 'segments'">
+            <span class="segment-number">
+              <strong>Segment:</strong>
+              {{ segment.av_segment_id }}
+            </span>
+            <span class="description">
+              <strong>Description:</strong>
+              {{ segment.description }}
+            </span>
+            <span class="duration"
+              ><strong>Duration: </strong
+              >{{ segment.duration_s.toFixed(2) }} seconds</span
+            >
+            <span class="keywords">
+              <strong>Keywords: </strong>
+              <mat-chip-set>
+                <mat-chip
+                  *ngFor="let keyword of segment.keywords.trim().split(', ')"
+                  >{{ keyword }}</mat-chip
+                >
+              </mat-chip-set>
+            </span>
+            @if (!allowSelection) {
+              <div class="marker-buttons">
+                <button
+                  type="button"
+                  mat-raised-button
+                  color="primary"
+                  (click)="addSegmentMarker(segment.av_segment_id)"
+                  [disabled]="
+                    isSegmentPlaying(segment.av_segment_id) || segment.splitting
+                  "
+                >
+                  <mat-icon>switch_access_shortcut_add</mat-icon>Add split
+                  marker
+                </button>
+                <span
+                  [matTooltip]="
+                    splitting &&
+                    !segment.splitting &&
+                    !isSegmentPlaying(segment.av_segment_id) &&
+                    hasSegmentMarkers(segment.av_segment_id)
+                      ? 'Not available during splitting'
+                      : ''
+                  "
+                >
+                  <button
+                    type="button"
+                    mat-raised-button
+                    color="primary"
+                    (click)="splitSegment(segment.av_segment_id)"
+                    [disabled]="
+                      isSegmentPlaying(segment.av_segment_id) ||
+                      !hasSegmentMarkers(segment.av_segment_id) ||
+                      splitting
+                    "
+                  >
+                    <mat-icon>splitscreen</mat-icon>Split segment
+                  </button>
+                </span>
+                <button
+                  type="button"
+                  mat-raised-button
+                  color="primary"
+                  (click)="clearSegmentMarkers(segment.av_segment_id)"
+                  [disabled]="!hasSegmentMarkers(segment.av_segment_id)"
+                >
+                  <mat-icon>delete_forever</mat-icon>Clear markers
+                </button>
+              </div>
+            }
+          </div>
         </div>
       </div>
     }

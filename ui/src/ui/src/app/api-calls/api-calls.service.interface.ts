@@ -38,10 +38,11 @@ export interface GenerationSettings {
 }
 
 export interface AvSegment {
-  av_segment_id: number;
+  av_segment_id: string;
   start_s: number;
   end_s: number;
   selected?: boolean;
+  splitting?: boolean;
   played?: boolean;
   segment_screenshot_uri?: string;
 }
@@ -49,7 +50,7 @@ export interface AvSegment {
 export interface GenerateVariantsResponse {
   combo_id: number;
   title: string;
-  scenes: number[];
+  scenes: string[];
   av_segments: AvSegment[];
   description: string;
   score: number;
@@ -159,6 +160,12 @@ export interface PreviewSettings {
   weights: PreviewWeights;
 }
 
+export interface SegmentMarker {
+  av_segment_id: string;
+  marker_cut_time_s: number;
+  canvas_position: number;
+}
+
 export interface ApiCalls {
   uploadVideo(
     file: Blob,
@@ -204,4 +211,8 @@ export interface ApiCalls {
     variantVideoPath: string,
     textAssetsLanguage: string
   ): Observable<VariantTextAsset[]>;
+  splitSegment(
+    gcsFolder: string,
+    segmentMarkers: SegmentMarker[]
+  ): Observable<string>;
 }

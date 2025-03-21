@@ -1,6 +1,6 @@
 [
   {
-    "av_segment_id": 0,
+    "av_segment_id": "1",
     "visual_segment_ids": [1, 2, 3, 4],
     "audio_segment_ids": [1, 2, 3],
     "start_s": 0.0,
@@ -25,11 +25,11 @@
     ],
     "description": " The video shows a series of video calls between different people. The first call is between a woman lying in bed and a man. The next scene shows a four-way video call with three adults and a man with a dog. The third call is between a woman in an airport and a group of people celebrating a birthday. The final call is between a man and a baby.",
     "keywords": " video call, connection, communication, family, friends",
-    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/1.txt",
+    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/1.mp4",
     "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/1.jpg"
   },
   {
-    "av_segment_id": 1,
+    "av_segment_id": "2",
     "visual_segment_ids": [5],
     "audio_segment_ids": [4],
     "start_s": 17.04,
@@ -44,11 +44,11 @@
     "text": ["-", "Lufthansa", "A STAR ALLIANCE MEMBER"],
     "description": " Two women are on a video call, laughing and smiling. They are then shown sitting at a table in a glass-enclosed structure, eating dinner. The scene cuts to a man on a sailboat, looking excited. The video ends with a shot of water.",
     "keywords": " video call, dinner, sailboat, travel, adventure",
-    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/2.txt",
+    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/2.mp4",
     "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/2.jpg"
   },
   {
-    "av_segment_id": 2,
+    "av_segment_id": "3",
     "visual_segment_ids": [6, 7],
     "audio_segment_ids": [],
     "start_s": 26.44,
@@ -61,11 +61,11 @@
     "text": ["Lufthansa", "A STAR ALLIANCE MEMBER"],
     "description": " An aerial shot reveals a pink lake with a narrow strip of land running through it. A large flock of birds flies over the land. The Lufthansa logo is in the bottom right corner, and \"A Star Alliance Member\" is in the top right corner.",
     "keywords": " pink lake, birds, aerial, Lufthansa, landscape.",
-    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/3.txt",
+    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/3.mp4",
     "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/3.jpg"
   },
   {
-    "av_segment_id": 3,
+    "av_segment_id": "4",
     "visual_segment_ids": [8],
     "audio_segment_ids": [],
     "start_s": 27.28,
@@ -78,11 +78,11 @@
     "text": ["Lufthansa", "A STAR ALLIANCE MEMBER"],
     "description": " The video showcases a montage of scenic landscapes, including hot air balloons floating over Cappadocia, Turkey, a desert scene with camels and people, and a unique geological formation. The video ends with the Lufthansa logo, indicating a travel or tourism-related theme.",
     "keywords": " hot air balloons, Cappadocia, desert, camels, Lufthansa.",
-    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/4.txt",
+    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/4.mp4",
     "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/4.jpg"
   },
   {
-    "av_segment_id": 4,
+    "av_segment_id": "5",
     "visual_segment_ids": [9, 10, 11, 12, 13, 14, 15, 16, 17],
     "audio_segment_ids": [5],
     "start_s": 29.28,
@@ -105,11 +105,11 @@
     ],
     "description": " The video is a Lufthansa advertisement showcasing various travel destinations and experiences. It begins with a woman hiking in a mountainous region, followed by a shot of an airplane wing against a scenic landscape. The video then transitions to a collage of images featuring people enjoying different activities, such as exploring Iceland, relaxing in a hot spring, and smiling with braces. It also shows a group of friends dining outdoors in a picturesque European town, people enjoying a meal with traditional cuisine, a close-up of a festive mask, and a crowd celebrating with confetti. The overall tone is positive and adventurous, encouraging viewers to explore the world.",
     "keywords": " travel, Lufthansa, adventure, culture, celebration",
-    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/5.txt",
+    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/5.mp4",
     "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/5.jpg"
   },
   {
-    "av_segment_id": 5,
+    "av_segment_id": "6",
     "visual_segment_ids": [18, 19],
     "audio_segment_ids": [6],
     "start_s": 36.8,
@@ -134,7 +134,7 @@
     ],
     "description": " The video is a commercial for Lufthansa airlines. It opens with a collage of images, including two women in traditional Indian clothing dancing, and a close-up of someone's feet in sneakers dancing on a wooden floor. The video then transitions to a shot of the New York City skyline at dusk, featuring the Empire State Building and One World Trade Center. The next scene shows a flock of birds flying against a sunset, with the text \"Zeit f\u00fcr neue Horizonte\" (Time for new horizons) superimposed. This is followed by a collage of images including a person's eye, a child's hand reaching out of an airplane window, and a woman looking out at the horizon. The video concludes with a shot of a Lufthansa airplane flying in the sky, with the Lufthansa logo and the tagline \"Say yes to the world\" displayed.",
     "keywords": " Lufthansa, travel, New York City, India, horizon",
-    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/6.txt",
+    "segment_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/6.mp4",
     "segment_screenshot_uri": "assets/horizontal.mp4--1234567890123--abcdef/av_segments_cuts/6.jpg"
   }
 ]

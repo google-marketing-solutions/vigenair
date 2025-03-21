@@ -85,6 +85,12 @@ def gcs_file_uploaded(cloud_event: Dict[str, Any]):
         gcs_bucket_name=bucket, media_file=trigger_file
     )
     extractor_instance.finalise_extraction()
+  elif trigger_file.is_extractor_split_segment_trigger():
+    logging.info('TRIGGER - Extractor split segment trigger')
+    extractor_instance = ExtractorService.Extractor(
+        gcs_bucket_name=bucket, media_file=trigger_file
+    )
+    extractor_instance.split_av_segment()
   elif trigger_file.is_combiner_initial_trigger():
     logging.info('TRIGGER - Combiner initial trigger')
     combiner_instance = CombinerService.Combiner(

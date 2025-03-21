@@ -27,7 +27,7 @@ export class StorageManager {
     filePath: string,
     asString = false
   ): string | GoogleAppsScript.Byte[] | null {
-    const url = `${this.getGcsUrlBase()}/o/${encodeURIComponent(filePath)}?alt=media`;
+    const url = `${StorageManager.getGcsUrlBase()}/o/${encodeURIComponent(filePath)}?alt=media`;
 
     const response = ScriptUtil.executeWithRetry(() =>
       ScriptUtil.urlFetch(url)
@@ -39,7 +39,7 @@ export class StorageManager {
   }
 
   static listObjects(delimiter = '/', prefix?: string): string[] {
-    let url = `${this.getGcsUrlBase()}/o?`;
+    let url = `${StorageManager.getGcsUrlBase()}/o?`;
 
     if (delimiter) {
       url += `delimiter=${encodeURIComponent(delimiter)}`;
@@ -92,13 +92,23 @@ export class StorageManager {
   }
 
   static deleteFile(filePath: string) {
-    const url = `${this.getGcsUrlBase()}/o/${encodeURIComponent(filePath)}`;
+    const url = `${StorageManager.getGcsUrlBase()}/o/${encodeURIComponent(filePath)}`;
     ScriptUtil.urlFetch(url, 'DELETE');
     AppLogger.debug(`Deleted file ${filePath}`);
   }
 
+  static renameFile(filePath: string, destinationPath: string) {
+    const url = `${StorageManager.getGcsUrlBase()}/o/${encodeURIComponent(filePath)}/rewriteTo/b/${CONFIG.cloudStorage.bucket}/o/${encodeURIComponent(destinationPath)}`;
+    ScriptUtil.urlFetch(url, 'POST');
+    AppLogger.debug(`Renamed file ${filePath} to ${destinationPath}`);
+
+    StorageManager.deleteFile(filePath);
+  }
+
   static deleteFolder(folder: string) {
-    this.listObjects('', folder).forEach(file => this.deleteFile(file));
+    StorageManager.listObjects('', folder).forEach(file =>
+      StorageManager.deleteFile(file)
+    );
     AppLogger.debug(`Deleted video folder ${folder}`);
   }
 }

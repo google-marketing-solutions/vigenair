@@ -118,9 +118,9 @@ export class GenerationHelper {
     const avSegments = GenerationHelper.getAvSegments(gcsFolder);
     const videoScript: string[] = [];
 
-    avSegments.forEach((avSegment, index) => {
+    avSegments.forEach(avSegment => {
       if (avSegment.duration_s <= duration) {
-        videoScript.push(`Scene ${index + 1}`);
+        videoScript.push(`Scene ${avSegment.av_segment_id}`);
         videoScript.push(`${avSegment.start_s} --> ${avSegment.end_s}`);
         videoScript.push(
           `Duration: ${(avSegment.end_s - avSegment.start_s).toFixed(2)}s`
@@ -177,7 +177,7 @@ export class GenerationHelper {
     const avSegmentsMap = avSegments.reduce(
       (segments, segment) => ({
         ...segments,
-        [String(segment.av_segment_id + 1)]: segment,
+        [segment.av_segment_id]: segment,
       }),
       {}
     );

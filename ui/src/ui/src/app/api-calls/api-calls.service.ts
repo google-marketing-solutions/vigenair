@@ -28,6 +28,7 @@ import {
   PreviousRunsResponse,
   RenderedVariant,
   RenderQueue,
+  SegmentMarker,
   VariantTextAsset,
 } from './api-calls.service.interface';
 
@@ -396,5 +397,30 @@ export class ApiCallsService implements ApiCalls {
     }).pipe(
       retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
     );
+  }
+
+  splitSegment(
+    gcsFolder: string,
+    segmentMarkers: SegmentMarker[]
+  ): Observable<string> {
+    return new Observable<string>(subscriber => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+        .withSuccessHandler((response: string) => {
+          this.ngZone.run(() => {
+            subscriber.next(response);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Encountered an unexpected error while splitting a segment! Error: ',
+            error
+          );
+          subscriber.error(error);
+        })
+        .splitSegment(gcsFolder, segmentMarkers);
+    });
   }
 }
