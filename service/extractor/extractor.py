@@ -677,7 +677,7 @@ def _finalise_split(
                     'av_segment_id'] = current_segment_id
 
     for i, marker in enumerate(markers):
-      marker_cut_time_s = marker.marker_cut_time_s
+      marker_cut_time_s = marker.marker_cut_time_s + current_start_s
 
       new_row_end_s = row_to_split[
           'end_s'] if i == len(markers) - 1 else marker_cut_time_s
@@ -711,7 +711,9 @@ def _finalise_split(
       av_segments = pd.concat([av_segments, new_row], ignore_index=True)
 
       current_segment_id = new_row_id
-      current_start_s = marker_cut_time_s
+      current_start_s = (
+          marker_cut_time_s if i == len(markers) - 1 else current_start_s
+      )
 
   return av_segments
 
