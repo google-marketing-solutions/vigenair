@@ -28,7 +28,7 @@ const GENERATE_TEXT_ASSETS_REGEX =
   /.*Headline\s?:\**(?<headline>.*)\n+\**Description\s?:\**(?<description>.*)/ims;
 
 export interface AvSegment {
-  av_segment_id: number;
+  av_segment_id: string;
   description: string;
   visual_segment_ids: number[];
   audio_segment_ids: number[];
@@ -111,7 +111,12 @@ export class GenerationHelper {
         );
       }
     }
-    return JSON.parse(avSegments) as AvSegment[];
+    return JSON.parse(avSegments).map((avSegment: AvSegment) => {
+      if (typeof avSegment.av_segment_id === 'number') {
+        avSegment.av_segment_id = String(avSegment.av_segment_id + 1);
+      }
+      return avSegment;
+    }) as AvSegment[];
   }
 
   static createVideoScript(gcsFolder: string, duration: number): string {
@@ -221,7 +226,7 @@ export class GenerationHelper {
               title: String(title).trim(),
               scenes: outputScenes,
               av_segments: avSegments.filter((segment: AvSegment) =>
-                outputScenes.includes(segment.av_segment_id)
+                outputScenes.includes(Number(segment.av_segment_id))
               ),
               description: String(description).trim(),
               score: Number(String(score).trim()),

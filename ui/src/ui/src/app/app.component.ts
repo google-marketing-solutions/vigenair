@@ -461,12 +461,16 @@ export class AppComponent {
           const dataJson = JSON.parse(data);
           this.avSegments = (
             dataJson.map((e: AvSegment) => {
+              if (typeof e.av_segment_id === 'number') {
+                e.av_segment_id = String(e.av_segment_id + 1);
+              }
               e.selected = false;
               e.splitting = false;
               return e;
             }) as AvSegment[]
-          ).sort((a: AvSegment, b: AvSegment) =>
-            String(a.av_segment_id).localeCompare(String(b.av_segment_id))
+          ).sort(
+            (a: AvSegment, b: AvSegment) =>
+              Number(a.av_segment_id) - Number(b.av_segment_id)
           );
           this.originalAvSegments = structuredClone(this.avSegments);
           this.segmentsStatus = 'check_circle';
