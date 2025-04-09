@@ -285,7 +285,9 @@ class Combiner:
     music_track_path = StorageService.download_gcs_file(
         file_path=Utils.TriggerFile(
             str(
-                pathlib.Path(root_video_folder, ConfigService.OUTPUT_MUSIC_FILE)
+                pathlib.Path(
+                    root_video_folder, ConfigService.OUTPUT_MUSIC_FILE
+                )
             )
         ),
         output_dir=tmp_dir,
@@ -1266,8 +1268,8 @@ def _group_consecutive_segments(
   while i < len(av_segment_ids):
     j = i
     while (
-        j < len(av_segment_ids) - 1
-        and int(av_segment_ids[j + 1]) == int(av_segment_ids[j]) + 1
+        j < len(av_segment_ids) - 1 and int(float(av_segment_ids[j + 1]))
+        <= int(float(av_segment_ids[j])) + 1
     ):
       j += 1
     result.append((av_segment_ids[i], av_segment_ids[j]))
@@ -1339,7 +1341,8 @@ def _build_ffmpeg_filters(
       video_select_filter + audio_select_filter + select_filter_concat
       + [f'concat=n={idx}:v=1:a=1[outv][outa]', fade_out_filter]
   ) if has_audio else ''.join(
-      video_select_filter + select_filter_concat + [f'concat=n={idx}:v=1[outv]']
+      video_select_filter + select_filter_concat
+      + [f'concat=n={idx}:v=1[outv]']
   )
 
   music_overlay_select_filter = ''.join(

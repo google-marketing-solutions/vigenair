@@ -534,7 +534,8 @@ class Extractor:
               ConfigService.ENHANCE_SEGMENT_ANNOTATIONS_PATTERN, result,
               re.MULTILINE
           )
-          rows.append([entry.strip() for entry in result[0]])
+          if result:
+            rows.append([entry.strip() for entry in result[0]])
       else:
         logging.warning('ANNOTATION - Could not enhance segments!')
     # Execution should continue regardless of the underlying exception
