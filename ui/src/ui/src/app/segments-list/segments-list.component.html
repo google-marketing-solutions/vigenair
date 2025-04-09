@@ -90,14 +90,14 @@ limitations under the License.
                 [class.current-segment]="
                   currentSegmentId === segment.av_segment_id
                 "
-                src="{{ segment.segment_screenshot_uri }}"
+                src="{{ segment.segment_screenshot_uri.replace('.0', '') }}"
               />
             } @else {
               <div style="position: relative">
                 <video
                   #segmentVideoElem
                   attr.id="vid-{{ segment.av_segment_id }}"
-                  src="{{ segment.segment_uri }}"
+                  src="{{ segment.segment_uri.replace('.0', '') }}"
                   oncanplay="this.muted=true"
                   controls
                   muted

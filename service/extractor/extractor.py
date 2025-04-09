@@ -454,7 +454,8 @@ class Extractor:
               cuts_path=cuts_path,
               vision_model=self.vision_model,
               gcs_cut_path=(
-                  f"{gcs_cuts_folder_path}/{row['av_segment_id']}{video_ext}"
+                  f'{gcs_cuts_folder_path}/'
+                  f"{row['av_segment_id'].replace('.0', '')}{video_ext}"
               ),
               bucket_name=self.gcs_bucket_name,
           ): index
@@ -471,7 +472,7 @@ class Extractor:
             f'{self.gcs_bucket_name}/'
             f'{parse.quote(self.media_file.gcs_root_folder)}/'
             f'{ConfigService.OUTPUT_AV_SEGMENTS_DIR}/'
-            f"{optimised_av_segments.loc[index, 'av_segment_id']}"
+            f"{optimised_av_segments.loc[index, 'av_segment_id'].replace('.0', '')}"
         )
         cut_paths[index] = f'{resources_base_path}{video_ext}'
         screenshot_paths[index] = (
@@ -534,8 +535,11 @@ class Extractor:
               ConfigService.ENHANCE_SEGMENT_ANNOTATIONS_PATTERN, result,
               re.MULTILINE
           )
-          if result:
-            rows.append([entry.strip() for entry in result[0]])
+          if not result:
+            logging.warning('ANNOTATION - Could not enhance segments!')
+            rows = []
+            break
+          rows.append([entry.strip() for entry in result[0]])
       else:
         logging.warning('ANNOTATION - Could not enhance segments!')
     # Execution should continue regardless of the underlying exception
@@ -604,7 +608,9 @@ class Extractor:
         av_segments_file_path,
         orient='records',
     )
-    av_segments['av_segment_id'] = av_segments['av_segment_id'].astype(str)
+    av_segments['av_segment_id'] = av_segments['av_segment_id'].astype(
+        str
+    ).str.replace('.0', '')
     logging.info(
         'SPLITTING - Current segments: %r',
         av_segments.to_json(orient='records')

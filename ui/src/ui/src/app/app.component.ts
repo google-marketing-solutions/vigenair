@@ -464,6 +464,9 @@ export class AppComponent {
               if (typeof e.av_segment_id === 'number') {
                 e.av_segment_id = String(e.av_segment_id + 1);
               }
+              if (e.av_segment_id.endsWith('.0')) {
+                e.av_segment_id = e.av_segment_id.replace('.0', '');
+              }
               e.selected = false;
               e.splitting = false;
               return e;

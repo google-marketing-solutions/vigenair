@@ -115,6 +115,9 @@ export class GenerationHelper {
       if (typeof avSegment.av_segment_id === 'number') {
         avSegment.av_segment_id = String(avSegment.av_segment_id + 1);
       }
+      if (avSegment.av_segment_id.endsWith('.0')) {
+        avSegment.av_segment_id = avSegment.av_segment_id.replace('.0', '');
+      }
       return avSegment;
     }) as AvSegment[];
   }
