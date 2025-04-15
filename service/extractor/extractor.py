@@ -722,7 +722,9 @@ def _finalise_split(
           marker_cut_time_s if i == len(markers) - 1 else current_start_s
       )
 
-  return av_segments
+  av_segments['duration_s'] = av_segments['end_s'] - av_segments['start_s']
+  return av_segments.sort_values(by=['av_segment_id', 'start_s']
+                                ).reset_index(drop=True)
 
 
 def _cut_and_annotate_av_segment(

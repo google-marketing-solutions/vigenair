@@ -47,7 +47,7 @@ export interface AvSegment {
 export interface GenerateVariantsResponse {
   combo_id: number;
   title: string;
-  scenes: number[];
+  scenes: string[];
   av_segments: AvSegment[];
   description: string;
   score: number;
@@ -217,19 +217,18 @@ export class GenerationHelper {
             .trim()
             .split(', ')
             .filter(Boolean)
-            .map(scene => scene.toLowerCase().replace('scene ', ''))
+            .map(scene =>
+              scene.toLowerCase().replace('scene ', '').replace('.0', '')
+            )
             .join(', ');
           if (trimmedScenes !== allScenes) {
-            const outputScenes = trimmedScenes
-              .split(', ')
-              .filter(Boolean)
-              .map(Number);
+            const outputScenes = trimmedScenes.split(', ').filter(Boolean);
             const variant: GenerateVariantsResponse = {
               combo_id: index + 1,
               title: String(title).trim(),
               scenes: outputScenes,
               av_segments: avSegments.filter((segment: AvSegment) =>
-                outputScenes.includes(Number(segment.av_segment_id))
+                outputScenes.includes(segment.av_segment_id)
               ),
               description: String(description).trim(),
               score: Number(String(score).trim()),
@@ -262,13 +261,13 @@ export class GenerationHelper {
   }
 
   static calculateVariantDuration(
-    scenes: number[],
+    scenes: string[],
     avSegmentsMap: Record<string, AvSegment>
   ): string {
     let duration = 0;
 
     for (const scene of scenes) {
-      const avSegment = avSegmentsMap[String(scene)];
+      const avSegment = avSegmentsMap[scene];
       if (avSegment) {
         duration += avSegment.end_s - avSegment.start_s;
       }
