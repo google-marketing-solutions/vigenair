@@ -723,8 +723,7 @@ def _finalise_split(
       )
 
   av_segments['duration_s'] = av_segments['end_s'] - av_segments['start_s']
-  return av_segments.sort_values(by=['av_segment_id', 'start_s']
-                                ).reset_index(drop=True)
+  return av_segments.sort_values(by='start_s').reset_index(drop=True)
 
 
 def _cut_and_annotate_av_segment(

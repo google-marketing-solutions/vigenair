@@ -471,10 +471,7 @@ export class AppComponent {
               e.splitting = false;
               return e;
             }) as AvSegment[]
-          ).sort(
-            (a: AvSegment, b: AvSegment) =>
-              Number(a.av_segment_id) - Number(b.av_segment_id)
-          );
+          ).sort((a: AvSegment, b: AvSegment) => a.start_s - b.start_s);
           this.originalAvSegments = structuredClone(this.avSegments);
           this.segmentsStatus = 'check_circle';
           this.loading = false;
