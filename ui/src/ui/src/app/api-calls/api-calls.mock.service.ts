@@ -30,8 +30,11 @@ import {
   VariantTextAsset,
 } from './api-calls.service.interface';
 
-const HORIZONTAL_SAMPLE_FOLDER = 'horizontal.mp4--1234567890123--abcdef';
-const COMBOS_FOLDER = 'Sample--1707812254000-combos';
+// const HORIZONTAL_SAMPLE_FOLDER = 'horizontal.mp4--1234567890123--abcdef';
+const AUDI_SAMPLE_FOLDER = 'audi.mp4--1234567890123--abcdef';
+const PIXEL8_SAMPLE_FOLDER = 'pixel8_en.mp4--1234567890123--abcdef';
+const PIXEL9_SAMPLE_FOLDER = 'pixel9_de.mp4--1234567890123--abcdef';
+const COMBOS_FOLDER = 'Sample--1746417355000-combos';
 
 @Injectable({
   providedIn: 'root',
@@ -59,7 +62,7 @@ export class ApiCallsService implements ApiCalls {
     return new Observable(subscriber => {
       setTimeout(() => {
         this.ngZone.run(() => {
-          subscriber.next(this.loadPreviousRun(HORIZONTAL_SAMPLE_FOLDER));
+          subscriber.next(this.loadPreviousRun(AUDI_SAMPLE_FOLDER));
           subscriber.complete();
         });
       }, 1000);
@@ -115,7 +118,11 @@ export class ApiCallsService implements ApiCalls {
       setTimeout(() => {
         this.ngZone.run(() => {
           subscriber.next({
-            runs: [HORIZONTAL_SAMPLE_FOLDER],
+            runs: [
+              AUDI_SAMPLE_FOLDER,
+              PIXEL8_SAMPLE_FOLDER,
+              PIXEL9_SAMPLE_FOLDER,
+            ],
             encodedUserId: 'abcdef',
           });
           subscriber.complete();
