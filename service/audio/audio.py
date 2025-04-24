@@ -314,8 +314,8 @@ def _transcribe_gemini(
               duration_s=lambda df: df['end_s'] - df['start_s'],
           )
       )
-      subtitles_output_path = audio_file_path.replace(
-          'wav', ConfigService.OUTPUT_SUBTITLES_TYPE
+      subtitles_output_path = re.sub(
+        r'\.[^.]+$', f'.{ConfigService.OUTPUT_SUBTITLES_TYPE}', audio_file_path
       )
       with open(subtitles_output_path, 'w', encoding='utf8') as f:
         f.write(result.group(4))
