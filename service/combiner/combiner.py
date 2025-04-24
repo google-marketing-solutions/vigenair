@@ -1254,7 +1254,16 @@ def _group_consecutive_segments(
   """Groups consecutive segments together.
 
   Consecutive A/V segments, such as `1, 2, 3`, will be grouped as a tuple of the
-  start and end A/V segment ids, such as `(1, 3)`.
+  start and end A/V segment ids, such as `(1, 3)`. This also applies to
+  consecutive split segments, for example `4.2, 4.3, 4.4` yields `(4.2, 4.4)`.
+  Since we cannot discern whether split segments have ended, we cannot group a
+  split segment with a subsequent non-split segment, however we are able to
+  group non-split segments with consecutive split-segments only if the
+  consecutive split-segments start at `n.1`. For example,
+  `1, 2, 3, 4.1, 4.2, 4.3, 5` yields `[(1, 4.3), (5, 5)]` while
+  `1, 2, 3, 4.2, 4.3, 4.4, 5` yields `[(1, 3), (4.2, 4.4), (5, 5)]`. Segments
+  that are unordered are also treated as individual non-sequential segments.
+  For example, `5, 1, 2, 3` yields `[(5, 5), (1, 3)]`.
 
   Args:
     av_segment_ids: The A/V segments ids to be grouped.
@@ -1266,15 +1275,52 @@ def _group_consecutive_segments(
   result = []
   i = 0
   while i < len(av_segment_ids):
+    start_segment = av_segment_ids[i]
     j = i
-    while (
-        j < len(av_segment_ids) - 1 and int(float(av_segment_ids[j + 1]))
-        <= int(float(av_segment_ids[j])) + 1
-    ):
-      j += 1
-    result.append((av_segment_ids[i], av_segment_ids[j]))
+    while j < len(av_segment_ids) - 1:
+      if _is_sequential_segments(av_segment_ids[j], av_segment_ids[j + 1]):
+        j += 1
+      else:
+        break
+    result.append((start_segment, av_segment_ids[j]))
     i = j + 1
   return result
+
+
+def _is_sequential_segments(current_segment_id: str, next_segment_id: str):
+  """Checks if two consecutive segments are sequential.
+
+  Rules:
+  1. Incrementing the last numerical part (e.g., '1' -> '2', '4.2' -> '4.3',
+     '4.2.1' -> '4.2.2').
+  2. Stepping down to a new sub-level by appending '.1' to the segment ID
+      that would be the result of incrementing the last part of the current ID
+      (e.g., '3' -> '4.1' because incrementing '3' gives '4', and '4.1' is
+      '4' + '.1';
+      '4.1' -> '4.2.1' because incrementing '4.1' gives '4.2', and '4.2.1' is
+      '4.2' + '.1').
+
+  Args:
+    current_segment_id: The current segment ID.
+    next_segment_id: The next segment ID.
+
+  Returns:
+    True if the next segment is sequential to the current, False otherwise.
+  """
+  current_parts = current_segment_id.split('.')
+  next_parts = next_segment_id.split('.')
+  try:
+    next_level_parts = list(current_parts)
+    next_level_parts[-1] = str(int(next_level_parts[-1]) + 1)
+    if (
+        len(current_parts) == len(next_parts)
+        and current_parts[:-1] == next_parts[:-1]
+        and int(next_parts[-1]) == int(current_parts[-1]) + 1
+    ) or next_segment_id == '.'.join(next_level_parts) + '.1':
+      return True
+  except ValueError:
+    pass
+  return False
 
 
 def _build_ffmpeg_filters(
