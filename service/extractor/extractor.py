@@ -610,7 +610,7 @@ class Extractor:
     )
     av_segments['av_segment_id'] = av_segments['av_segment_id'].astype(
         str
-    ).str.replace('.0', '')
+    ).str.replace(r'\.0', '')
     logging.info(
         'SPLITTING - Current segments: %r',
         av_segments.to_json(orient='records')
