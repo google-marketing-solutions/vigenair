@@ -24,3 +24,7 @@ body {
   margin: 0;
   font-family: 'Google Sans', Roboto, 'Helvetica Neue', sans-serif;
 }
+
+video {
+    max-height: 600px;
+}
