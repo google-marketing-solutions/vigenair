@@ -329,7 +329,7 @@ def _transcribe_gemini(
     )
 
   subtitles_output_path = audio_file_path.replace(
-      'wav', ConfigService.OUTPUT_SUBTITLES_TYPE
+      '.wav', f'.{ConfigService.OUTPUT_SUBTITLES_TYPE}'
   )
   with open(subtitles_output_path, 'w', encoding='utf8') as f:
     if subtitles_content:
