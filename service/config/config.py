@@ -172,7 +172,7 @@ GENERATE_ASSETS_CONFIG = {
 DEFAULT_VIDEO_LANGUAGE = 'English'
 
 TRANSCRIBE_AUDIO_PROMPT = """Transcribe the provided audio file, paying close attention to speaker changes and pauses in speech.
-Output the following, in this order:
+Output exactly as shown below and in the following order:
 1. **Language:** Specify the language of the audio (e.g., "Language: English")
 2. **Confidence:**  Specify the confidence score of the transcription (e.g., "Confidence: 0.95")
 3. **Transcription CSV:** Output the transcription in CSV (Comma-Separated Values) format (e.g. ```csv<output>```) with these columns:
@@ -186,7 +186,7 @@ Output the following, in this order:
 4. **WebVTT Format:** Output the transcription information in WebVTT format, surrounded by backticks (e.g. ```vtt<output>```)
 
 **Constraints:**
-    * **No Extra Text:** Only output the language, confidence, table, and WebVTT data, without any additional text or explanations. This includes avoiding any labels or headings before or after the transcription table and WebVTT data.
+    * **No Extra Text:** Only output the language, confidence, table, and WebVTT data, without any additional text or explanations. This includes avoiding any labels or headings before or after the transcription table and WebVTT data. Do not output in JSON.
     * **Valid Timestamps:** All timestamps MUST be within the actual duration of the audio. No timestamps should exceed the total length of the audio. This is absolutely critical.
     * **Sequential Timestamps:** Timestamps should progress sequentially and logically from the beginning to the end of the audio.
 

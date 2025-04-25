@@ -264,6 +264,7 @@ def _transcribe_gemini(
   transcription_dataframe = pd.DataFrame()
   video_language = ConfigService.DEFAULT_VIDEO_LANGUAGE
   language_probability = 0.0
+  subtitles_content = None
 
   vertexai.init(
       project=ConfigService.GCP_PROJECT_ID,
@@ -314,15 +315,7 @@ def _transcribe_gemini(
               duration_s=lambda df: df['end_s'] - df['start_s'],
           )
       )
-      subtitles_output_path = audio_file_path.replace(
-          'wav', ConfigService.OUTPUT_SUBTITLES_TYPE
-      )
-      with open(subtitles_output_path, 'w', encoding='utf8') as f:
-        f.write(result.group(4))
-      logging.info(
-          'TRANSCRIPTION - transcript for %s written successfully!',
-          audio_file_path,
-      )
+      subtitles_content = result.group(4)
     else:
       logging.warning(
           'Could not transcribe audio! Returning empty transcription...'
@@ -335,6 +328,19 @@ def _transcribe_gemini(
         'Returning empty transcription...'
     )
 
+  subtitles_output_path = audio_file_path.replace(
+      'wav', ConfigService.OUTPUT_SUBTITLES_TYPE
+  )
+  with open(subtitles_output_path, 'w', encoding='utf8') as f:
+    if subtitles_content:
+      f.write(subtitles_content)
+    else:
+      pass
+
+  logging.info(
+      'TRANSCRIPTION - transcript for %s written successfully!',
+      audio_file_path,
+  )
   return transcription_dataframe, video_language, float(language_probability)
 
 
