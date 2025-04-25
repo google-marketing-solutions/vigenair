@@ -1,0 +1,364 @@
+[
+  {
+    "score": 4,
+    "scenes": [
+      "5.3",
+      "5.4",
+      "5.5",
+      "6",
+      "21",
+      "22.1",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36"
+    ],
+    "duration": "0:28",
+    "title": "Experience the Audi Driving Experience",
+    "description": "This combination highlights the Audi driving experience by showcasing the racetrack, performance driving, snowy landscapes demonstrating the \"Driving Experiance,\" and the overview of all the different types of Audi driving experiences, and brand logo to conclude, all within the desired time constraint.",
+    "av_segments": [
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.3.jpg",
+        "start_s": 19.58,
+        "av_segment_id": "5.3",
+        "end_s": 21.84
+      },
+      {
+        "av_segment_id": "5.4",
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.4.jpg",
+        "end_s": 22.58,
+        "start_s": 21.88
+      },
+      {
+        "end_s": 22.8,
+        "av_segment_id": "5.5",
+        "start_s": 22.62,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.5.jpg"
+      },
+      {
+        "end_s": 24.16,
+        "start_s": 22.84,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/6.jpg",
+        "av_segment_id": "6"
+      },
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/21.jpg",
+        "av_segment_id": "21",
+        "end_s": 62.08,
+        "start_s": 59.92
+      },
+      {
+        "start_s": 62.12,
+        "av_segment_id": "22.1",
+        "end_s": 63.0,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/22.1.jpg"
+      },
+      {
+        "start_s": 79.72,
+        "av_segment_id": "30",
+        "end_s": 80.92,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/30.jpg"
+      },
+      {
+        "av_segment_id": "31",
+        "end_s": 82.8,
+        "start_s": 80.96,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/31.jpg"
+      },
+      {
+        "av_segment_id": "32",
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/32.jpg",
+        "start_s": 82.84,
+        "end_s": 83.56
+      },
+      {
+        "end_s": 84.92,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/33.jpg",
+        "av_segment_id": "33",
+        "start_s": 83.6
+      },
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/34.jpg",
+        "start_s": 84.96,
+        "av_segment_id": "34",
+        "end_s": 85.56
+      },
+      {
+        "end_s": 88.12,
+        "start_s": 85.6,
+        "av_segment_id": "35",
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/35.jpg"
+      },
+      {
+        "start_s": 88.16,
+        "end_s": 99.96,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/36.jpg",
+        "av_segment_id": "36"
+      }
+    ],
+    "reasoning": "*   **A - Attention (4/5):** The opening scene shows an overview of the Audi racetrack, immediately grabbing attention (1 point). The combination also effectively uses off-screen speech within scene 9 (1 point). However, the opening lacks dynamic visuals or fast pacing (1 point).\n    *   Recommendation: N/A\n*   **B - Branding (5/5):** Audi's logo is prominently featured in the first 5 seconds (2 points). Additionally, the brand is integrated more than 3+ times throughout the ad, including the last 5 seconds, using a variety of branding elements (2 points). The video uses a variety of branding assets, including the logo and name (1 point).\n    *   Recommendation: N/A\n*   **C - Connection (3/5):** The video lacks close-ups of faces and emotional engagement by real people (1 point); it has no human presence throughout the start of the commercial, with series of performance cars driving to Audi headquarters (1 point). However, the message is clear (1 point).\n    *   Recommendation: Consider including shots that showcase people interacting with the cars, displaying the joy of the \"driving experience\".\n*   **D - Direction (2/2):** The video ends with a clear on-screen presence for Audi's driving experience and technical skill (2 points).\n    *   Recommendation: N/A"
+  },
+  {
+    "title": "Audi: Intelligent Performance",
+    "av_segments": [
+      {
+        "av_segment_id": "1",
+        "end_s": 3.36,
+        "start_s": 0,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/1.jpg"
+      },
+      {
+        "end_s": 10.6496,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/3.2.jpg",
+        "start_s": 5.79957,
+        "av_segment_id": "3.2"
+      },
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.3.jpg",
+        "start_s": 19.58,
+        "end_s": 21.84,
+        "av_segment_id": "5.3"
+      },
+      {
+        "end_s": 22.58,
+        "av_segment_id": "5.4",
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.4.jpg",
+        "start_s": 21.88
+      },
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.5.jpg",
+        "start_s": 22.62,
+        "end_s": 22.8,
+        "av_segment_id": "5.5"
+      },
+      {
+        "av_segment_id": "6",
+        "end_s": 24.16,
+        "start_s": 22.84,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/6.jpg"
+      },
+      {
+        "start_s": 59.92,
+        "av_segment_id": "21",
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/21.jpg",
+        "end_s": 62.08
+      },
+      {
+        "start_s": 62.12,
+        "av_segment_id": "22.1",
+        "end_s": 63.0,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/22.1.jpg"
+      },
+      {
+        "end_s": 80.92,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/30.jpg",
+        "start_s": 79.72,
+        "av_segment_id": "30"
+      },
+      {
+        "end_s": 82.8,
+        "av_segment_id": "31",
+        "start_s": 80.96,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/31.jpg"
+      },
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/32.jpg",
+        "end_s": 83.56,
+        "av_segment_id": "32",
+        "start_s": 82.84
+      },
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/33.jpg",
+        "start_s": 83.6,
+        "av_segment_id": "33",
+        "end_s": 84.92
+      },
+      {
+        "start_s": 84.96,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/34.jpg",
+        "end_s": 85.56,
+        "av_segment_id": "34"
+      },
+      {
+        "start_s": 85.6,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/35.jpg",
+        "av_segment_id": "35",
+        "end_s": 88.12
+      },
+      {
+        "end_s": 100.96,
+        "av_segment_id": "36",
+        "start_s": 88.16,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/36.jpg"
+      }
+    ],
+    "reasoning": "*   **A - Attention (3/5):** The cars heading towards the Audi Headquarters provides a visually interesting shot (1 point). Background sound enhances the story to engage the viewer (2 points). Visuals are interesting (0 points). Recommendation: The opening scene currently features only cars. A more impactful opening would be a close-up of driver, focusing on their face.\n*   **B - Branding (4/5):** The Audi logo is subtly present scene (2 points), and the brand highlighted on screen during the promotional display multiple times throughout the combination (2 points). Branding variety could be slightly improved.\n*   **C - Connection (4/5):** Human is highlighted throughout the scene with their interactions providing a relatable connection with viewers (2 points). The dessert shot shows how the product or service fits into people's lives celebrating with food (1 point). Simplicity and Differentiation is highlighted (1 point).\n*   **D - Direction (2/2):** The video ends with a clear on-screen display to explore Audi’s experience (2 points).",
+    "scenes": [
+      "1",
+      "3.2",
+      "5.3",
+      "5.4",
+      "5.5",
+      "6",
+      "21",
+      "22.1",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36"
+    ],
+    "description": "This combination begins with cars driving to Audi headquarters, focuses on a woman entering the driver's car, showcases dessert, and concludes with advertisement display. The on-screen text throughout provides coherence.",
+    "score": 4,
+    "duration": "0:37"
+  },
+  {
+    "score": 5,
+    "description": "This combination showcases the Audi Driving Experience through various scenes, starting with the racetrack and leading to the Audi headquarters, then a woman entering a performance car. The snowy mountain scenes emphasizing the call to adventure, followed by the gourmet cuisine and inspiration, with the concluding scene highlighting Audi's \"Vorsprung durch Technik.\" This combination provides a comprehensive view of the \"driving experience\" and Audi's commitment to technology and excellence.",
+    "title": "Audi Driving Experience: A Thrilling Journey",
+    "duration": "0:57",
+    "scenes": [
+      "1",
+      "3.2",
+      "3.3",
+      "4",
+      "5.1",
+      "5.2",
+      "5.3",
+      "5.4",
+      "5.5",
+      "6",
+      "7.1",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "34",
+      "35",
+      "36"
+    ],
+    "av_segments": [
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/1.jpg",
+        "end_s": 3.36,
+        "start_s": 0,
+        "av_segment_id": "1"
+      },
+      {
+        "av_segment_id": "3.2",
+        "start_s": 5.79957,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/3.2.jpg",
+        "end_s": 10.6496
+      },
+      {
+        "end_s": 14.16,
+        "av_segment_id": "3.3",
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/3.3.jpg",
+        "start_s": 10.6496
+      },
+      {
+        "start_s": 14.2,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/4.jpg",
+        "end_s": 15.44,
+        "av_segment_id": "4"
+      },
+      {
+        "av_segment_id": "5.1",
+        "start_s": 15.48,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.1.jpg",
+        "end_s": 16.12
+      },
+      {
+        "av_segment_id": "5.2",
+        "start_s": 16.16,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.2.jpg",
+        "end_s": 19.54
+      },
+      {
+        "start_s": 19.58,
+        "av_segment_id": "5.3",
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.3.jpg",
+        "end_s": 21.84
+      },
+      {
+        "start_s": 21.88,
+        "end_s": 22.58,
+        "av_segment_id": "5.4",
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.4.jpg"
+      },
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/5.5.jpg",
+        "av_segment_id": "5.5",
+        "end_s": 22.8,
+        "start_s": 22.62
+      },
+      {
+        "start_s": 22.84,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/6.jpg",
+        "av_segment_id": "6",
+        "end_s": 24.16
+      },
+      {
+        "av_segment_id": "7.1",
+        "end_s": 26.24,
+        "start_s": 24.2,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/7.1.jpg"
+      },
+      {
+        "start_s": 30.2,
+        "av_segment_id": "9",
+        "end_s": 36.6,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/9.jpg"
+      },
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/10.jpg",
+        "av_segment_id": "10",
+        "end_s": 37.4,
+        "start_s": 36.64
+      },
+      {
+        "av_segment_id": "11",
+        "end_s": 38.52,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/11.jpg",
+        "start_s": 37.44
+      },
+      {
+        "start_s": 38.56,
+        "av_segment_id": "12",
+        "end_s": 39.96,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/12.jpg"
+      },
+      {
+        "start_s": 40.0,
+        "av_segment_id": "13",
+        "end_s": 42.32,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/13.jpg"
+      },
+      {
+        "start_s": 84.96,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/34.jpg",
+        "end_s": 85.56,
+        "av_segment_id": "34"
+      },
+      {
+        "start_s": 85.6,
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/35.jpg",
+        "end_s": 88.12,
+        "av_segment_id": "35"
+      },
+      {
+        "segment_screenshot_uri": "assets/audi.mp4--1234567890123--abcdef/av_segments_cuts/36.jpg",
+        "start_s": 88.16,
+        "av_segment_id": "36",
+        "end_s": 106.96
+      }
+    ],
+    "reasoning": "*   **A - Attention (5 points):**\n    *   **Impactful Opening (2 points):** The opening scene of the Audi racetrack immediately grabs attention with its aerial view and modern architecture.\n    *   **Audio Engagement (2 points):** Scene 3.2 includes off-screen speech guiding the viewer, enhancing engagement. Scene 9 includes speech as well.\n    *   **Visual Interest (1 point):** The variety of scenes (racetrack, headquarters, snow mountains, gourmet food) maintains visual interest.\n*   **B - Branding (5 points):**\n    *   **Early Branding (2 points):** The Audi logo appears prominently in the first scene (Scene 1).\n    *   **Frequent Branding (2 points):** The brand is visible throughout the ad, including branding assets in key scenes and the concluding scene (Scene 36).\n    *   **Branding Variety (1 point):** The video utilizes the Audi logo, product (cars), and tagline (\"Vorsprung durch Technik\").\n*   **C - Connection (4 points):**\n    *   **Human Presence (2 points):** The video features the woman entering the car (Scene 5.2), the chef in Scene 14, and the faces in Scene 16, creating a human connection.\n    *   **Context and Relevance (1 point):** Relatable scenarios are shown, like driving in the snow and enjoying a gourmet experience, showcasing the Audi lifestyle.\n    *   **Simplicity and Differentiation (1 point):** The message is clear, but an increased emphasis on brand uniqueness would be a plus.\n*   **D - Direction (2 points):**\n    *   **Clear Call to Action (2 points):** The concluding scene (Scene 36) highlights various Audi experiences and the website, providing a clear call to action."
+  }
+]

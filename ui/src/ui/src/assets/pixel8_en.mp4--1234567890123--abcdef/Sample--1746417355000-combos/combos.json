@@ -1,0 +1,187 @@
+{
+  "_0": {
+    "variant_id": 0,
+    "av_segments": {
+      "_15": {
+        "av_segment_id": "15",
+        "start_s": 29.166666,
+        "end_s": 29.966666
+      },
+      "_6": {
+        "av_segment_id": "6",
+        "start_s": 8.7,
+        "end_s": 10.866666
+      },
+      "_7": {
+        "av_segment_id": "7",
+        "start_s": 10.9,
+        "end_s": 12.633333
+      },
+      "_8": {
+        "av_segment_id": "8",
+        "start_s": 12.666666,
+        "end_s": 15.2
+      },
+      "_9": {
+        "av_segment_id": "9",
+        "start_s": 15.233333,
+        "end_s": 16.866666
+      },
+      "_10": {
+        "av_segment_id": "10",
+        "start_s": 16.9,
+        "end_s": 17.766666
+      },
+      "_14.2": {
+        "av_segment_id": "14.2",
+        "start_s": 23.736606,
+        "end_s": 29.133333
+      }
+    },
+    "title": "Google Pixel 8: AI-Powered Magic",
+    "description": "This script begins with the AI capabilities specifically with \"Magic Editor', then continues to show off some of the devices video recording capabilities with \"make it clear.\" Lastly, the script shows the Google logo with a call to action urging the viewer to \"Check out exciting offers.\" Key elements are logos and the AI editing factor.",
+    "score": 5,
+    "score_reasoning": "*   **A - Attention (3/5):** The video starts with the AI Google Pixel phone which will capture people's attention, even if it is only somewhat engaging. (Impactful Opening: 1, Audio Engagement: 1, Visual Interest: 1)\n    *   Recommendation: Adding sound could engage viewers more.\n*   **B - Branding (5/5):** The Google Pixel logo showcased in the intro and conclusion. The brand occurs multiple times displaying AI functionalities. (Early Branding: 2, Frequent Branding: 2, Branding Variety: 1)\n*   **C - Connection (3/5):** Features an AI-equipped device improving photos and videos. (Human Presence: 1, Context and Relevance: 1, Simplicity and Differentiation: 1)\n    *   Recommendation: Making the simplicity more obvious could drastically improve results and using more human faces would help this connection.\n*   **D - Direction (2/2):** The video ends with a clear call to action. (Clear Call to Action: 2)",
+    "render_settings": {
+      "generate_image_assets": true,
+      "generate_text_assets": true,
+      "formats": ["horizontal", "vertical", "square"],
+      "use_music_overlay": false,
+      "use_continuous_audio": false,
+      "fade_out": false,
+      "overlay_type": "variant_start"
+    },
+    "variants": {
+      "horizontal": "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0_h.mp4",
+      "square": "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0_s.mp4",
+      "vertical": "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0_v.mp4"
+    },
+    "texts": [
+      {
+        "headline": "Google Pixel 8",
+        "description": "The only AI phone engineered by Google. Capture stunning photos and videos. Shop now."
+      },
+      {
+        "headline": "Pixel 8: AI Phone",
+        "description": "Experience the power of AI with Google Pixel 8. Enhanced audio and video. Learn more."
+      },
+      {
+        "headline": "Google Pixel 8 Camera",
+        "description": "Capture life's moments with the Google Pixel 8's AI-powered camera. Order yours today."
+      },
+      {
+        "headline": "Pixel 8: Sound Editing",
+        "description": "Remove unwanted noise from your videos with Google Pixel 8. The AI phone. Buy now."
+      },
+      {
+        "headline": "Google Pixel 8: AI",
+        "description": "The only AI phone engineered by Google. Get yours today from Flipkart."
+      }
+    ],
+    "images": {
+      "horizontal": [
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/1.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/2.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/3.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/4.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/5.png"
+      ],
+      "square": [
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/1.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/2.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/3.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/4.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/5.png"
+      ],
+      "vertical": [
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/1.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/2.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/3.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/4.png",
+        "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/5.png"
+      ]
+    }
+  },
+  "_1": {
+    "variant_id": 1,
+    "av_segments": {
+      "_14.2": {
+        "av_segment_id": "14.2",
+        "start_s": 23.736606,
+        "end_s": 29.133333
+      },
+      "_15": {
+        "av_segment_id": "15",
+        "start_s": 29.166666,
+        "end_s": 29.966666
+      }
+    },
+    "title": "Google Pixel 8: Engineered by Google",
+    "description": "This combination is very brand-focused, highlighting that the Google Pixel 8 is engineered by Google. It starts with the Google Pixel 8 logo, transitions to scenes emphasizing the \"AI\" and \"The only phone engineered by Google\" messaging, and the product being used by real consumers. The combination ends with a clear call to action.",
+    "score": 4,
+    "score_reasoning": "*   **A - Attention (2/5):** The opening scene with the Pixel 8 grabs some attention, but the static shots of the phone and text in Scenes 14.1 and 14.2 are less engaging. There is off-screen speech, but only during moments where the product is simply shown on the screen and static. Recommendation: Ensure audio elements complement each other and don't compete.\n*   **B - Branding (5/5):** The branding is exceptionally strong, with frequent appearances of the Google Pixel logo, name, and tagline. This combination really drives home the \"Engineered by Google\" message. The variety of branding is noticeable.\n*   **C - Connection (3/5):** Scenes include human presence and scenarios, such a groups looking down at the camera, and smiling.\n*   **D - Direction (2/2):** The final scene provides a clear and direct call to action, prompting viewers to check out offers.",
+    "render_settings": {
+      "generate_image_assets": false,
+      "generate_text_assets": false,
+      "formats": ["horizontal"],
+      "use_music_overlay": false,
+      "use_continuous_audio": false,
+      "fade_out": false,
+      "overlay_type": "variant_start"
+    },
+    "variants": {
+      "horizontal": "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_1_h.mp4"
+    }
+  },
+  "_2": {
+    "variant_id": 2,
+    "av_segments": {
+      "_11": {
+        "av_segment_id": "11",
+        "start_s": 17.8,
+        "end_s": 18.933333
+      },
+      "_12": {
+        "av_segment_id": "12",
+        "start_s": 18.966666,
+        "end_s": 20.5
+      },
+      "_13": {
+        "av_segment_id": "13",
+        "start_s": 20.533333,
+        "end_s": 21.933333
+      },
+      "_14.1": {
+        "av_segment_id": "14.1",
+        "start_s": 21.966666,
+        "end_s": 23.736606
+      },
+      "_14.2": {
+        "av_segment_id": "14.2",
+        "start_s": 23.736606,
+        "end_s": 29.133333
+      },
+      "_15": {
+        "av_segment_id": "15",
+        "start_s": 29.166666,
+        "end_s": 29.966666
+      }
+    },
+    "title": "Google Pixel 8: Capture Every Moment",
+    "description": "This combination focuses on the video and audio recording capabilities of the Google Pixel 8, emphasizing its ability to capture important moments clearly. The scenes show recording a proposal, using Audio Magic Eraser, and then the joyous reaction of the couple. It concludes with a call to action.",
+    "score": 5,
+    "score_reasoning": "*   **A - Attention (4/5):** The light blue Google Pixel phone, mounted on a tripod, records a man against a scenic backdrop of rocky cliffs and ocean, highlights the phone's video recording capabilities, quickly grabbing attention. The audio is limited. Recommendation: Include some off-screen audio for more attention value.\n*   **B - Branding (5/5):** The Google Pixel logo is consistently and creatively integrated throughout the ad, promoting recognition and recall.\n*   **C - Connection (3/5):** The proposal scene creates an emotional connection and shows how the phone can capture important life moments.\n*   **D - Direction (2/2):** The combination ends with a clear call to action, encouraging viewers to explore offers at Flipkart.",
+    "render_settings": {
+      "generate_image_assets": false,
+      "generate_text_assets": false,
+      "formats": ["horizontal"],
+      "use_music_overlay": false,
+      "use_continuous_audio": false,
+      "fade_out": false,
+      "overlay_type": "variant_start"
+    },
+    "variants": {
+      "horizontal": "assets/pixel8_en.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_2_h.mp4"
+    }
+  }
+}
