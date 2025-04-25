@@ -23,15 +23,13 @@ const spawn = require("cross-spawn");
 export const DEFAULT_GCP_REGION = "us-central1";
 export const DEFAULT_GCS_LOCATION = "us";
 const GCS_BUCKET_NAME_SUFFIX = "-vigenair";
-const GCP_BASH_DEPLOYMENT_SCRIPT = "deploy-service";
-const GCP_TERRAFORM_DEPLOYMENT_SCRIPT = "tf-deploy-service";
+const USE_TERRAFORM_FOR_GCP_DEPLOYMENT = false;
 
 interface Config {
   gcpProjectId?: string;
   gcpRegion?: string;
   gcsLocation?: string;
   vertexAiRegion?: string;
-  gcpDeploymentScript?: string;
 }
 
 interface ConfigReplace {
@@ -48,7 +46,6 @@ export interface PromptsResponse {
   gcsLocation?: string;
   webappDomainAccess?: boolean;
   vertexAiRegion?: string;
-  useTerraform?: boolean;
 }
 
 class ClaspManager {
@@ -143,11 +140,14 @@ export class GcpDeploymentHandler {
     }
   }
 
-  static deployGcpComponents(config: Config) {
+  static deployGcpComponents() {
     console.log(
       "Deploying the 'vigenair' service on Cloud Run / Cloud Functions..."
     );
-    spawn.sync(`npm run ${config.gcpDeploymentScript}`, { stdio: "inherit", shell: true });
+    spawn.sync(
+      `npm run ${USE_TERRAFORM_FOR_GCP_DEPLOYMENT ? "tf-" : ""}deploy-service`,
+      { stdio: "inherit", shell: true }
+    );
   }
 }
 
@@ -235,7 +235,7 @@ export class UserConfigManager {
       .replace(".", "-")
       .replace(":", "-")}${GCS_BUCKET_NAME_SUFFIX}`;
     const vertexAiRegion = response.vertexAiRegion || DEFAULT_GCP_REGION;
-    const gcpDeploymentScript = response.useTerraform ? GCP_TERRAFORM_DEPLOYMENT_SCRIPT : GCP_BASH_DEPLOYMENT_SCRIPT;
+
     configReplace({
       regex: "<gcp-project-id>",
       replacement: gcpProjectId,
@@ -291,7 +291,6 @@ export class UserConfigManager {
         gcpRegion,
         gcsLocation,
         vertexAiRegion,
-        gcpDeploymentScript,
       })
     );
     console.log();

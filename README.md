@@ -94,7 +94,6 @@ Please make sure you have fulfilled all prerequisites mentioned under [Requireme
     * First, enter your GCP Project ID.
     * Then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
         * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
-        * When deploying GCP components, you'll be asked whether to use Terraform (defaults to `No`). If you select `Yes`, ensure [Terraform is installed](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli).
         * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
 
 The `npm start` script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to a new Apps Script project, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
@@ -102,6 +101,7 @@ The `npm start` script will then proceed to perform the deployments you requeste
 See [How Vigenair Works](#how-vigenair-works) for more details on the different components of the solution.
 
 > Note: If using a completely new GCP project with no prior deployments of Cloud Run / Cloud Functions, you may receive [Eventarc permission denied errors](https://cloud.google.com/eventarc/docs/troubleshooting#trigger-error) when deploying the `vigenair` Cloud Function for the very first time. Please wait a few minutes ([up to seven](https://cloud.google.com/iam/docs/access-change-propagation)) for all necessary permissions to propagate before retrying the `npm start` command.
+>> Additional note: You may also use Terraform to deploy the Vigenair backend. This can be done by setting the `USE_TERRAFORM_FOR_GCP_DEPLOYMENT` constant in [common.ts](common.ts) to `true` and ensuring that [Terraform is installed](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli) before running the `npm start` command.
 
 ### Managing Apps Script Deployments
 

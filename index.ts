@@ -72,15 +72,6 @@ const config = UserConfigManager.getUserConfig();
       intitial: config.gcsLocation ?? DEFAULT_GCS_LOCATION,
     },
     {
-      type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
-        values.deployGcpComponents ? "toggle" : null,
-      name: "useTerraform",
-      message: "Would you like to use Terraform for GCP deployment?",
-      initial: config.gcpDeploymentScript ? config.gcpDeploymentScript.includes("tf-") : false,
-      active: "Yes",
-      inactive: "No",
-    },
-    {
       type: "toggle",
       name: "deployUi",
       message: "Would you like to deploy the UI?",
@@ -114,7 +105,7 @@ const config = UserConfigManager.getUserConfig();
 
   if (response.deployGcpComponents) {
     await GcpDeploymentHandler.checkGcloudAuth();
-    GcpDeploymentHandler.deployGcpComponents(UserConfigManager.getUserConfig());
+    GcpDeploymentHandler.deployGcpComponents();
   }
 
   if (response.deployUi) {
