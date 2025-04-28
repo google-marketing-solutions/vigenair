@@ -53,6 +53,12 @@ segments-list {
   margin: 24px auto;
 }
 
+.checkbox-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .video-container {
   display: flex;
   flex-direction: column;
@@ -273,4 +279,21 @@ mat-divider {
   margin-top: 0px;
   margin-bottom: 16px;
   justify-content: start;
+}
+
+
+footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    bottom: 0;
+    z-index: 1;
+    width: 100%;
+}
+
+footer p {
+    margin: 10px 0;
+    font-size: 12px;
+    font-family: 'Roboto', sans-serif;
 }
