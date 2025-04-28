@@ -19,6 +19,7 @@ This module contains functions to extract, split and transcribe audio files.
 
 import datetime
 import io
+import json
 import logging
 import os
 import pathlib
@@ -290,14 +291,12 @@ def _transcribe_gemini(
         and response.candidates[0].content.parts[0].text
     ):
       text = response.candidates[0].content.parts[0].text
-      result = (
-          re.search(ConfigService.TRANSCRIBE_AUDIO_PATTERN, text, re.DOTALL)
-      )
       logging.info('TRANSCRIPTION - %s', text)
-      video_language = result.group(1)
-      language_probability = result.group(2)
+      result = json.loads(text.replace('```json', '').replace('```', ''))
+      video_language = result.get('language')
+      language_probability = result.get('confidence', 0.0)
       transcription_dataframe = (
-          pd.read_csv(io.StringIO(result.group(3)), usecols=[
+          pd.read_csv(io.StringIO(result.get('transcription_csv')), usecols=[
               0, 1, 2
           ]).dropna(axis=1, how='all').rename(
               columns={
@@ -314,26 +313,28 @@ def _transcribe_gemini(
               duration_s=lambda df: df['end_s'] - df['start_s'],
           )
       )
+      logging.info("audio_file_path ------ %s", audio_file_path)
       subtitles_output_path = re.sub(
         r'\.[^.]+$', f'.{ConfigService.OUTPUT_SUBTITLES_TYPE}', audio_file_path
       )
       with open(subtitles_output_path, 'w', encoding='utf8') as f:
-        f.write(result.group(4))
+        f.write(result.get('transcription_vtt'))
       logging.info(
           'TRANSCRIPTION - transcript for %s written successfully!',
           audio_file_path,
       )
     else:
-      logging.warning(
-          'Could not transcribe audio! Returning empty transcription...'
-      )
+      message = 'Could not transcribe audio! Returning empty transcription...'
+      logging.warning(message)
+      raise Exception(message)
   # Execution should continue regardless of the underlying exception
   # pylint: disable=broad-exception-caught
-  except Exception:
+  except Exception as e:
     logging.exception(
         'Encountered error during transcription! '
         'Returning empty transcription...'
     )
+    raise e
 
   return transcription_dataframe, video_language, float(language_probability)
 

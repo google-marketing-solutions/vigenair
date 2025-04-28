@@ -172,10 +172,10 @@ GENERATE_ASSETS_CONFIG = {
 DEFAULT_VIDEO_LANGUAGE = 'English'
 
 TRANSCRIBE_AUDIO_PROMPT = """Transcribe the provided audio file, paying close attention to speaker changes and pauses in speech.
-Output the following, in this order:
-1. **Language:** Specify the language of the audio (e.g., "Language: English")
-2. **Confidence:**  Specify the confidence score of the transcription (e.g., "Confidence: 0.95")
-3. **Transcription CSV:** Output the transcription in CSV (Comma-Separated Values) format (e.g. ```csv<output>```) with these columns:
+Output a json object with the following properties and content:
+1. **language:** Specify the language of the audio (e.g., "English")
+2. **confidence:**  Specify the confidence score of the transcription (e.g., "0.95")
+3. **transcription_csv:** Output the transcription in CSV (Comma-Separated Values) format (e.g. ```csv<output>```) with these columns:
     * **Start:** (Start timestamp for each utterance in the format "mm:ss.SSS")
     * **End:** (End timestamp for each utterance in the format "mm:ss.SSS")
     * **Transcription:** (The transcribed text of the utterance)
@@ -183,7 +183,7 @@ Output the following, in this order:
     **Critical Timestamping Requirements:**
         * **Pause Detection:** It is absolutely essential to accurately identify and incorporate pauses in speech. If there is a period of silence between utterances, even a brief one, this MUST be reflected in the timestamps. Do not assume continuous speech.
         * **No Overlapping:** Timestamps for consecutive sentences should NOT overlap. The end timestamp of one sentence should be the start timestamp of the next sentence ONLY if there is no pause between them.
-4. **WebVTT Format:** Output the transcription information in WebVTT format, surrounded by backticks (e.g. ```vtt<output>```)
+4. **transcription_vtt:** Output the transcription information in WebVTT format, surrounded by backticks (e.g. ```vtt<output>```)
 
 **Constraints:**
     * **No Extra Text:** Only output the language, confidence, table, and WebVTT data, without any additional text or explanations. This includes avoiding any labels or headings before or after the transcription table and WebVTT data.
