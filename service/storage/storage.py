@@ -246,3 +246,41 @@ def delete_gcs_file(
         file_path.full_gcs_path,
         bucket_name,
     )
+
+
+def download_gcs_dir(
+    bucket_name: str,
+    dir_path: str,
+    output_dir: str,
+) -> int:
+  """Downloads all files in a directory from a GCS bucket.
+
+  Args:
+    bucket_name: The name of the bucket to download from.
+    dir_path: The directory to download.
+    output_dir: The directory to download to.
+
+  Returns:
+    The number of files downloaded.
+  """
+  storage_client = storage.Client()
+  prefix = f'{dir_path}/'
+  blobs = storage_client.list_blobs(bucket_name, prefix=prefix)
+  count_files = 0
+
+  for blob in blobs:
+    if blob.name == prefix:
+      continue
+    filename = blob.name.replace(prefix, '')
+    blob.download_to_filename(str(pathlib.Path(output_dir, filename)))
+    count_files += 1
+
+  logging.info(
+      'DOWNLOAD - Fetched "%d" files from bucket "%s" and folder "%s" '
+      'into path "%s".',
+      count_files,
+      bucket_name,
+      dir_path,
+      output_dir,
+  )
+  return count_files
