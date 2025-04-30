@@ -27,6 +27,10 @@ GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', 'my-gcp-project')
 GCP_LOCATION = os.environ.get('GCP_LOCATION', 'us-central1')
 CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-2.0-flash')
 CONFIG_VISION_MODEL = os.environ.get('CONFIG_VISION_MODEL', 'gemini-2.0-flash')
+CONFIG_TRANSCRIPTION_MODEL_WHISPER_GCS_BUCKET = os.environ.get(
+    'CONFIG_TRANSCRIPTION_MODEL_WHISPER_GCS_BUCKET',
+    'vigenair-faster-whisper'
+)
 CONFIG_TRANSCRIPTION_MODEL_WHISPER = os.environ.get(
     'CONFIG_TRANSCRIPTION_MODEL_WHISPER', 'small'
 )
@@ -53,9 +57,7 @@ CONFIG_DEFAULT_FADE_OUT_DURATION = os.environ.get(
     '1'  # seconds
 )
 
-CONFIG_BACKEND_VERSION = os.environ.get(
-    'CONFIG_BACKEND_VERSION', 'v1'
-)
+CONFIG_BACKEND_VERSION = os.environ.get('CONFIG_BACKEND_VERSION', 'v1')
 
 USER_AGENT_ID = f'cloud-solutions/mas-vigenair-backend-{CONFIG_BACKEND_VERSION}'
 
