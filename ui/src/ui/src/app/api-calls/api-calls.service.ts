@@ -18,6 +18,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
 import { catchError, Observable, of, retry, switchMap, timer } from 'rxjs';
 import { CONFIG } from '../../../../config';
+import { AuthService } from './auth.service';
 
 import {
   ApiCalls,
@@ -38,7 +39,8 @@ import {
 export class ApiCallsService implements ApiCalls {
   constructor(
     private ngZone: NgZone,
-    private httpClient: HttpClient
+    private httpClient: HttpClient,
+    private authService: AuthService
   ) {}
 
   loadPreviousRun(folder: string): string[] {
@@ -50,23 +52,10 @@ export class ApiCallsService implements ApiCalls {
 
   getUserAuthToken(): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((userAuthToken: string) => {
-          this.ngZone.run(() => {
-            subscriber.next(userAuthToken);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Could not retrieve the user auth token! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .getUserAuthToken();
+      this.ngZone.run(() => {
+        subscriber.next(this.authService.getAccessToken());
+        subscriber.complete();
+      });    
     }).pipe(
       retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
     );
@@ -198,28 +187,40 @@ export class ApiCallsService implements ApiCalls {
     );
   }
 
+  // getRunsFromGcs(): Observable<PreviousRunsResponse> {
+  //   return new Observable<PreviousRunsResponse>(subscriber => {
+  //     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //     // @ts-ignore
+  //     google.script.run
+  //       .withSuccessHandler((response: PreviousRunsResponse) => {
+  //         this.ngZone.run(() => {
+  //           subscriber.next(response);
+  //           subscriber.complete();
+  //         });
+  //       })
+  //       .withFailureHandler((error: Error) => {
+  //         console.error(
+  //           'Could not retrieve previous runs from GCS! Error: ',
+  //           error
+  //         );
+  //         subscriber.error(error);
+  //       })
+  //       .getRunsFromGcs();
+  //   }).pipe(
+  //     retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+  //   );
+  // }
+
   getRunsFromGcs(): Observable<PreviousRunsResponse> {
     return new Observable<PreviousRunsResponse>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((response: PreviousRunsResponse) => {
-          this.ngZone.run(() => {
-            subscriber.next(response);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Could not retrieve previous runs from GCS! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .getRunsFromGcs();
-    }).pipe(
-      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
-    );
+      this.ngZone.run(() => {
+        subscriber.next({
+          encodedUserId: "test-user-id",
+          runs: ['video a', 'video b', 'video c'],
+        });
+        subscriber.complete();
+      });
+    });
   }
 
   getRendersFromGcs(gcsFolder: string): Observable<string[]> {

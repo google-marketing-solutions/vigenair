@@ -39,7 +39,7 @@ import { GcpDeploymentHandler, UiDeploymentHandler, UserConfigManager } from "./
     },
   ]);
   if (response.deployGcpComponents) {
-    GcpDeploymentHandler.deployGcpComponents(UserConfigManager.getUserConfig());
+    GcpDeploymentHandler.deployGcpComponents();
   }
   if (response.deployUi) {
     UiDeploymentHandler.deployUi();
