@@ -38,7 +38,7 @@ export const CONFIG = {
   },
   vertexAi: {
     endpoint: 'aiplatform.googleapis.com',
-    projectId: 'maj-int-0b657n3',
+    projectId: '<gcp-project-id>',
     location: '<vertexai-region>',
     quotaLimitDelay: 10 * 1000, // 10s,
     model: 'gemini-2.0-flash',
@@ -398,5 +398,5 @@ export const CONFIG = {
   maxRetries: 600,
   maxRetriesAppsScript: 5,
   debug: true,
-  googleClientId: '333515661855-f4c20icumkmg3jg6h8rv0ar7tfgfaasg.apps.googleusercontent.com',
+  googleClientId: '<google-oauth-client-id>',
 };
