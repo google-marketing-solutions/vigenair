@@ -11,3 +11,6 @@ build/
 *.tfstate.*
 *.tfvars
 terraform/*.zip
+
+# ui-backend
+/ui-backend/public/
