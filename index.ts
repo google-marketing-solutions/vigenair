@@ -100,6 +100,13 @@ const config = UserConfigManager.getUserConfig();
       }]:`,
       intitial: config.vertexAiRegion ?? DEFAULT_GCP_REGION,
     },
+    {
+      type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
+        values.deployUi ? "text" : null,
+      name: "googleOauthClientId",
+      message: `Enter your Google OAuth client ID. Refer to https://console.cloud.google.com/auth/clients`,
+      initial: config.googleOauthClientId ?? "",
+    }
   ]);
   UserConfigManager.setUserConfig(response);
 
@@ -110,6 +117,6 @@ const config = UserConfigManager.getUserConfig();
 
   if (response.deployUi) {
     await UiDeploymentHandler.createScriptProject();
-    UiDeploymentHandler.deployUi();
+    UiDeploymentHandler.deployUi(response.vertexAiRegion);
   }
 })();

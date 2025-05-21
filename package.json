@@ -23,6 +23,7 @@
     "update-app": "npm run build && node dist/update.js",
     "deploy-ui": "cd ui && npm run deploy",
     "deploy-service": "cd service && bash deploy.sh",
+    "build-ui-cloud-run": "cd ui && npm run build:cloud-run",
     "tf-deploy-service": "cd terraform && bash pre_deploy.sh && terraform init && terraform apply -auto-approve && terraform init -migrate-state",
     "postinstall": "cd ui && npm install"
   },

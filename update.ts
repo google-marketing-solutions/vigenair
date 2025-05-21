@@ -42,6 +42,6 @@ import { GcpDeploymentHandler, UiDeploymentHandler, UserConfigManager } from "./
     GcpDeploymentHandler.deployGcpComponents();
   }
   if (response.deployUi) {
-    UiDeploymentHandler.deployUi();
+    UiDeploymentHandler.deployUi(response.vertexAiRegion);
   }
 })();
