@@ -20,6 +20,7 @@ import { ApiCallsService } from '../app/api-calls/api-calls.service';
 
 export const environment = {
   production: false,
+  includeGoogleGsiClient: false,
   providers: [
     { provide: ApiCallsService, useExisting: MockApiCallsService },
     provideRouter([]),
