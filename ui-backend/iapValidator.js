@@ -38,8 +38,14 @@ class IapValidator {
   }  
 
   async getExpectedAudience() {
-    if (await this.serviceMetadataConfig.backendServiceId) {
-      return `/projects/${await this.serviceMetadataConfig.projectNumber}/locations/${await this.serviceMetadataConfig.cloudRegion}/services/${await this.serviceMetadataConfig.backendServiceId}`;
+    const backendServiceId = await this.serviceMetadataConfig.backendServiceId;
+    const projectNumber = await this.serviceMetadataConfig.projectNumber;
+    const cloudRegion = await this.serviceMetadataConfig.cloudRegion;
+    if (backendServiceId) {
+      const isNumerical = /^\d+$/.test(backendServiceId);
+      return isNumerical
+        ? `/projects/${projectNumber}/global/backendServices/${backendServiceId}`
+        : `/projects/${projectNumber}/locations/${cloudRegion}/services/${backendServiceId}`;
     } else {
       return `/projects/${await this.serviceMetadataConfig.projectNumber}/apps/${await this.serviceMetadataConfig.projectId}`;
     }

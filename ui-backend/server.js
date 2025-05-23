@@ -10,7 +10,7 @@ const staticFilesPath = path.join(__dirname, 'public');
 const serviceMetadataConfig = new ServiceMetadataConfig(
   process.env.PROJECT_ID,
   process.env.PROJECT_NUMBER,
-  process.env.K_SERVICE,
+  process.env.IAP_SERVICE_ID || process.env.K_SERVICE,
   process.env.K_SERVICE_REGION
 );
 
@@ -51,12 +51,14 @@ app.get('/', validateIap, (req, res) => {
 
 app.get('/service_url', validateIap, async (req, res) => {
   try {
-    const projectNumber = await serviceMetadataConfig.projectNumber;
-    const cloudRegion = await serviceMetadataConfig.cloudRegion;
-    const backendServiceId = await serviceMetadataConfig.backendServiceId; // Also await this for consistency
+    let serviceUrl = process.env.SERVICE_URL_OVERRIDE;
+    if (!serviceUrl) {
+      const projectNumber = await serviceMetadataConfig.projectNumber;
+      const cloudRegion = await serviceMetadataConfig.cloudRegion;
+      const backendServiceId = await serviceMetadataConfig.backendServiceId;
 
-    // Now construct the URL with the resolved values
-    const serviceUrl = `https://${backendServiceId}-${projectNumber}.${cloudRegion}.run.app`;
+      serviceUrl = `https://${backendServiceId}-${projectNumber}.${cloudRegion}.run.app`;
+    }
 
     res.json({
       url: serviceUrl
