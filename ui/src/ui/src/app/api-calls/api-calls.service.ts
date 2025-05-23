@@ -211,10 +211,13 @@ export class ApiCallsService implements ApiCalls {
   }
 
   getRunsFromGcs(): Observable<PreviousRunsResponse> {
-    return this.storageManager.listObjects().pipe(
-      switchMap(runs => {
+    return forkJoin({
+      runs: this.storageManager.listObjects(),
+      user: this.getCurrentUser()
+    }).pipe(
+      switchMap(({runs, user}) => {
         return of({
-          encodedUserId: "test-user-id",
+          encodedUserId: btoa(user),
           runs: runs
         });
       })
@@ -337,6 +340,21 @@ export class ApiCallsService implements ApiCalls {
         throw error;
       })
     );
+  }
+
+  getCurrentUser(): Observable<string> {
+    return this.httpClient.get('userinfo', {
+      responseType: 'text',
+    })
+      .pipe(
+        switchMap((response: any) => {
+          return of(response);
+        }),
+        catchError(error => {
+          console.error('Failed to get user info: ', error);
+          throw error;
+        })
+      );
   }
 
   regenerateTextAsset(

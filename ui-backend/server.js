@@ -25,7 +25,7 @@ const validateIap = async (req, res, next) => {
     const payload = await iapValidator.verifyIapIdToken(iapJwt);
     if (payload) {
       console.log('IAP token validated successfully for user:', payload.email);
-      req.user = payload;
+      req.user = payload.email;
       next();
     } else {
       console.warn('Invalid IAP JWT received.');
@@ -66,6 +66,14 @@ app.get('/service_url', validateIap, async (req, res) => {
   } catch (error) {
     console.error('Error constructing service URL:', error);
     res.status(500).json({ error: 'Failed to construct service URL' });
+  }
+});
+
+app.get('/userinfo', validateIap, (req, res) => {
+  if (req.user) {
+    res.json(req.user);
+  } else {
+    res.status(401).send('User information not available.');
   }
 });
 
