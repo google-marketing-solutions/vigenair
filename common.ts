@@ -58,7 +58,7 @@ class ClaspManager {
 
     if (!loggedIn) {
       console.log("Logging in via clasp...");
-      spawn.sync("clasp", ["login"], { stdio: "inherit" });
+      spawn.sync("clasp", ["login", "--no-localhost"], { stdio: "inherit" });
     }
   }
 
@@ -145,7 +145,7 @@ export class GcpDeploymentHandler {
       "Deploying the 'vigenair' service on Cloud Run / Cloud Functions..."
     );
     spawn.sync(
-      `npm run ${USE_TERRAFORM_FOR_GCP_DEPLOYMENT ? "tf-" : ""}deploy-service`,
+      `npx run ${USE_TERRAFORM_FOR_GCP_DEPLOYMENT ? "tf-" : ""}deploy-service`,
       { stdio: "inherit", shell: true }
     );
   }
@@ -170,7 +170,7 @@ export class UiDeploymentHandler {
 
   static deployUi() {
     console.log("Deploying the UI Web App...");
-    spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
+    spawn.sync("npx run deploy-ui", { stdio: "inherit", shell: true });
     const res = spawn.sync("cd ui && clasp undeploy -a && clasp deploy", {
       stdio: "pipe",
       shell: true,

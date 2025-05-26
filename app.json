@@ -1,0 +1,11 @@
+{
+  "name": "ViGenAiR",
+  "build": {
+    "skip": true
+  },
+  "hooks": {
+    "postbuild": {
+      "commands": ["npx run start"]
+    }
+  }
+}
