@@ -174,7 +174,12 @@ export class UiDeploymentHandler {
     }
   }
 
-  static deployUi(uiRegion: string) {
+  static deployUi(uiRegion: string,
+    options?: {
+      iapServiceId?: string;
+      serviceUrlOveride?: string;
+    }
+  ) {
     console.log("Deploying the UI Web App...");
     if(!DEPLOY_UI_ON_CLOUD_RUN) {
       spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
@@ -195,7 +200,18 @@ export class UiDeploymentHandler {
     } else {
       spawn.sync("npm run build-ui-cloud-run", { stdio: "inherit", shell: true });
       const uiDeploymentRegion = uiRegion || DEFAULT_GCP_REGION;
-      spawn.sync(`cd ui-backend && gcloud run deploy ${CLOUD_RUN_UI_SERVICE_NAME} --region=${uiDeploymentRegion} --source .`, { stdio: "inherit", shell: true });
+      const envVarsList: string[] = [];
+      if(options?.iapServiceId) {
+        envVarsList.push(`IAP_SERVICE_ID=${options.iapServiceId}`);
+      }
+      if(options?.serviceUrlOveride) {
+        envVarsList.push(`SERVICE_URL_OVERRIDE=${options.serviceUrlOveride}`);
+      }
+      let envVarsArgument = "";
+      if (envVarsList.length > 0) {
+        envVarsArgument = ` --set-env-vars=${envVarsList.join(",")}`;
+      }
+      spawn.sync(`cd ui-backend && gcloud run deploy ${CLOUD_RUN_UI_SERVICE_NAME} --region=${uiDeploymentRegion} --source .${envVarsArgument}`, { stdio: "inherit", shell: true });
     }
   }
 }

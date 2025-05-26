@@ -238,14 +238,14 @@ export class AppComponent {
     }
   }
 
-  ngOnInit() {
-    if(environment.includeGoogleGsiClient) {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      document.head.appendChild(script);
-    }
-  }
+  // ngOnInit() {
+  //   if(environment.includeGoogleGsiClient) {
+  //     const script = document.createElement('script');
+  //     script.src = 'https://accounts.google.com/gsi/client';
+  //     script.async = true;
+  //     document.head.appendChild(script);
+  //   }
+  // }
 
   ngAfterViewInit() {
     const inputCombosFolder = document.querySelector(

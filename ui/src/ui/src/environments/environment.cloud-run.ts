@@ -34,7 +34,6 @@ import { ApiCallsService } from '../app/api-calls/api-calls.service';
 
 export const environment = {
   production: true,
-  includeGoogleGsiClient: true,
   providers: [
     { provide: ApiCallsService, useExisting: CloudRunApiCallsService },
   ],
