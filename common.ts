@@ -58,7 +58,9 @@ class ClaspManager {
 
     if (!loggedIn) {
       console.log("Logging in via clasp...");
-      spawn.sync("clasp", ["login", "--no-localhost"], { stdio: "inherit" });
+      spawn.sync("npx", ["clasp", "login", "--no-localhost"], {
+        stdio: "inherit",
+      });
     }
   }
 
@@ -82,8 +84,9 @@ class ClaspManager {
   ) {
     fs.ensureDirSync(path.join(filesRootDir, scriptRootDir));
     const res = spawn.sync(
-      "clasp",
+      "npx",
       [
+        "clasp",
         "create",
         "--type",
         "standalone",
@@ -145,7 +148,7 @@ export class GcpDeploymentHandler {
       "Deploying the 'vigenair' service on Cloud Run / Cloud Functions..."
     );
     spawn.sync(
-      `npx run ${USE_TERRAFORM_FOR_GCP_DEPLOYMENT ? "tf-" : ""}deploy-service`,
+      `npm run ${USE_TERRAFORM_FOR_GCP_DEPLOYMENT ? "tf-" : ""}deploy-service`,
       { stdio: "inherit", shell: true }
     );
   }
@@ -170,12 +173,15 @@ export class UiDeploymentHandler {
 
   static deployUi() {
     console.log("Deploying the UI Web App...");
-    spawn.sync("npx run deploy-ui", { stdio: "inherit", shell: true });
-    const res = spawn.sync("cd ui && clasp undeploy -a && clasp deploy", {
-      stdio: "pipe",
-      shell: true,
-      encoding: "utf8",
-    });
+    spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
+    const res = spawn.sync(
+      "cd ui && npx clasp undeploy -a && npx clasp deploy",
+      {
+        stdio: "pipe",
+        shell: true,
+        encoding: "utf8",
+      }
+    );
     const lastNonEmptyLine = res.output[1]
       .split("\n")
       .findLast((line: string) => line.trim().length > 0);
@@ -222,10 +228,13 @@ export class UserConfigManager {
       stdio: "inherit",
       shell: true,
     });
-    spawn.sync("cp ./terraform/terraform.tfvars.template ./terraform/terraform.tfvars", {
-      stdio: "inherit",
-      shell: true
-    });
+    spawn.sync(
+      "cp ./terraform/terraform.tfvars.template ./terraform/terraform.tfvars",
+      {
+        stdio: "inherit",
+        shell: true,
+      }
+    );
     console.log("Setting user configuration...");
     const gcpProjectId = response.gcpProjectId;
     const gcpRegion = response.gcpRegion || DEFAULT_GCP_REGION;

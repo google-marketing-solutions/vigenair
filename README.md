@@ -83,14 +83,16 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 Please make sure you have fulfilled all prerequisites mentioned under [Requirements](#requirements) first.
 
-[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run?git_repo=https://github.com/google-marketing-solutions/vigenair&revision=events)
+[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=events&show=terminal)
+
+Once the cloud shell terminal is ready, run `npm start`:
 
 * First, enter your GCP Project ID.
 * Then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
   * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
   * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
 
-The deployment script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to a new Apps Script project, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
+The `npm start` script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to a new Apps Script project, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
 
 See [How Vigenair Works](#how-vigenair-works) for more details on the different components of the solution.
 
