@@ -83,7 +83,7 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 Please make sure you have fulfilled all prerequisites mentioned under [Requirements](#requirements) first.
 
-[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run?git_repo=https://github.com/google-marketing-solutions/vigenair&revision=main)
+[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run?git_repo=https://github.com/google-marketing-solutions/vigenair&revision=events)
 
 * First, enter your GCP Project ID.
 * Then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).

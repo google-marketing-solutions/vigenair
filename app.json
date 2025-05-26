@@ -5,7 +5,7 @@
   },
   "hooks": {
     "postbuild": {
-      "commands": ["npx run start"]
+      "commands": ["npm run start"]
     }
   }
 }
