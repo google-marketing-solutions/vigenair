@@ -58,7 +58,7 @@ class ClaspManager {
 
     if (!loggedIn) {
       console.log("Logging in via clasp...");
-      spawn.sync("npx", ["clasp", "login", "--no-localhost"], {
+      spawn.sync("clasp", ["login", "--no-localhost"], {
         stdio: "inherit",
       });
     }
@@ -84,9 +84,8 @@ class ClaspManager {
   ) {
     fs.ensureDirSync(path.join(filesRootDir, scriptRootDir));
     const res = spawn.sync(
-      "npx",
+      "clasp",
       [
-        "clasp",
         "create",
         "--type",
         "standalone",
@@ -98,10 +97,7 @@ class ClaspManager {
       { encoding: "utf-8" }
     );
 
-    await fs.move(
-      path.join(scriptRootDir, ".clasp.json"),
-      path.join(filesRootDir, ".clasp-dev.json")
-    );
+    await fs.move(".clasp.json", path.join(filesRootDir, ".clasp-dev.json"));
     await fs.copyFile(
       path.join(filesRootDir, ".clasp-dev.json"),
       path.join(filesRootDir, ".clasp-prod.json")
@@ -174,14 +170,11 @@ export class UiDeploymentHandler {
   static deployUi() {
     console.log("Deploying the UI Web App...");
     spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
-    const res = spawn.sync(
-      "cd ui && npx clasp undeploy -a && npx clasp deploy",
-      {
-        stdio: "pipe",
-        shell: true,
-        encoding: "utf8",
-      }
-    );
+    const res = spawn.sync("cd ui && clasp undeploy -a && clasp deploy", {
+      stdio: "pipe",
+      shell: true,
+      encoding: "utf8",
+    });
     const lastNonEmptyLine = res.output[1]
       .split("\n")
       .findLast((line: string) => line.trim().length > 0);
