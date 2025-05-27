@@ -33,7 +33,7 @@ limitations under the License.
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
 * [May 2025]
-  * Significantly reduce deployment steps by utilising Cloud Shell to deploy both backend and frontend components. Read more [here](#get-started).
+  * Significantly reduced the number of deployment steps by utilising Cloud Shell to deploy both backend and frontend components. Read more [here](#get-started).
 * [March 2025]
   * `frontend` + `backend`: Added functionality to cut segments by adding *split markers* and re-running the extraction process. Read more [here](#22-segment-splitting).
 * [February 2025]
