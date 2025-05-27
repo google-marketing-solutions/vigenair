@@ -34,7 +34,7 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 * [May 2025]
   * Significantly reduced the number of deployment steps by utilising Cloud Shell to deploy both backend and frontend components. Read more [here](#get-started).
-* [March 2025]
+* [March + April 2025]
   * `frontend` + `backend`: Added functionality to cut segments by adding *split markers* and re-running the extraction process. Read more [here](#22-segment-splitting).
 * [February 2025]
   * `frontend`: You can now choose objective-specific ABCDs (Awareness, Consideration, Action, or Shorts) in the *Advanced settings* section of variants generation. Read more [here](#41-variants-generation).
