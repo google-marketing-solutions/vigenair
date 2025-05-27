@@ -32,7 +32,9 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
-* [March 2025]
+* [May 2025]
+  * Significantly reduced the number of deployment steps by utilising Cloud Shell to deploy both backend and frontend components. Read more [here](#get-started).
+* [March + April 2025]
   * `frontend` + `backend`: Added functionality to cut segments by adding *split markers* and re-running the extraction process. Read more [here](#22-segment-splitting).
 * [February 2025]
   * `frontend`: You can now choose objective-specific ABCDs (Awareness, Consideration, Action, or Shorts) in the *Advanced settings* section of variants generation. Read more [here](#41-variants-generation).
@@ -83,18 +85,14 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 Please make sure you have fulfilled all prerequisites mentioned under [Requirements](#requirements) first.
 
-1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp@2.4.2 -g`, then login via `clasp login`.
-1. Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
-1. Make sure your system has an up-to-date installation of the [gcloud CLI](https://cloud.google.com/sdk/docs/install), then login via `gcloud auth login`.
-1. Make sure your system has an up-to-date installation of `git` and use it to clone this repository:
-   `git clone https://github.com/google-marketing-solutions/vigenair`.
-1. Navigate to the directory where the source code lives: `cd vigenair`.
-1. Run `npm start`:
-    * First, enter your GCP Project ID.
-    * Then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
-        * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
-        * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
+[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=main&show=terminal)
+
+Once the cloud shell terminal is ready and the GitHub repository has been cloned successfully, run `npm start`:
+
+* You will be prompted to login via Clasp. Copy the full authorisation URL posted in the cloud shell terminal (clicking on it will not work properly) and open it in your local browser. Login to your account, then copy the entire URL of the resulting page and paste it back into the cloud shell terminal (the browser will show you an error that the page is unreachable, which is correct and expected).
+* Next, enter your GCP Project ID when prompted, then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
+  * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
+  * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
 
 The `npm start` script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to a new Apps Script project, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
 
@@ -114,6 +112,7 @@ You need the following to use Vigenair:
 * Google account: required to access the Vigenair web app.
 * GCP project
   * All users running Vigenair must be granted the [Vertex AI User](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user) and the [Storage Object User](https://cloud.google.com/storage/docs/access-control/iam-roles) roles on the associated GCP project.
+* Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
 
 The Vigenair [setup and deployment script](#get-started) will create the following components:
 
@@ -121,7 +120,7 @@ The Vigenair [setup and deployment script](#get-started) will create the followi
 * A Cloud Function (2nd gen) named `vigenair` that fulfills both the [Extractor and Combiner services](#solution-details). Refer to [deploy.sh](./service/deploy.sh) for specs.
 * An Apps Script deployment for the frontend web app.
 
-If you will also be deploying Vigenair, you need to have the following additional roles on the associated GCP project:
+If you will also deploy Vigenair, you need to have the following additional roles on the associated GCP project:
 
 * `Storage Admin` for the entire project OR `Storage Legacy Bucket Writer` on the <code>*<gcp_project_id>*-vigenair</code> bucket. See [IAM Roles for Cloud Storage](https://cloud.google.com/storage/docs/access-control/iam-roles) for more information.
 * `Cloud Functions Developer` to deploy and manage Cloud Functions. See [IAM Roles for Cloud Functions](https://cloud.google.com/functions/docs/reference/iam/roles) for more information.
@@ -357,7 +356,7 @@ Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), yo
 ### Build and Serve the Angular UI
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp@2.4.2 -g`, then login via `clasp login`.
+1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`, then login via `clasp login`.
 1. Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
 1. Navigate to the directory where the source code lives and run `cd ui`
 1. Run `npm install` to install dependencies.

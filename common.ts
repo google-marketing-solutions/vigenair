@@ -58,7 +58,9 @@ class ClaspManager {
 
     if (!loggedIn) {
       console.log("Logging in via clasp...");
-      spawn.sync("clasp", ["login"], { stdio: "inherit" });
+      spawn.sync("clasp", ["login", "--no-localhost"], {
+        stdio: "inherit",
+      });
     }
   }
 
@@ -95,10 +97,7 @@ class ClaspManager {
       { encoding: "utf-8" }
     );
 
-    await fs.move(
-      path.join(scriptRootDir, ".clasp.json"),
-      path.join(filesRootDir, ".clasp-dev.json")
-    );
+    await fs.move(".clasp.json", path.join(filesRootDir, ".clasp-dev.json"));
     await fs.copyFile(
       path.join(filesRootDir, ".clasp-dev.json"),
       path.join(filesRootDir, ".clasp-prod.json")
@@ -222,10 +221,13 @@ export class UserConfigManager {
       stdio: "inherit",
       shell: true,
     });
-    spawn.sync("cp ./terraform/terraform.tfvars.template ./terraform/terraform.tfvars", {
-      stdio: "inherit",
-      shell: true
-    });
+    spawn.sync(
+      "cp ./terraform/terraform.tfvars.template ./terraform/terraform.tfvars",
+      {
+        stdio: "inherit",
+        shell: true,
+      }
+    );
     console.log("Setting user configuration...");
     const gcpProjectId = response.gcpProjectId;
     const gcpRegion = response.gcpRegion || DEFAULT_GCP_REGION;

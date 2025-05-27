@@ -27,7 +27,7 @@
     "postinstall": "cd ui && npm install"
   },
   "engines": {
-    "node": ">=12"
+    "node": ">=20"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
