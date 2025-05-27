@@ -32,6 +32,8 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [May 2025]
+  * Significantly enhance deployment steps by utilising Cloud Shell to deploy both backend and frontend components. Read more [here](#get-started).
 * [March 2025]
   * `frontend` + `backend`: Added functionality to cut segments by adding *split markers* and re-running the extraction process. Read more [here](#22-segment-splitting).
 * [February 2025]
@@ -83,12 +85,12 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 Please make sure you have fulfilled all prerequisites mentioned under [Requirements](#requirements) first.
 
-[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=events&show=terminal)
+[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=main&show=terminal)
 
-Once the cloud shell terminal is ready, run `npm start`:
+Once the cloud shell terminal is ready and the GitHub repository has been cloned successfully, run `npm start`:
 
-* First, enter your GCP Project ID.
-* Then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
+* You will be prompted to login via Clasp. Copy the full authorisation URL posted in the cloud shell terminal (clicking on it will not work properly) and open it in your local browser. Login to your account, then copy the entire URL of the resulting page and paste it back into the cloud shell terminal (the browser will show you an error that the page is unreachable, which is correct and expected).
+* Next, enter your GCP Project ID when prompted, then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
   * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
   * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
 
@@ -354,7 +356,7 @@ Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), yo
 ### Build and Serve the Angular UI
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp@2.4.2 -g`, then login via `clasp login`.
+1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`, then login via `clasp login`.
 1. Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
 1. Navigate to the directory where the source code lives and run `cd ui`
 1. Run `npm install` to install dependencies.
