@@ -86,20 +86,17 @@
     "images": {
       "horizontal": [
         "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/1.png",
-        "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/2.png",
         "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/3.png",
         "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/4.png"
       ],
       "square": [
         "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/1.png",
-        "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/2.png",
         "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/3.png",
         "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/4.png"
       ],
       "vertical": [
         "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/1.png",
         "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/2.png",
-        "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/3.png",
         "assets/pixel9_de.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/4.png"
       ]
     }
