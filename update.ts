@@ -42,6 +42,6 @@ import { GcpDeploymentHandler, UiDeploymentHandler } from "./common.js";
     GcpDeploymentHandler.deployGcpComponents();
   }
   if (response.deployUi) {
-    UiDeploymentHandler.deployUi();
+    UiDeploymentHandler.deployUi(response.vertexAiRegion);
   }
 })();

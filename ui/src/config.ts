@@ -398,4 +398,5 @@ export const CONFIG = {
   maxRetries: 600,
   maxRetriesAppsScript: 5,
   debug: true,
+  googleClientId: '<google-oauth-client-id>',
 };

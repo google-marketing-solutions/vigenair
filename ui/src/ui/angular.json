@@ -34,6 +34,16 @@
               "optimization": false,
               "outputHashing": "all"
             },
+            "cloud-run": {
+              "optimization": false,
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.cloud-run.ts"
+                }
+              ]
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,

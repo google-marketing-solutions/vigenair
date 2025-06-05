@@ -17,6 +17,7 @@
     "deploy-ui": "node deploy-ui.mjs",
     "deploy:dev": "npm run lint && npm run test && npm run build && ncp appsscript.json dist/appsscript.json && ncp .clasp-dev.json .clasp.json && npm run build-ui && npm run deploy-ui && clasp push && clasp undeploy -a && clasp deploy",
     "deploy:prod": "npm run lint && npm run test && npm run build && ncp appsscript.json dist/appsscript.json && ncp .clasp-prod.json .clasp.json && npm run build-ui && npm run deploy-ui && clasp push && clasp undeploy -a && clasp deploy",
+    "build:cloud-run": "npm run lint && npm run test && npm run build && npm run build:cloud-run --prefix src/ui && node build-ui-cloud-run.mjs",
     "serve-ui": "cd src/ui && ng serve",
     "postinstall": "cd src/ui && npm install "
   },
