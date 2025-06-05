@@ -127,6 +127,26 @@ If you will also be deploying Vigenair, you need to have the following additiona
 * `Cloud Functions Developer` to deploy and manage Cloud Functions. See [IAM Roles for Cloud Functions](https://cloud.google.com/functions/docs/reference/iam/roles) for more information.
 * `Project IAM Admin` to be able to run the commands that set up roles and policy bindings in the deployment script. See [IAM access control](https://cloud.google.com/resource-manager/docs/access-control-proj) for more information.
 
+### Managing Front End Deployment on Cloud Run (Alternative to Apps Script Deployment)
+To deploy the ViGenAiR UI on Cloud Run instead of Apps Script, follow these steps:
+1.  Create an OAuth 2.0 Client ID:
+    * Follow the [guide](https://support.google.com/workspacemigrate/answer/9222992?hl=en) to create a Web Application OAuth Client ID. This is essential for user authentication and authorizing access to backend resources.
+    * After creation, note down the OAuth Client ID. You will need this during the deployment process.
+1.  Configure for Cloud Run Deployment:
+    * Open the [common.ts](common.ts) file in your local repository.
+    * Set the `DEPLOY_UI_ON_CLOUD_RUN` constant to `true`. This tells the deployment script to target Cloud Run.
+1.  Run the Deployment Script:
+    * Execute `npm start` as outlined in the [Get Started](#get-started) section.
+    * During the deployment, you will be prompted to provide the OAuth Client ID you created.
+    * The script will package the Angular UI with the ui-backend application (located at ui-backend/server.js) and deploy it as a Cloud Run service.
+1.  Secure Cloud Run with Identity-Aware Proxy (IAP):
+    * The `ui-backend` expects the Cloud Run service to be secured by IAP. It validates an IAP-provided JWT assertion token before serving content.
+    * Follow the [Enabling IAP for Cloud Run](https://cloud.google.com/iap/docs/enabling-cloud-run) guide to secure your new Cloud Run service.
+    * Once IAP is enabled, you will get an IAP-protected URL for your UI application. Note this URL.
+1.  Update OAuth Client Configuration:
+    * Go back to your OAuth 2.0 Client ID settings in the Google Cloud Console.
+    * Add the IAP-protected URL (from step 4) to the **Authorized JavaScript origins**.
+
 ## Why use Vigenair?
 
 Current Video Ads creative solutions, both within YouTube / Google Ads as well as open source, primarily focus on 4 of the [5 keys to effective advertising](https://info.ncsolutions.com/hubfs/2023%20Five%20Keys%20to%20Advertising%20Effectiveness/NCS_Five_Keys_to_Advertising_Effectiveness_E-Book_08-23.pdf) - Brand, Targeting, Reach and Recency. Those 4 pillars contribute to *only ~50%* of the potential marketing ROI, with the 5th pillar - **Creative** - capturing a *whopping ~50%* all on its own.
