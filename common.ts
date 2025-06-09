@@ -24,7 +24,7 @@ export const DEFAULT_GCP_REGION = "us-central1";
 export const DEFAULT_GCS_LOCATION = "us";
 const GCS_BUCKET_NAME_SUFFIX = "-vigenair";
 const USE_TERRAFORM_FOR_GCP_DEPLOYMENT = false;
-const DEPLOY_UI_ON_CLOUD_RUN = true;
+const DEPLOY_UI_ON_CLOUD_RUN = false;
 const CLOUD_RUN_UI_SERVICE_NAME = "vigenair-web"
 
 interface Config {

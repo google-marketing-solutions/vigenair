@@ -46,7 +46,7 @@ resource "google_storage_bucket" "backend_service_bucket" {
   name     = "${module.project_services.project_id}${local.gcs_bucket_name_suffix}"
   location = var.gcs_location
 
-  force_destroy               = false
+  force_destroy               = var.force_destroy_backend_gcs_bucket
   public_access_prevention    = "enforced"
   uniform_bucket_level_access = true
 
