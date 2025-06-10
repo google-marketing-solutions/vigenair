@@ -83,7 +83,9 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 ## Get Started
 
-Please make sure you have fulfilled all prerequisites mentioned under [Requirements](#requirements) first.
+Please ensure you have fulfilled all role prerequisites mentioned under [Requirements](#requirements).
+
+First, navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API, then click on the button below:
 
 [![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=events&show=terminal)
 
@@ -98,8 +100,9 @@ The `npm start` script will then proceed to perform the deployments you requeste
 
 See [How Vigenair Works](#how-vigenair-works) for more details on the different components of the solution.
 
-> Note: If using a completely new GCP project with no prior deployments of Cloud Run / Cloud Functions, you may receive [Eventarc permission denied errors](https://cloud.google.com/eventarc/docs/troubleshooting#trigger-error) when deploying the `vigenair` Cloud Function for the very first time. Please wait a few minutes ([up to seven](https://cloud.google.com/iam/docs/access-change-propagation)) for all necessary permissions to propagate before retrying the `npm start` command.
->> Additional note: You may also use Terraform to deploy the Vigenair backend. This can be done by setting the `USE_TERRAFORM_FOR_GCP_DEPLOYMENT` constant in [common.ts](common.ts) to `true` and ensuring that [Terraform is installed](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli) before running the `npm start` command.
+> If you encounter unexpected errors during the installation please [reset your Cloud Shell environment](https://cloud.google.com/shell/docs/resetting-cloud-shell#reset-shell) to ensure you are running the latest versions of gcloud, node, npm and clasp.
+>> Note: If using a completely new GCP project with no prior deployments of Cloud Run / Cloud Functions, you may receive [Eventarc permission denied errors](https://cloud.google.com/eventarc/docs/troubleshooting#trigger-error) when deploying the `vigenair` Cloud Function for the very first time. Please wait a few minutes ([up to seven](https://cloud.google.com/iam/docs/access-change-propagation)) for all necessary permissions to propagate before retrying the `npm start` command.
+>>> Additional note: You may also use Terraform to deploy the Vigenair backend. This can be done by setting the `USE_TERRAFORM_FOR_GCP_DEPLOYMENT` constant in [common.ts](common.ts) to `true` and ensuring that [Terraform is installed](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli) before running the `npm start` command.
 
 ### Managing Apps Script Deployments
 
@@ -112,19 +115,18 @@ You need the following to use Vigenair:
 * Google account: required to access the Vigenair web app.
 * GCP project
   * All users running Vigenair must be granted the [Vertex AI User](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user) and the [Storage Object User](https://cloud.google.com/storage/docs/access-control/iam-roles) roles on the associated GCP project.
-* Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
-
-The Vigenair [setup and deployment script](#get-started) will create the following components:
-
-* A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
-* A Cloud Function (2nd gen) named `vigenair` that fulfills both the [Extractor and Combiner services](#solution-details). Refer to [deploy.sh](./service/deploy.sh) for specs.
-* An Apps Script deployment for the frontend web app.
 
 If you will also deploy Vigenair, you need to have the following additional roles on the associated GCP project:
 
 * `Storage Admin` for the entire project OR `Storage Legacy Bucket Writer` on the <code>*<gcp_project_id>*-vigenair</code> bucket. See [IAM Roles for Cloud Storage](https://cloud.google.com/storage/docs/access-control/iam-roles) for more information.
 * `Cloud Functions Developer` to deploy and manage Cloud Functions. See [IAM Roles for Cloud Functions](https://cloud.google.com/functions/docs/reference/iam/roles) for more information.
 * `Project IAM Admin` to be able to run the commands that set up roles and policy bindings in the deployment script. See [IAM access control](https://cloud.google.com/resource-manager/docs/access-control-proj) for more information.
+
+> The Vigenair [setup and deployment script](#get-started) will create the following components automatically:
+>
+> * A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
+> * A Cloud Function (2nd gen) named `vigenair` that fulfills both the [Extractor and Combiner services](#solution-details). Refer to [deploy.sh](./service/deploy.sh) for specs.
+> * An Apps Script deployment for the frontend web app.
 
 ## Why use Vigenair?
 
