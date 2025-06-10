@@ -113,13 +113,6 @@ You need the following to use Vigenair:
 * Google account: required to access the Vigenair web app.
 * GCP project
   * All users running Vigenair must be granted the [Vertex AI User](https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user) and the [Storage Object User](https://cloud.google.com/storage/docs/access-control/iam-roles) roles on the associated GCP project.
-* Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
-
-The Vigenair [setup and deployment script](#get-started) will create the following components:
-
-* A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
-* A Cloud Function (2nd gen) named `vigenair` that fulfills both the [Extractor and Combiner services](#solution-details). Refer to [deploy.sh](./service/deploy.sh) for specs.
-* An Apps Script deployment for the frontend web app.
 
 If you will also deploy Vigenair, you need to have the following additional roles on the associated GCP project:
 
