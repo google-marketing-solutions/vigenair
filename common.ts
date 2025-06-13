@@ -24,12 +24,15 @@ export const DEFAULT_GCP_REGION = "us-central1";
 export const DEFAULT_GCS_LOCATION = "us";
 const GCS_BUCKET_NAME_SUFFIX = "-vigenair";
 const USE_TERRAFORM_FOR_GCP_DEPLOYMENT = false;
+const DEPLOY_UI_ON_CLOUD_RUN = false;
+const CLOUD_RUN_UI_SERVICE_NAME = "vigenair-web"
 
 interface Config {
   gcpProjectId?: string;
   gcpRegion?: string;
   gcsLocation?: string;
   vertexAiRegion?: string;
+  googleOauthClientId?: string;
 }
 
 interface ConfigReplace {
@@ -46,6 +49,7 @@ export interface PromptsResponse {
   gcsLocation?: string;
   webappDomainAccess?: boolean;
   vertexAiRegion?: string;
+  googleOauthClientId?: string;
 }
 
 class ClaspManager {
@@ -152,38 +156,62 @@ export class GcpDeploymentHandler {
 
 export class UiDeploymentHandler {
   static async createScriptProject() {
-    console.log();
-    await ClaspManager.login();
+    if(!DEPLOY_UI_ON_CLOUD_RUN) {
+      console.log();
+      await ClaspManager.login();
 
-    const claspConfigExists = await ClaspManager.isConfigured("./ui");
-    if (claspConfigExists) {
-      return;
+      const claspConfigExists = await ClaspManager.isConfigured("./ui");
+      if (claspConfigExists) {
+        return;
+      }
+      console.log();
+      console.log("Creating Apps Script Project...");
+      const scriptLink = await ClaspManager.create("ViGenAiR", "./dist", "./ui");
+      console.log();
+      console.log("IMPORTANT -> Apps Script Link:", scriptLink);
+      console.log();
     }
-    console.log();
-    console.log("Creating Apps Script Project...");
-    const scriptLink = await ClaspManager.create("ViGenAiR", "./dist", "./ui");
-    console.log();
-    console.log("IMPORTANT -> Apps Script Link:", scriptLink);
-    console.log();
   }
 
-  static deployUi() {
+  static deployUi(uiRegion: string,
+    options?: {
+      iapServiceId?: string;
+      serviceUrlOveride?: string;
+    }
+  ) {
     console.log("Deploying the UI Web App...");
-    spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
-    const res = spawn.sync("cd ui && clasp undeploy -a && clasp deploy", {
-      stdio: "pipe",
-      shell: true,
-      encoding: "utf8",
-    });
-    const lastNonEmptyLine = res.output[1]
-      .split("\n")
-      .findLast((line: string) => line.trim().length > 0);
-    let webAppLink = lastNonEmptyLine.match(/- (.*) @.*/);
-    webAppLink = webAppLink?.length
-      ? `https://script.google.com/a/macros/google.com/s/${webAppLink[1]}/exec`
-      : "Could not extract UI Web App link from npm output! Please check the output manually.";
-    console.log();
-    console.log(`IMPORTANT -> UI Web App Link: ${webAppLink}`);
+    if(!DEPLOY_UI_ON_CLOUD_RUN) {
+      spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
+      const res = spawn.sync("cd ui && clasp undeploy -a && clasp deploy", {
+        stdio: "pipe",
+        shell: true,
+        encoding: "utf8",
+      });
+      const lastNonEmptyLine = res.output[1]
+        .split("\n")
+        .findLast((line: string) => line.trim().length > 0);
+      let webAppLink = lastNonEmptyLine.match(/- (.*) @.*/);
+      webAppLink = webAppLink?.length
+        ? `https://script.google.com/a/macros/google.com/s/${webAppLink[1]}/exec`
+        : "Could not extract UI Web App link from npm output! Please check the output manually.";
+      console.log();
+      console.log(`IMPORTANT -> UI Web App Link: ${webAppLink}`);
+    } else {
+      spawn.sync("npm run build-ui-cloud-run", { stdio: "inherit", shell: true });
+      const uiDeploymentRegion = uiRegion || DEFAULT_GCP_REGION;
+      const envVarsList: string[] = [];
+      if(options?.iapServiceId) {
+        envVarsList.push(`IAP_SERVICE_ID=${options.iapServiceId}`);
+      }
+      if(options?.serviceUrlOveride) {
+        envVarsList.push(`SERVICE_URL_OVERRIDE=${options.serviceUrlOveride}`);
+      }
+      let envVarsArgument = "";
+      if (envVarsList.length > 0) {
+        envVarsArgument = ` --set-env-vars=${envVarsList.join(",")}`;
+      }
+      spawn.sync(`cd ui-backend && gcloud run deploy ${CLOUD_RUN_UI_SERVICE_NAME} --region=${uiDeploymentRegion} --source .${envVarsArgument}`, { stdio: "inherit", shell: true });
+    }
   }
 }
 
@@ -237,6 +265,7 @@ export class UserConfigManager {
       .replace(".", "-")
       .replace(":", "-")}${GCS_BUCKET_NAME_SUFFIX}`;
     const vertexAiRegion = response.vertexAiRegion || DEFAULT_GCP_REGION;
+    const googleOauthClientId = response.googleOauthClientId || '';
 
     configReplace({
       regex: "<gcp-project-id>",
@@ -285,6 +314,12 @@ export class UserConfigManager {
         replacement: vertexAiRegion,
         paths: ["./ui/src/config.ts"],
       });
+
+      configReplace({
+        regex: "<google-oauth-client-id>",
+        replacement: googleOauthClientId,
+        paths: ["./ui/src/config.ts"],
+      });
     }
     fs.writeFileSync(
       ".config.json",
@@ -293,6 +328,7 @@ export class UserConfigManager {
         gcpRegion,
         gcsLocation,
         vertexAiRegion,
+        googleOauthClientId,
       })
     );
     console.log();

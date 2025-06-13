@@ -391,11 +391,12 @@ export const CONFIG = {
   videoFolderNameSeparator: '--',
   videoFolderNoAudioSuffix: 'n',
   videoIntelligenceConfidenceThreshold: 0.7,
-  defaultTranscriptionService: 'whisper', // whisper | gemini
+  defaultTranscriptionService: 'gemini', // whisper | gemini
   defaultCacheExpiration: 60, // in seconds
   defaultDuration: 30, // in seconds
   retryDelay: 6000, // in milliseconds
   maxRetries: 600,
   maxRetriesAppsScript: 5,
   debug: true,
+  googleClientId: '<google-oauth-client-id>',
 };

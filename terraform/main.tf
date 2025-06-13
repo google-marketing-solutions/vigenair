@@ -17,3 +17,9 @@ provider "google" {
 }
 
 data "google_project" "project_info" {}
+
+resource "google_project_iam_member" "vigenair_user" {
+  project = var.project_id
+  role    = "roles/aiplatform.use"
+  member  = var.vigenair_user_principal
+}
