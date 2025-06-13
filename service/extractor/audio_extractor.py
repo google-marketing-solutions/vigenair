@@ -79,7 +79,12 @@ def _process_video_with_audio(
       target_dir=media_file.gcs_folder,
   )
   if size == 1:
-    extract_audio(media_file, gcs_bucket_name)
+    extract_audio(
+        Utils.TriggerFile(
+            f"{'.'.join(media_file.full_gcs_path.split('.')[:-1])}.wav"
+        ),
+        gcs_bucket_name,
+    )
 
 
 def _process_video_without_audio(

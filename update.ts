@@ -16,7 +16,7 @@
 
 const prompts = require("prompts");
 
-import { GcpDeploymentHandler, UiDeploymentHandler, UserConfigManager } from "./common.js";
+import { GcpDeploymentHandler, UiDeploymentHandler } from "./common.js";
 
 (async () => {
   const response = await prompts([

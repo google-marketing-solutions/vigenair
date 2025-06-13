@@ -1,6 +1,6 @@
 {
   "name": "vigenair-aside",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "",
   "main": "build/index.js",
   "license": "Apache-2.0",
@@ -22,10 +22,10 @@
     "postinstall": "cd src/ui && npm install "
   },
   "engines": {
-    "node": ">=12"
+    "node": ">=20"
   },
   "dependencies": {
-    "@google/clasp": "2.4.2",
+    "@google/clasp": "^3.0.4-alpha",
     "@types/google-apps-script": "^1.0.79",
     "@types/jest": "^29.5.11",
     "@typescript-eslint/eslint-plugin": "^6.20.0",

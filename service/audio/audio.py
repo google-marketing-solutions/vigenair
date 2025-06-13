@@ -30,6 +30,7 @@ import config as ConfigService
 from faster_whisper import WhisperModel
 from iso639 import languages
 import pandas as pd
+import storage as StorageService
 import utils as Utils
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
@@ -329,7 +330,7 @@ def _transcribe_gemini(
     )
 
   subtitles_output_path = audio_file_path.replace(
-      'wav', ConfigService.OUTPUT_SUBTITLES_TYPE
+      '.wav', f'.{ConfigService.OUTPUT_SUBTITLES_TYPE}'
   )
   with open(subtitles_output_path, 'w', encoding='utf8') as f:
     if subtitles_content:
@@ -349,8 +350,24 @@ def _transcribe_whisper(
     audio_file_path: str,
 ) -> Tuple[pd.DataFrame, str, float]:
   """Transcribes audio using Whisper."""
+  model_download_dir_base = (
+      f'/tmp/{ConfigService.CONFIG_TRANSCRIPTION_MODEL_WHISPER_GCS_BUCKET}'
+  )
+  model_download_dir = str(
+      pathlib.Path(
+          model_download_dir_base,
+          ConfigService.CONFIG_TRANSCRIPTION_MODEL_WHISPER,
+      )
+  )
+  os.makedirs(model_download_dir, exist_ok=True)
+  count_files = StorageService.download_gcs_dir(
+      bucket_name=ConfigService.CONFIG_TRANSCRIPTION_MODEL_WHISPER_GCS_BUCKET,
+      dir_path=ConfigService.CONFIG_TRANSCRIPTION_MODEL_WHISPER,
+      output_dir=model_download_dir,
+  )
   model = WhisperModel(
-      ConfigService.CONFIG_TRANSCRIPTION_MODEL_WHISPER,
+      model_download_dir
+      if count_files else ConfigService.CONFIG_TRANSCRIPTION_MODEL_WHISPER,
       device=ConfigService.DEVICE,
       compute_type='int8',
   )
