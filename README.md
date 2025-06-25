@@ -87,7 +87,7 @@ Please ensure you have fulfilled all role prerequisites mentioned under [Require
 
 First, navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API, then click on the button below:
 
-[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=main&show=terminal)
+[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=events&show=terminal)
 
 Once the cloud shell terminal is ready and the GitHub repository has been cloned successfully, run `npm start`:
 
