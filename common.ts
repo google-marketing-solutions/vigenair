@@ -180,7 +180,7 @@ export class UiDeploymentHandler {
       .findLast((line: string) => line.trim().length > 0);
     let webAppLink = lastNonEmptyLine.match(/- (.*) @.*/);
     webAppLink = webAppLink?.length
-      ? `https://script.google.com/a/macros/google.com/s/${webAppLink[1]}/exec`
+      ? `https://script.google.com/macros/s/${webAppLink[1]}/exec`
       : "Could not extract UI Web App link from npm output! Please check the output manually.";
     console.log();
     console.log(`IMPORTANT -> UI Web App Link: ${webAppLink}`);

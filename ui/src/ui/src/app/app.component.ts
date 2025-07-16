@@ -1041,7 +1041,9 @@ export class AppComponent {
       const avSegment = this.avSegments.find(
         (segment: AvSegment) => segment.av_segment_id === String(segmentId)
       );
-      avSegment.selected = true;
+      if (avSegment) {
+        avSegment.selected = true;
+      }
     }
   }
 

@@ -30,4 +30,8 @@ export class StringUtil {
       Uint8Array.from(binaryString, (m: any) => m.codePointAt(0))
     );
   }
+
+  static gcsSanitise(input: string) {
+    return input.replace(/[#\/\[\]*?:"<>|]/g, ''); // See https://cloud.google.com/storage/docs/objects#naming
+  }
 }
