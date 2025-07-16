@@ -19,6 +19,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { catchError, Observable, of, retry, switchMap, timer } from 'rxjs';
 import { CONFIG } from '../../../../config';
 
+import { StringUtil } from '../../../../string-util';
 import {
   ApiCalls,
   GeneratePreviewsResponse,
@@ -82,7 +83,7 @@ export class ApiCallsService implements ApiCalls {
     const videoFolderTranscriptionSuffix =
       CONFIG.defaultTranscriptionService.charAt(0);
     // eslint-disable-next-line no-useless-escape
-    const sanitisedFileName = file.name.replace(/[#\[\]*?:"<>|]/g, ''); // See https://cloud.google.com/storage/docs/objects#naming
+    const sanitisedFileName = StringUtil.gcsSanitise(file.name);
     const folder = `${sanitisedFileName}${CONFIG.videoFolderNameSeparator}${analyseAudio ? videoFolderTranscriptionSuffix : CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
     const fullName = encodeURIComponent(`${folder}/${filename}`);
     const url = `${CONFIG.cloudStorage.uploadEndpointBase}/b/${CONFIG.cloudStorage.bucket}/o?uploadType=media&name=${fullName}`;
