@@ -25,8 +25,8 @@ from vertexai import generative_models
 
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', 'my-gcp-project')
 GCP_LOCATION = os.environ.get('GCP_LOCATION', 'us-central1')
-CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-2.0-flash')
-CONFIG_VISION_MODEL = os.environ.get('CONFIG_VISION_MODEL', 'gemini-2.0-flash')
+CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-2.5-flash')
+CONFIG_VISION_MODEL = os.environ.get('CONFIG_VISION_MODEL', 'gemini-2.5-flash')
 CONFIG_TRANSCRIPTION_MODEL_WHISPER_GCS_BUCKET = os.environ.get(
     'CONFIG_TRANSCRIPTION_MODEL_WHISPER_GCS_BUCKET',
     'vigenair-faster-whisper'
@@ -35,7 +35,7 @@ CONFIG_TRANSCRIPTION_MODEL_WHISPER = os.environ.get(
     'CONFIG_TRANSCRIPTION_MODEL_WHISPER', 'small'
 )
 CONFIG_TRANSCRIPTION_MODEL_GEMINI = os.environ.get(
-    'CONFIG_TRANSCRIPTION_MODEL_GEMINI', 'gemini-2.0-flash'
+    'CONFIG_TRANSCRIPTION_MODEL_GEMINI', 'gemini-2.5-flash'
 )
 CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD = float(
     os.environ.get('CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD', '0.7')
@@ -130,6 +130,9 @@ SEGMENT_ANNOTATIONS_CONFIG = {
     'max_output_tokens': 2048,
     'temperature': 0.2,
     'top_p': 1,
+    'thinkingConfig': {
+        'thinkingBudget': 0,
+    },
 }
 
 # pylint: disable=line-too-long
@@ -169,6 +172,9 @@ GENERATE_ASSETS_CONFIG = {
     'max_output_tokens': 2048,
     'temperature': 0.2,
     'top_p': 1,
+    'thinkingConfig': {
+        'thinkingBudget': 0,
+    },
 }
 
 DEFAULT_VIDEO_LANGUAGE = 'English'
@@ -197,6 +203,9 @@ TRANSCRIBE_AUDIO_CONFIG = {
     'max_output_tokens': 8192,
     'temperature': 0.2,
     'top_p': 1,
+    'thinkingConfig': {
+        'thinkingBudget': 0,
+    },
 }
 TRANSCRIBE_AUDIO_PATTERN = '.*Language: ?(.*)\n*.*Confidence: ?(.*)\n*```csv\n(.*)```\n*```vtt\n(.*)```'
 
@@ -204,6 +213,9 @@ ENHANCE_SEGMENT_ANNOTATIONS_CONFIG = {
     'max_output_tokens': 8192,
     'temperature': 1,
     'top_p': 1,
+    'thinkingConfig': {
+        'thinkingBudget': 0,
+    },
 }
 ENHANCE_SEGMENT_ANNOTATIONS_PATTERN = 'Scene: (\d+)\nOld Description: (.*)\nNew Description: (.*)\nKeywords: (.*)'
 ENHANCE_SEGMENT_ANNOTATIONS_PROMPT = """Assume the role of an expert video ad script writer specializing in creating compelling and coherent narratives that maximize viewer engagement.
@@ -228,6 +240,9 @@ KEY_FRAMES_CONFIG = {
     'max_output_tokens': 8192,
     'temperature': 0.2,
     'top_p': 1,
+    'thinkingConfig': {
+        'thinkingBudget': 0,
+    },
 }
 KEY_FRAMES_PATTERN = '\[(.*)\].*'
 KEY_FRAMES_PROMPT = """You are an expert in analyzing video ad content for marketing purposes.

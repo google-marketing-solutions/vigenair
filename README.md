@@ -32,9 +32,11 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [July 2025]
+  * `frontend` + `backend`: Added support for Gemini 2.5 models along with a few fixes and enhancements to the variants generation prompts.
 * [May 2025]
   * Significantly reduced the number of deployment steps by utilising Cloud Shell to deploy both backend and frontend components. Read more [here](#get-started).
-* [March + April 2025]
+* [April 2025]
   * `frontend` + `backend`: Added functionality to cut segments by adding *split markers* and re-running the extraction process. Read more [here](#22-segment-splitting).
 * [February 2025]
   * `frontend`: You can now choose objective-specific ABCDs (Awareness, Consideration, Action, or Shorts) in the *Advanced settings* section of variants generation. Read more [here](#41-variants-generation).
@@ -49,7 +51,6 @@ Update to the latest version by running `npm run update-app` after pulling the l
   * `frontend`: During variants generation, users can now preview the total duration of their variant directly as they are selecting/deselecting segments.
   * `frontend`: The ABCDs evaluation section per variant may now additionally include recommendations on how to improve the video's content to make it more engaging.
   * `frontend`: Improved user instruction following for the variants generation prompt and simplified the input process; you no longer need a separate checkbox to include or exclude elements - just specify your requirements directly in the prompt.
-  * `frontend` + `backend`: Added support for Gemini 2.0.
 * [November 2024]
   * `frontend` + `backend`: General bug fixes and performance improvements.
   * `frontend` + `backend`: Added possibility to select the timing for audio and music overlays. Read more [here](#42-user-controls-for-video-rendering).

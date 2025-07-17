@@ -22,6 +22,7 @@ interface VertexAiModelParams {
   temperature: number;
   maxOutputTokens: number;
   topP: number;
+  thinkingConfig: { thinkingBudget: number };
 }
 
 interface VertexAiGeminiRequest {
