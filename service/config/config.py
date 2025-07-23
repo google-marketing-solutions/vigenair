@@ -130,8 +130,8 @@ SEGMENT_ANNOTATIONS_CONFIG = {
     'max_output_tokens': 2048,
     'temperature': 0.2,
     'top_p': 1,
-    'thinkingConfig': {
-        'thinkingBudget': 0,
+    'thinking_config': {
+        'thinking_budget': 0,
     },
 }
 
@@ -172,8 +172,8 @@ GENERATE_ASSETS_CONFIG = {
     'max_output_tokens': 2048,
     'temperature': 0.2,
     'top_p': 1,
-    'thinkingConfig': {
-        'thinkingBudget': 0,
+    'thinking_config': {
+        'thinking_budget': 0,
     },
 }
 
@@ -203,8 +203,8 @@ TRANSCRIBE_AUDIO_CONFIG = {
     'max_output_tokens': 8192,
     'temperature': 0.2,
     'top_p': 1,
-    'thinkingConfig': {
-        'thinkingBudget': 0,
+    'thinking_config': {
+        'thinking_budget': 0,
     },
 }
 TRANSCRIBE_AUDIO_PATTERN = '.*Language: ?(.*)\n*.*Confidence: ?(.*)\n*```csv\n(.*)```\n*```vtt\n(.*)```'
@@ -213,8 +213,8 @@ ENHANCE_SEGMENT_ANNOTATIONS_CONFIG = {
     'max_output_tokens': 8192,
     'temperature': 1,
     'top_p': 1,
-    'thinkingConfig': {
-        'thinkingBudget': 0,
+    'thinking_config': {
+        'thinking_budget': 0,
     },
 }
 ENHANCE_SEGMENT_ANNOTATIONS_PATTERN = 'Scene: (\d+)\nOld Description: (.*)\nNew Description: (.*)\nKeywords: (.*)'
@@ -240,8 +240,8 @@ KEY_FRAMES_CONFIG = {
     'max_output_tokens': 8192,
     'temperature': 0.2,
     'top_p': 1,
-    'thinkingConfig': {
-        'thinkingBudget': 0,
+    'thinking_config': {
+        'thinking_budget': 0,
     },
 }
 KEY_FRAMES_PATTERN = '\[(.*)\].*'
