@@ -72,7 +72,7 @@ class ClaspManager {
   }
 
   static extractScriptLink(output: string) {
-    const scriptLink = output.match(/Created new standalone script: ([^\n]*)/);
+    const scriptLink = output.match(/.*: ([^\n]*)/);
 
     return scriptLink?.length ? scriptLink[1] : "Not found";
   }
