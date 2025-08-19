@@ -65,14 +65,68 @@ limitations under the License.
       >
     </div>
   }
-  <video
-    class="mat-elevation-z8"
-    [style.margin-right]="showApprovalStatus ? 'auto' : ''"
-    #videoElem
-    controls
-  >
-    <source src="" />
-  </video>
+  <div style="position:relative; display:inline-block;">
+    <video
+      class="mat-elevation-z8"
+      [style.margin-right]="showApprovalStatus ? 'auto' : ''"
+      #videoElem
+      controls
+    >
+      <source src="" />
+    </video>
+    <!-- Overlay preview div -->
+    <div
+      *ngIf="showOverlayPreview && overlayText"
+      class="custom-text-overlay"
+      style="
+        position: absolute;
+        bottom: 10%;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        background: rgba(0,0,0,0.6);
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 2em;
+        pointer-events: none;
+        z-index: 10;
+        max-width: 90%;
+        text-align: center;
+        white-space: pre-line;
+      "
+    >
+      {{ overlayText }}
+    </div>
+  </div>
+</div>
+<div
+  *ngIf="displayMode === 'combo'"
+  class="row"
+  style="margin: 16px 0; gap: 16px; align-items: center;"
+>
+  <mat-form-field style="width: 300px; margin-right: 16px;">
+    <mat-label>Custom overlay text</mat-label>
+    <input matInput [(ngModel)]="overlayInput" placeholder="Enter overlay text" />
+  </mat-form-field>
+  <button mat-raised-button color="primary" (click)="applyOverlay()" style="margin-right: 16px;">
+    Apply
+  </button>
+  <mat-form-field style="width: 120px; margin-right: 16px;">
+    <mat-label>Export Quality</mat-label>
+    <mat-select [(ngModel)]="exportQuality">
+      <mat-option value="low">Low (Fast)</mat-option>
+      <mat-option value="medium">Medium</mat-option>
+      <mat-option value="high">High (Slow)</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <button mat-raised-button color="secondary" (click)="exportVideoWithOverlay()" [disabled]="exporting">
+    {{ exporting ? 'Exporting...' : 'Export/Download' }}
+  </button>
+  <mat-progress-bar *ngIf="exporting" 
+    mode="determinate" 
+    [value]="exportProgress"
+    style="width: 200px; margin-left: 16px;">
+  </mat-progress-bar>
 </div>
 <div class="row" style="justify-content: start">
   Segments: {{ combo.scenes }}

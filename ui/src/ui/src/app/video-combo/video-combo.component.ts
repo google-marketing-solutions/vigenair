@@ -33,12 +33,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
-
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiCallsService } from '../api-calls/api-calls.service';
-
 import { marked } from 'marked';
 import { CONFIG } from '../../../../config';
 import {
@@ -64,6 +63,7 @@ import {
     MatTooltipModule,
     MatButtonModule,
     MatSnackBarModule,
+    MatSelectModule,
   ],
   templateUrl: './video-combo.component.html',
   styleUrl: './video-combo.component.css',
@@ -85,10 +85,24 @@ export class VideoComboComponent implements AfterViewInit {
   selectedFormat: FormatType = 'horizontal';
   textAssetsLanguage = '';
 
+  overlayInput = '';
+  overlayText = '';
+  showOverlayPreview = false;
+  exporting = false;
+  exportQuality = 'medium';
+  exportProgress = 0;
+
   constructor(
     private snackBar: MatSnackBar,
     private apiCallsService: ApiCallsService
   ) {}
+
+  ngAfterViewInit(): void {
+    this.getTextAssetsLanguage();
+    this.loadVideo();
+    // Overlay custom text if present
+    setTimeout(() => this.addCustomTextOverlay(), 0);
+  }
 
   loadVideo() {
     if (this.displayMode === 'combo') {
@@ -97,6 +111,8 @@ export class VideoComboComponent implements AfterViewInit {
       this.images = this.combo.images
         ? this.combo.images[this.selectedFormat]!
         : [];
+      // Overlay custom text if present
+      setTimeout(() => this.addCustomTextOverlay(), 0);
     }
   }
 
@@ -105,9 +121,41 @@ export class VideoComboComponent implements AfterViewInit {
     this.loadVideo();
   }
 
-  ngAfterViewInit(): void {
-    this.getTextAssetsLanguage();
-    this.loadVideo();
+  addCustomTextOverlay() {
+    // Remove previous overlay if any
+    const video = this.videoElem?.nativeElement;
+    if (!video) return;
+    let overlay = video.parentElement?.querySelector('.custom-text-overlay');
+    if (overlay) overlay.remove();
+
+    // Add new overlay if text exists
+    if (this.overlayText) {
+      overlay = document.createElement('div');
+      overlay.className = 'custom-text-overlay';
+      overlay.textContent = this.overlayText;
+      Object.assign((overlay as HTMLElement).style, {
+        position: 'absolute',
+        bottom: '10%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        color: 'white',
+        background: 'rgba(0,0,0,0.6)',
+        padding: '8px 16px',
+        borderRadius: '8px',
+        fontSize: '2em',
+        pointerEvents: 'none',
+        zIndex: 10,
+        maxWidth: '90%',
+        textAlign: 'center',
+        whiteSpace: 'pre-line',
+      });
+      // Ensure parent is position: relative
+      const parent = video.parentElement as HTMLElement;
+      if (parent && getComputedStyle(parent).position === 'static') {
+        parent.style.position = 'relative';
+      }
+      parent.appendChild(overlay);
+    }
   }
 
   getTextAssetsLanguage() {
@@ -183,5 +231,98 @@ export class VideoComboComponent implements AfterViewInit {
         },
         error: (err: Error) => this.failHandler(err),
       });
+  }
+
+  applyOverlay() {
+    this.overlayText = this.overlayInput;
+    this.showOverlayPreview = !!this.overlayText;
+    this.addCustomTextOverlay(); // Add this to update the overlay immediately
+  }
+
+  async exportVideoWithOverlay() {
+    if (!this.videoElem?.nativeElement) return;
+    this.exporting = true;
+    this.exportProgress = 0;
+    const video = this.videoElem.nativeElement;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d')!;
+    const stream = canvas.captureStream();
+    const recordedChunks: BlobPart[] = [];
+
+    // Configure quality based on settings
+    const quality: { [key: string]: number } = {
+      low: 1000000,    // 1 Mbps
+      medium: 2500000, // 2.5 Mbps
+      high: 5000000    // 5 Mbps
+    };
+    
+    const recorder = new MediaRecorder(stream, {
+      mimeType: 'video/webm;codecs=vp9',
+      videoBitsPerSecond: quality[this.exportQuality]
+    });
+
+    recorder.ondataavailable = (e: BlobEvent) => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `video_with_overlay_${this.exportQuality}.webm`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.exporting = false;
+      this.exportProgress = 0;
+    };
+
+    const drawFrame = () => {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (this.overlayText) {
+        // Scale font size based on canvas size
+        const fontSize = Math.max(16, Math.floor(canvas.height * 0.05));
+        ctx.font = `${fontSize}px sans-serif`;
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        const textWidth = ctx.measureText(this.overlayText).width;
+        ctx.fillRect(
+          canvas.width / 2 - textWidth / 2 - 20,
+          canvas.height - fontSize * 2,
+          textWidth + 40,
+          fontSize + 24
+        );
+        ctx.fillStyle = 'white';
+        ctx.fillText(this.overlayText, canvas.width / 2, canvas.height - fontSize);
+      }
+      // Update progress
+      this.exportProgress = Math.round((video.currentTime / video.duration) * 100);
+    };
+
+    // Adjust frame rate based on quality setting
+    const fps = this.exportQuality === 'low' ? 24 : this.exportQuality === 'medium' ? 30 : 60;
+    const frameInterval = 1000 / fps;
+    let lastDrawTime = 0;
+
+    const render = (timestamp: number) => {
+      if (video.ended || video.currentTime >= video.duration) {
+        recorder.stop();
+        return;
+      }
+      
+      if (timestamp - lastDrawTime >= frameInterval) {
+        drawFrame();
+        lastDrawTime = timestamp;
+      }
+      requestAnimationFrame(render);
+    };
+
+    video.currentTime = 0;
+    recorder.start(1000); // Record in 1-second chunks
+    video.play();
+    video.onplay = () => requestAnimationFrame(render);
   }
 }
