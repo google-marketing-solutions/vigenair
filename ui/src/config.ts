@@ -356,6 +356,119 @@ export const CONFIG = {
 2.  **Total Score:** Sum up the points for each criterion to calculate the total score (out of 17).
 3.  **Justification:** Provide detailed reasoning for the overall score, citing specific examples from the video to support your evaluation. Be precise and analytical, focusing on the strengths and weaknesses of the ad in relation to the Shorts format and its combined Awareness, Consideration, and Action objectives.`,
       },
+       regulatedIndustry: {
+      displayName: 'Regulated Industry',
+      value: 'regulatedIndustry',
+      promptPart: `1. **Role:** Act as a highly analytical compliance and regulatory expert (140 IQ), meticulously evaluating each generated script against the following criteria. For each criterion, assign a score based on how well the video fulfills it, and provide specific recommendations for improvement where applicable.
+    * **Alcohol (0-3 points):**
+      * **Compliance and Targeting (0-1 point):**
+        * **1 point:** The ad fully complies with all local laws and industry standards. It is targeted to an adult audience only and is shown in countries where alcohol ads are explicitly permitted.
+        * **0 points:** The ad fails to meet compliance standards or is inappropriately targeted.
+        * **Recommendation (If Applicable):** If the ad is non-compliant, describe the specific violation (e.g., "The ad should be restricted to adult audiences in [Country/State]").
+      * **Clarity of Message (0-1 point):**
+        * **1 point:** The ad is direct and avoids vague or unclear messages about restricted beverages.
+        * **0 points:** The ad contains misleading or ambiguous messaging.
+        * **Recommendation (If Applicable):** If the message is unclear, suggest simplifying it to a direct and factual statement about the product.
+      * **Minors' Presence (0-1 point):**
+        * **1 point:** Minors do not appear in the video, and the ad does not target minors.
+        * **0 points:** Minors are present or the ad targets a minor demographic.
+        * **Recommendation (If Applicable):** If minors are present, state that they must be removed from the ad.
+    * **Gambling and Games (0-2 points):**
+      * **Legal Compliance (0-1 point):**
+        * **1 point:** The ad complies with all local gambling laws in [Enter country or states], and is targeted to an adult audience.
+        * **0 points:** The ad is non-compliant or is not targeted to adults.
+        * **Recommendation (If Applicable):** If the ad is non-compliant, describe the specific legal requirement it fails to meet.
+      * **Responsible Gambling (0-1 point):**
+        * **1 point:** The ad clearly features responsible gambling information on the landing page.
+        * **0 points:** Responsible gambling information is missing or not clearly featured.
+        * **Recommendation (If Applicable):** If responsible gambling information is missing, recommend adding a clear visual or textual callout to the landing page.
+    * **Children's Content (0-3 points):**
+      * **Audience and Privacy (0-1 point):**
+        * **1 point:** The ad is created for a general audience, has no child-directed content or elements, and adheres to strict privacy and data collection policies.
+        * **0 points:** The ad is directed at children or fails to comply with privacy policies.
+        * **Recommendation (If Applicable):** If the ad is child-directed, recommend removing child-centric elements or re-targeting the ad to a general audience.
+      * **Cartoons (0-1 point):**
+        * **1 point:** The ad does not contain any cartoons.
+        * **0 points:** The ad features cartoons.
+        * **Recommendation (If Applicable):** If cartoons are present, state that they must be removed to be compliant.
+      * **COPPA Regulation (0-1 point):**
+        * **1 point:** The ad fully follows COPPA regulation.
+        * **0 points:** The ad fails to comply with COPPA regulation.
+        * **Recommendation (If Applicable):** If the ad is non-compliant, state the specific COPPA rule it violates.
+    * **Healthcare and Medicines (0-2 points):**
+      * **Local Law Compliance (0-1 point):**
+        * **1 point:** The ad complies with local laws in [Enter states or country] regarding the promotion of pharmaceuticals, medical services, and health products.
+        * **0 points:** The ad is non-compliant with local laws.
+        * **Recommendation (If Applicable):** If the ad is non-compliant, describe the specific legal requirement it fails to meet.
+      * **Substantiated Claims (0-1 point):**
+        * **1 point:** Claims made about efficacy or results are substantiated and not misleading.
+        * **0 points:** The ad makes unsubstantiated or misleading claims.
+        * **Recommendation (If Applicable):** If claims are unsubstantiated, recommend adding supporting data, expert endorsements, or clinical trial results.
+    * **Political Content (0-3 points):**
+      * **Legal and Finance Compliance (0-1 point):**
+        * **1 point:** The ad adheres to local election [enter states or country] and campaign finance laws.
+        * **0 points:** The ad is non-compliant with election or finance laws.
+        * **Recommendation (If Applicable):** If the ad is non-compliant, describe the specific law it fails to adhere to.
+      * **Clear Disclosure (0-1 point):**
+        * **1 point:** The ad includes clear and required disclosure information (e.g., "Paid for by...") and is certified as a political ad.
+        * **0 points:** The ad lacks required disclosure information.
+        * **Recommendation (If Applicable):** If disclosure information is missing, recommend adding a clear and prominent disclosure.
+      * **Honest Information (0-1 point):**
+        * **1 point:** The ad does not contain misleading or false information.
+        * **0 points:** The ad contains misleading or false information.
+        * **Recommendation (If Applicable):** If the ad contains misleading information, recommend correcting the false claims and ensuring all facts are verifiable.
+
+2. **Total Score:** Sum up the points for each criterion to calculate the total score (out of 13).
+3. **Justification:** Provide detailed reasoning for the overall score, citing specific examples from the video to support your evaluation. Be precise and analytical, focusing on the strengths and weaknesses of the ad in relation to the regulated industry objective.`
+    },
+    // Corrected the typo "brnadGuidelines" to "brandGuidelines"
+    brandGuidelines: {
+      displayName: 'Brand Guidelines',
+      value: 'brandGuidelines',
+      promptPart: `1. **Role:** Act as a brand strategist and visual identity expert (140 IQ), meticulously evaluating each generated script combination against the following Brand Guidelines criteria. For each criterion, assign a score based on how well the video fulfills it, and provide specific recommendations for improvement where applicable.
+    * **Brand Voice & Tone (0-3 points):**
+      * **Consistency (0-1 point):**
+        * **1 point:** The ad's language is consistent with the established brand voice (e.g., professional, playful, authoritative).
+        * **0 points:** The brand voice is inconsistent or unclear.
+        * **Recommendation (If Applicable):** If the voice is inconsistent, recommend a specific tone and provide examples of language that align with it.
+      * **Audience Appropriateness (0-1 point):**
+        * **1 point:** The tone is appropriate for the target audience and platform.
+        * **0 points:** The tone is mismatched with the target audience or platform.
+        * **Recommendation (If Applicable):** If the tone is inappropriate, suggest a more suitable tone and provide examples.
+      * **Messaging Clarity (0-1 point):**
+        * **1 point:** Messaging is clear, concise, and avoids jargon.
+        * **0 points:** The message is unclear, verbose, or full of jargon.
+        * **Recommendation (If Applicable):** If the message is unclear, recommend a simpler, more direct way to communicate the core message.
+    * **Visual Identity (0-3 points):**
+      * **Logo Usage (0-1 point):**
+        * **1 point:** The logo is used correctly, without distortion or alteration, and is clearly visible.
+        * **0 points:** The logo is distorted, altered, or not clearly visible.
+        * **Recommendation (If Applicable):** If the logo is used incorrectly, recommend a specific visual placement and usage that adheres to brand guidelines.
+      * **Color Palette (0-1 point):**
+        * **1 point:** The color palette aligns with the official brand guidelines.
+        * **0 points:** The color palette is inconsistent with the brand.
+        * **Recommendation (If Applicable):** If the colors are wrong, suggest a specific color scheme to use.
+      * **Typography (0-1 point):**
+        * **1 point:** Typography and fonts are consistent with the brand's official standards.
+        * **0 points:** Typography is inconsistent or difficult to read.
+        * **Recommendation (If Applicable):** If the typography is inconsistent, recommend a specific font family and styling.
+    * **Messaging & Positioning (0-3 points):**
+      * **Positioning Consistency (0-1 point):**
+        * **1 point:** The key message is consistent with the brand's overall positioning and value proposition.
+        * **0 points:** The message contradicts the brand's positioning.
+        * **Recommendation (If Applicable):** If the message is inconsistent, recommend aligning it with the brand's core value proposition.
+      * **Audience Relevance (0-1 point):**
+        * **1 point:** The ad addresses the needs and interests of the target audience.
+        * **0 points:** The ad is not relevant to the target audience.
+        * **Recommendation (If Applicable):** If the message is not relevant, recommend a specific message that addresses the target audience's pain points or desires.
+      * **Brand Differentiation (0-1 point):**
+        * **1 point:** The ad clearly differentiates the brand from its competitors.
+        * **0 points:** The ad fails to differentiate the brand.
+        * **Recommendation (If Applicable):** If the brand is not differentiated, recommend highlighting a unique selling proposition or a key feature that competitors lack.
+
+2. **Total Score:** Sum up the points for each criterion to calculate the total score (out of 9).
+3. **Justification:** Provide detailed reasoning for the overall score, citing specific examples from the video to support your evaluation. Be precise and analytical, focusing on the strengths and weaknesses of the ad in relation to the brand guidelines objective.`
+    },
     },
     textAssetsGenerationPrompt: `You are a leading digital marketer and an expert at crafting high-performing search ad headlines and descriptions that captivate users and drive conversions.
     Follow these instructions in order:
