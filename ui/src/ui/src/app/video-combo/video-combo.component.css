@@ -1,3 +1,27 @@
+/* Make mat-progress-bar and MDC progress bar more visible */
+mat-progress-bar {
+  height: 12px !important;
+  min-width: 200px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  background: #e0e0e0 !important;
+  margin-top: 8px;
+}
+
+::ng-deep .mat-progress-bar .mdc-linear-progress__bar-inner {
+  background-color: #1976d2 !important;
+  height: 100% !important;
+  border-radius: 6px;
+}
+
+::ng-deep .mat-progress-bar .mdc-linear-progress__buffer {
+  background: #b3c6e6 !important;
+}
+
+/* For indeterminate mode, make the animation color visible */
+::ng-deep .mat-progress-bar .mdc-linear-progress__bar-inner.mdc-linear-progress__primary-bar {
+  background-color: #1976d2 !important;
+}
 /*
 Copyright 2024 Google LLC
 

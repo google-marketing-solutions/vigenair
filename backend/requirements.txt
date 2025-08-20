@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+google-cloud-firestore
+google-cloud-storage
+python-dotenv
+python-multipart

@@ -37,6 +37,7 @@ import {
   providedIn: 'root',
 })
 export class ApiCallsService implements ApiCalls {
+  // ...existing code...
   constructor(
     private ngZone: NgZone,
     private httpClient: HttpClient

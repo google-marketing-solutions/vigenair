@@ -86,6 +86,11 @@ export type FramingDialogData = {
   weightSteps: number[];
 };
 
+interface VideoSize {
+  w: number;
+  h: number;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -124,20 +129,238 @@ export type FramingDialogData = {
   styleUrl: './app.component.css',
 })
 export class AppComponent implements OnInit {
+  // ViewChild declarations
+  @ViewChild('renderQueueSidenav') renderQueueSidenav!: MatSidenav;
+  @ViewChild('renderQueueButtonSpan') renderQueueButtonSpan!: ElementRef;
+  @ViewChild('previewVideoElem') previewVideoElem!: ElementRef<HTMLVideoElement>;
+  @ViewChild('videoMagicPanel') videoMagicPanel!: MatExpansionPanel;
+  @ViewChild('renderFormatsToggle') renderFormatsToggle!: MatButtonToggleGroup;
+  @ViewChild('segmentModeToggle') segmentModeToggle!: MatButtonToggleGroup;
+  @ViewChild('reorderSegmentsToggle') reorderSegmentsToggle!: MatSlideToggle;
+  @ViewChild('evalPromptTextarea') evalPromptTextarea!: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('evalPromptPlaceholder') evalPromptPlaceholder!: ElementRef<HTMLDivElement>;
+
+  // Component properties
   private styleTag!: HTMLStyleElement;
   userEmail: string = '';
-
-  private loadUserEmail() {
-    if (location.hostname === 'localhost') {
-      this.userEmail = 'testuser@example.com';
-    } else {
-      const email = (window as any).Session?.getActiveUser()?.getEmail();
-      this.userEmail = email || 'testuser@example.com';
-    }
-  }
+  loading = false;
+  rendering = false;
+  loadingVariant = false;
+  folder = '';
+  combosFolder = '';
+  combos?: RenderedVariant[];
+  originalCombos?: RenderedVariant[];
+  selectedVariant = 0;
+  variants?: GenerateVariantsResponse[];
+  avSegments?: AvSegment[];
+  originalAvSegments?: any[];
+  squareVideoObjects?: any[];
+  verticalVideoObjects?: any[];
+  allSegmentsToggle = false;
+  selectedAbcdType: AbcdType = 'awareness';
+  evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
+  renderQueue: RenderQueueVariant[] = [];
+  renderQueueJsonArray: string[] = [];
+  renderQueueName = '';
+  demandGenAssets = true;
+  audioSettings = 'segment';
+  fadeOut = false;
+  overlaySettings: OverlayType = 'variant_start';
 
   frameInterval?: number;
   folderGcsPath: string = '';
+
+  constructor(
+    private apiCallsService: ApiCallsService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog,
+    private appSettingsService: AppSettingsService
+  ) {
+    if (location.hostname === 'localhost') {
+      this.userEmail = 'testuser@example.com';
+    } else {
+      try {
+        if ((window as any).Session?.getActiveUser) {
+          const email = (window as any).Session.getActiveUser().getEmail();
+          if (email) {
+            this.userEmail = email;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to get user email from Session', e);
+        this.userEmail = 'testuser@example.com';
+      }
+    }
+    this.styleTag = this.getOrCreateStyleElement('dynamic-theme-styles');
+  }
+
+  public loadVariant(index: number): void {
+    const variant = this.renderQueue[index];
+    if (!variant) return;
+
+    this.loadingVariant = true;
+    this.avSegments?.forEach((segment: AvSegment) => {
+      segment.selected = false;
+    });
+    this.selectedVariant = variant.original_variant_id;
+    if (this.variants?.[this.selectedVariant]?.scenes) {
+      this.setSelectedSegments(this.variants[this.selectedVariant].scenes);
+    }
+    if (this.renderFormatsToggle) {
+      this.renderFormatsToggle.value = variant.render_settings.format;
+    }
+    this.demandGenAssets = variant.render_settings.demandgen;
+    this.audioSettings = variant.render_settings.use_music_overlay
+      ? 'music'
+      : 'segment';
+    this.fadeOut = variant.render_settings.fade_out;
+    this.overlaySettings = variant.render_settings.overlay_type ?? 'variant_start';
+    this.closeRenderQueueSidenav();
+    setTimeout(() => {
+      this.loadingVariant = false;
+    }, 500);
+  }
+
+  public closeRenderQueueSidenav(): void {
+    this.renderQueueSidenav?.close();
+    const renderQueueButton = this.renderQueueButtonSpan?.nativeElement;
+    if (renderQueueButton) {
+      renderQueueButton.style.backgroundColor = '';
+    }
+  }
+
+  public renderVariants(): void {
+    if (!this.folder || !this.renderQueue.length) return;
+
+    this.loading = true;
+    this.rendering = true;
+    
+    const videoWidth = this.previewVideoElem?.nativeElement?.videoWidth;
+    const videoHeight = this.previewVideoElem?.nativeElement?.videoHeight;
+    
+    if (!videoWidth || !videoHeight) {
+      this.snackBar.open('Video dimensions not available', 'Close', { duration: 3000 });
+      return;
+    }
+
+    this.apiCallsService
+      .renderVariants(this.folder, {
+        queue: this.renderQueue,
+        queueName: this.renderQueueName,
+        squareCropAnalysis: this.squareVideoObjects,
+        verticalCropAnalysis: this.verticalVideoObjects,
+        videoSize: {
+          w: videoWidth,
+          h: videoHeight,
+        },
+      })
+      .subscribe({
+        next: (combosFolder: string) => {
+          this.loading = false;
+          this.renderQueue = [];
+          this.renderQueueJsonArray = [];
+          this.closeRenderQueueSidenav();
+          this.getRenderedCombos(combosFolder);
+        },
+        error: (err: Error) => this.failHandler(err),
+      });
+  }
+
+  protected getRenderedCombos(combosFolder: string): void {
+    // Implementation
+  }
+
+  private setCombos(): void {
+    if (!this.combosJson) return;
+    
+    this.combos = Object.values(this.combosJson).map((combo: any) => ({
+      ...combo,
+      selected: true,
+    }));
+    this.originalCombos = structuredClone(this.combos);
+  }
+
+  private setSelectedSegments(scenes: any[]): void {
+    // Implementation
+  }
+
+  private failHandler(error: Error, folder?: string, startOver = false): void {
+    this.loading = false;
+    this.rendering = false;
+    console.error('Operation failed:', error);
+    this.snackBar.open(error.message || 'Operation failed', 'Close', { duration: 5000 });
+    
+    if (startOver && folder) {
+      // Additional error handling logic here
+    }
+  }
+
+  private getOrCreateStyleElement(id: string): HTMLStyleElement {
+    let styleElement = document.getElementById(id) as HTMLStyleElement;
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = id;
+      document.head.appendChild(styleElement);
+    }
+    return styleElement;
+  }
+
+  private getHoverColor(hex: string): string {
+    // Implementation of color manipulation
+    return hex;
+  }
+
+  public getContrastColor(hex: string): string {
+    // Implementation of contrast color calculation
+    return '#ffffff';
+  }
+
+  public ngOnInit(): void {
+    this.appSettingsService.getSettings().subscribe(settings => {
+      this.applySettings(settings);
+    });
+  }
+
+  public ngAfterViewInit(): void {
+    if (!environment.production) {
+      inject(ActivatedRoute).queryParams.subscribe(params => {
+        const inputCombosFolder = params['inputCombosFolder'];
+        if (inputCombosFolder) {
+          this.handleInputCombosFolder(inputCombosFolder);
+        }
+      });
+    }
+  }
+
+  private handleInputCombosFolder(inputCombosFolder: string): void {
+    // Implementation
+  }
+
+  public applySettings(settings: AppSettings): void {
+    if (!settings) return;
+
+    if (settings.primaryColor) {
+      const primary = settings.primaryColor;
+      const contrast = this.getContrastColor(primary);
+      const hover = this.getHoverColor(primary);
+
+      document.documentElement.style.setProperty('--primary-color', primary);
+      document.documentElement.style.setProperty('--primary-contrast-color', contrast);
+      document.documentElement.style.setProperty('--primary-hover-color', hover);
+
+      localStorage.setItem('primary-color', primary);
+      localStorage.setItem('primary-contrast-color', contrast);
+      localStorage.setItem('primary-hover-color', hover);
+
+      // Remove any previous theme class
+      document.body.classList.forEach(cls => {
+        if (cls.startsWith('primary-theme-')) document.body.classList.remove(cls);
+      });
+      // Add new theme class
+      document.body.classList.add(`primary-theme-${primary.replace('#', '')}`);
+    }
+  }
+  // UI personalization properties
   logoUrl: string = '';
   brandName: string = '';
   primaryColor: string = '#1976d2';
@@ -170,7 +393,7 @@ export class AppComponent implements OnInit {
 
   openSettingsDialog() {
     const dialogRef = this.dialog.open(SavedSettingsDialogComponent, {
-      width: '700px',
+      width: '750px',
       maxHeight: '90vh',
       panelClass: 'custom-dialog'
     });
@@ -217,6 +440,19 @@ export class AppComponent implements OnInit {
   moveCropArea = false;
   weightsTextIndex = 3;
   weightsPersonFaceIndex = 1;
+  renderQueueSidenav!: MatSidenav;
+  renderQueueButtonSpan!: ElementRef;
+  previewVideoElem!: ElementRef<HTMLVideoElement>;
+  previewTrackElem!: ElementRef<HTMLTrackElement>;
+  videoUploadPanel!: MatExpansionPanel;
+  videoMagicPanel!: MatExpansionPanel;
+  magicCanvas!: ElementRef<HTMLCanvasElement>;
+  renderFormatsToggle!: MatButtonToggleGroup;
+  segmentModeToggle!: MatButtonToggleGroup;
+  previewToggleGroup!: MatButtonToggleGroup;
+  reorderSegmentsToggle!: MatSlideToggle;
+  evalPromptTextarea!: ElementRef<HTMLTextAreaElement>;
+  evalPromptPlaceholder!: ElementRef<HTMLDivElement>;
   weightSteps = [0, 10, 100, 1000];
   subtitlesTrack = '';
   webAppUrl = '';
@@ -261,7 +497,12 @@ export class AppComponent implements OnInit {
     private dialog: MatDialog,
     private appSettingsService: AppSettingsService
   ) {
-    this.loadUserEmail();
+    if (location.hostname === 'localhost') {
+      this.userEmail = 'testuser@example.com';
+    } else {
+      this.userEmail = (window as any).getEncodedUserId();
+    }
+  }
     this.styleTag = this.getOrCreateStyleElement('dynamic-theme-styles');
     this.getPreviousRuns();
     this.getWebAppUrl();
@@ -279,7 +520,7 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-  // Mock user 
+  // Mock user email for local development
   this.userEmail = 'testuser@example.com';
     // On app load, fetch latest settings from backend
     this.appSettingsService.getSettings().subscribe(settings => {

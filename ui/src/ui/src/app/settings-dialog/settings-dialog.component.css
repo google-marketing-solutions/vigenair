@@ -1,0 +1,64 @@
+:host {
+  display: block;
+}
+
+.settings-dialog-content {
+  width: 500px;
+  max-height: 90vh;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.dialog-content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.mat-mdc-form-field-wrapper {
+  padding-bottom: 16px;
+}
+
+.color-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-section {
+  margin-top: 24px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}

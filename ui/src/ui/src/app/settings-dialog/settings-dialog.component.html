@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>
+  App Settings
+</h2>
+<div mat-dialog-content class="settings-container">
+  
+  <mat-divider style="margin: 1rem 0;"></mat-divider>
+  <div class="logo-section" style="text-align: center;">
+    <img
+     [src]="logoPreview || './assets/logo-upload.svg'"
+    
+      alt="Logo"
+      style="max-height: 60px; margin-bottom: 1rem;"
+    /> <br>
+    <input type="file" #logoInput hidden (change)="onLogoSelected($event)" accept="image/*" />
+    <button mat-raised-button color="primary" (click)="logoInput.click()">Upload Logo</button>
+  </div>
+  <mat-divider style="margin: 1rem 0;"></mat-divider>
+  <mat-form-field appearance="fill" style="width: 90%;">
+    <mat-label>Brand Name</mat-label>
+    <input matInput [(ngModel)]="brandName" />
+  </mat-form-field>
+  <mat-divider style="margin: 1rem 0;"></mat-divider>
+  <div class="colorPickerSec">
+    <label for="colorPicker" style="font-weight: 500; display: block; margin-bottom: 8px;">
+      Choose Theme Color
+    </label>
+    <input
+      id="colorPicker"
+      type="color"
+      [(ngModel)]="primaryColor"
+      style="width: 120px; height: 40px; border: none; border-radius: 3em; background: none; cursor: pointer;"
+    />
+  </div>
+  <mat-divider style="margin: 1rem 0;"></mat-divider>
+</div>
+<mat-dialog-actions style="justify-content: center; gap: 1em;">
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="saveSettings()"
+    [disabled]="!brandName || !primaryColor || !logoPreview"
+  >
+    Save
+  </button>
+  <button  mat-raised-button color="primary" class="new-settings-btn" mat-dialog-close style="float: right;">
+    Close
+  </button>
+</mat-dialog-actions>

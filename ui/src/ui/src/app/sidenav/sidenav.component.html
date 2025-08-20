@@ -1,0 +1,97 @@
+
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav #settingsSidenav position="start" style="width: 35rem;">
+    <div class="settings-container" style="padding: 1rem;">
+      <h3>App Settings</h3>
+      <div style="margin-bottom: 1rem;">
+        <button mat-raised-button color="primary" (click)="showSavedSettingsModal = true">
+          Saved Settings
+        </button>
+      </div>
+      <ng-template [ngIf]="showSavedSettingsModal">
+        <div class="modal-backdrop" style="position: fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:1000;" (click)="showSavedSettingsModal = false"></div>
+        <div class="modal-content"
+              style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                     background: #fff; z-index:1001; padding: 2rem; border-radius: 8px;
+                     width: 750px; height: 400px; min-width: 350px; min-height: 120px; box-sizing: border-box;">
+          <h2 style="margin-top:0;">Saved Settings</h2>
+          <div style="overflow: auto; width: 100%; height: 300px;">
+            <table style="width:100%; border-collapse: collapse; margin-bottom: 1rem;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding: 8px;">Logo</th>
+                  <th style="text-align:left; padding: 8px;">Name</th>
+                  <th style="text-align:left; padding: 8px;">Color</th>
+                  <th style="text-align:left; padding: 8px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let setting of savedSettingsList; let i = index">
+                  <td style="padding: 8px;">
+                    <img [src]="setting.logo || './assets/dummy.svg'" alt="Logo" style="height: 40px; width: 40px; object-fit: contain;" />
+                  </td>
+                  <td style="padding: 8px;">{{ setting.brandName }}</td>
+                  <td style="padding: 8px;">
+                    <span style="display:inline-block; width:24px; height:24px; border-radius:50%; border:1px solid #ccc; vertical-align:middle; background:{{setting.primaryColor}}"></span>
+                    <span style="margin-left:8px;">{{ setting.primaryColor }}</span>
+                  </td>
+                  <td style="padding: 8px;">
+                    <button mat-icon-button color="warn" (click)="deleteSavedSetting(i)" matTooltip="Delete">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                    <button mat-icon-button color="primary" (click)="applySavedSetting(i); showSavedSettingsModal = false" matTooltip="Apply">
+                      <mat-icon>check_circle</mat-icon>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="!savedSettingsList || savedSettingsList.length === 0">
+                  <td colspan="4" style="text-align:center; padding: 16px;">No saved settings.</td>
+                </tr>
+              </tbody>
+            </table>
+          <button mat-button color="primary" (click)="showSavedSettingsModal = false" style="margin-top: 1rem;">Close</button>
+        
+          </div>  </div>
+      </ng-template>
+      <mat-divider style="margin: 1rem 0;"></mat-divider>
+      <div class="logo-section" style="text-align: center;">
+        <img
+          [src]="logoPreview || './assets/dummy.svg'"
+          alt="Logo"
+          style="max-height: 80px; margin-bottom: 1rem;"
+        /> <br>
+        <input type="file" #logoInput hidden (change)="onLogoSelected($event)" accept="image/*" />
+        <button mat-raised-button color="primary" (click)="logoInput.click()">Upload Logo</button>
+      </div>
+      <mat-divider style="margin: 1rem 0;"></mat-divider>
+      <mat-form-field appearance="fill" style="width: 90%;">
+        <mat-label>Brand Name</mat-label>
+        <input matInput [(ngModel)]="brandName" />
+      </mat-form-field>
+      <mat-divider style="margin: 1rem 0;"></mat-divider>
+      <div class="colorPickerSec">
+        <label for="colorPicker" style="font-weight: 500; display: block; margin-bottom: 8px;">
+          Choose Theme Color
+        </label>
+        <input
+          id="colorPicker"
+          type="color"
+          [(ngModel)]="primaryColor"
+          style="width: 120px; height: 40px; border: none; border-radius: 3em; background: none; cursor: pointer;"
+        />
+      </div>
+      <mat-divider style="margin: 1rem 0;"></mat-divider>
+      <div style="display: flex; justify-content: center; align-items: center; gap: 1em;">
+        <button mat-raised-button color="primary" (click)="saveSettings()">
+          Save
+        </button>
+        <button mat-raised-button color="primary" (click)="resetSettings()">
+          Reset
+        </button>
+      </div>
+    </div>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <ng-content></ng-content>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,100 @@
+<div mat-dialog-content class="saved-settings-dialog-modal">
+  <!-- Header Section -->
+  <div class="dialog-header">
+    <h2 class="dialog-title">Saved Settings</h2>
+    
+    <!-- Modified Header Actions -->
+    <div class="header-actions" >
+
+  <!-- The form field will now grow to fill available space -->
+  <mat-form-field appearance="outline" style="flex-grow: 1; width: 100%;">
+    <mat-label>Search Settings</mat-label>
+    <input matInput (keyup)="applyFilter($event)" placeholder="Search by brand name...">
+  </mat-form-field>
+
+  <!-- The button's height is no longer fixed, allowing it to align properly -->
+  <button mat-raised-button color="primary" style="flex-grow: 4; width: 30%;" class="new-settings-btn" (click)="createNewSetting()">
+    <mat-icon>add</mat-icon> New Settings
+  </button>
+
+</div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading saved settings...</p>
+  </div>
+
+  <div *ngIf="!loading && dataSource.data.length === 0" class="no-data">
+    <mat-icon color="black">settings</mat-icon>
+    <p>No saved settings found.</p>
+    <p class="hint">Create and save settings to see them here.</p>
+  </div>
+
+  <div *ngIf="!loading && dataSource.data.length > 0" class="settings-table-container">
+    <div style="height: 15rem; overflow-y: auto;">
+      <table mat-table [dataSource]="dataSource" class="mat-elevation-z2 settings-table">
+        <!-- Logo Column -->
+        <ng-container matColumnDef="logo">
+          <th mat-header-cell *matHeaderCellDef style="text-align:center;"> Logo </th>
+          <td mat-cell *matCellDef="let setting" style="text-align:center;">
+            <img [src]="setting.logoUrl || 'https://services.google.com/fh/files/misc/vigenair_logo.png'"
+                 alt="Logo"
+                 class="logo-preview"
+                 onerror="this.src='https://services.google.com/fh/files/misc/vigenair_logo.png'">
+          </td>
+        </ng-container>
+
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef style="text-align:left;"> Name </th>
+          <td mat-cell *matCellDef="let setting" style="text-align:left;">
+            <span class="brand-name">{{ setting.brandName }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Colour Column -->
+        <ng-container matColumnDef="colour">
+          <th mat-header-cell *matHeaderCellDef style="text-align:center;"> Colour </th>
+          <td mat-cell *matCellDef="let setting" style="text-align:center;">
+            <div class="color-box" [style.backgroundColor]="setting.primaryColor" style="margin: 0 auto;"></div>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef style="text-align:center;"> Actions </th>
+          <td mat-cell *matCellDef="let setting" style="text-align:center;">
+            <div class="action-buttons">
+              <button mat-icon-button (click)="editSetting(setting)" matTooltip="Edit Setting">
+                <mat-icon style="color: black !important;">edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="deleteSavedSetting(setting.id)" matTooltip="Delete Setting">
+                <mat-icon style="color: black !important;">delete</mat-icon>
+              </button>
+              <button mat-icon-button (click)="applySavedSetting(setting)" matTooltip="Apply Setting">
+                <mat-icon style="color: black !important;">check_circle</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['logo', 'name', 'colour', 'actions']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['logo', 'name', 'colour', 'actions']; trackBy: trackBySettingId"></tr>
+      </table>
+    </div>
+     <!-- ...existing code... -->
+
+<!-- ...existing code... -->
+  </div>
+  <div mat-raised-button color="primary" style="margin-top: 1rem; text-align: right; display: flex; gap: 1rem; justify-content: flex-end;">
+  <button mat-raised-button color="primary"  (click)="resetSettings()">
+    Reset to Default
+  </button>
+  <button mat-raised-button color="primary" (click)="closeDialog()">
+    <mat-icon>close</mat-icon> Close
+  </button>
+</div>
+</div>

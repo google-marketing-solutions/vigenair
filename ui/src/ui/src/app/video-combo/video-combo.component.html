@@ -122,11 +122,11 @@ limitations under the License.
   <button mat-raised-button color="secondary" (click)="exportVideoWithOverlay()" [disabled]="exporting">
     {{ exporting ? 'Exporting...' : 'Export/Download' }}
   </button>
-  <mat-progress-bar *ngIf="exporting" 
-    mode="determinate" 
-    [value]="exportProgress"
-    style="width: 200px; margin-left: 16px;">
-  </mat-progress-bar>
+  <div *ngIf="exporting" style="display: flex; flex-direction: column; align-items: flex-start; margin-left: 16px;">
+    <span color="secondary" style="font-size: 14px; font-weight: 500; margin-bottom: 2px;">
+     {{ exportProgress }}%
+    </span>
+  </div>
 </div>
 <div class="row" style="justify-content: start">
   Segments: {{ combo.scenes }}

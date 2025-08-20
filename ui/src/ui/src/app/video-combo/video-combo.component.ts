@@ -248,20 +248,27 @@ export class VideoComboComponent implements AfterViewInit {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d')!;
-    const stream = canvas.captureStream();
+    // Capture video stream from canvas
+    const videoStream = canvas.captureStream();
+    // Get the original audio track from the video element
+    let audioTracks: MediaStreamTrack[] = [];
+    if (video.srcObject) {
+      audioTracks = (video.srcObject as MediaStream).getAudioTracks();
+    }
+    // If video.srcObject is not set or has no audio, try to get audio from the video element's captureStream (browser support required)
+    if (audioTracks.length === 0 && (video as any).captureStream) {
+      try {
+        const nativeStream = (video as any).captureStream();
+        nativeStream.getAudioTracks().forEach((track: MediaStreamTrack) => audioTracks.push(track));
+      } catch (e) {}
+    }
+    // Combine video and audio tracks
+    const combinedStream = new MediaStream([
+      ...videoStream.getVideoTracks(),
+      ...audioTracks
+    ]);
     const recordedChunks: BlobPart[] = [];
-
-    // Configure quality based on settings
-    const quality: { [key: string]: number } = {
-      low: 1000000,    // 1 Mbps
-      medium: 2500000, // 2.5 Mbps
-      high: 5000000    // 5 Mbps
-    };
-    
-    const recorder = new MediaRecorder(stream, {
-      mimeType: 'video/webm;codecs=vp9',
-      videoBitsPerSecond: quality[this.exportQuality]
-    });
+    const recorder = new MediaRecorder(combinedStream);
 
     recorder.ondataavailable = (e: BlobEvent) => {
       if (e.data.size > 0) recordedChunks.push(e.data);
@@ -272,9 +279,14 @@ export class VideoComboComponent implements AfterViewInit {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `video_with_overlay_${this.exportQuality}.webm`;
+      a.download = 'video_with_overlay.webm';
       a.click();
       URL.revokeObjectURL(url);
+      this.exporting = false;
+      this.exportProgress = 0;
+    };
+
+    recorder.onerror = () => {
       this.exporting = false;
       this.exportProgress = 0;
     };
@@ -298,24 +310,27 @@ export class VideoComboComponent implements AfterViewInit {
         ctx.fillStyle = 'white';
         ctx.fillText(this.overlayText, canvas.width / 2, canvas.height - fontSize);
       }
-      // Update progress
-      this.exportProgress = Math.round((video.currentTime / video.duration) * 100);
     };
 
-    // Adjust frame rate based on quality setting
-    const fps = this.exportQuality === 'low' ? 24 : this.exportQuality === 'medium' ? 30 : 60;
+    // Use fixed frame rate
+    const fps = 30;
     const frameInterval = 1000 / fps;
     let lastDrawTime = 0;
 
     const render = (timestamp: number) => {
       if (video.ended || video.currentTime >= video.duration) {
+        this.exportProgress = 100;
         recorder.stop();
         return;
       }
-      
+
       if (timestamp - lastDrawTime >= frameInterval) {
         drawFrame();
         lastDrawTime = timestamp;
+        // Update progress bar
+        if (video.duration > 0) {
+          this.exportProgress = Math.min(100, Math.floor((video.currentTime / video.duration) * 100));
+        }
       }
       requestAnimationFrame(render);
     };

@@ -1,0 +1,5 @@
+  onColorChange(event: any) {
+    const color = event.target.value;
+    this.primaryColor = color;
+    this.themeService.setThemeColor(color);
+  }
