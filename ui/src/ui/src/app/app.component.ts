@@ -140,7 +140,7 @@ export class AppComponent implements OnInit {
   folderGcsPath: string = '';
   logoUrl: string = '';
   brandName: string = '';
-  primaryColor: string = '#1976d2';
+  primaryColor: string = '#3f51b5';
 
   loading = false;
   generatingVariants = false;
@@ -320,7 +320,7 @@ export class AppComponent implements OnInit {
       document.body.classList.forEach(cls => {
         if (cls.startsWith('primary-theme-')) document.body.classList.remove(cls);
       });
-      // Add new theme class based on color hex (e.g., #1976d2 => primary-theme-1976d2)
+      // Add new theme class based on color hex (e.g., #3f51b5 => primary-theme-1976d2)
       document.body.classList.add(`primary-theme-${primary.replace('#', '')}`);
     }
     this.logoUrl = settings.logoUrl || 'https://services.google.com/fh/files/misc/vigenair_logo.png';

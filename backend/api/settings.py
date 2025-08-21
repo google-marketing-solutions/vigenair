@@ -30,7 +30,7 @@ def get_settings(current_user_id: str = Depends(get_user_id)):
         return AppSettings(
             brandName="ViGenAir",
             logoUrl="https://services.google.com/fh/files/misc/vigenair_logo.png",
-            primaryColor="#1976d2"
+            primaryColor="#3f51b5"
         )
     return AppSettings(**settings)
 

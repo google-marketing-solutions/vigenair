@@ -9,7 +9,7 @@ mat-progress-bar {
 }
 
 ::ng-deep .mat-progress-bar .mdc-linear-progress__bar-inner {
-  background-color: #1976d2 !important;
+  background-color: #3f51b5 !important;
   height: 100% !important;
   border-radius: 6px;
 }
@@ -20,7 +20,7 @@ mat-progress-bar {
 
 /* For indeterminate mode, make the animation color visible */
 ::ng-deep .mat-progress-bar .mdc-linear-progress__bar-inner.mdc-linear-progress__primary-bar {
-  background-color: #1976d2 !important;
+  background-color: #3f51b5 !important;
 }
 /*
 Copyright 2024 Google LLC
