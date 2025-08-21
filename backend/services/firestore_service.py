@@ -4,20 +4,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Ensure Firestore emulator is always used if FIRESTORE_EMULATOR_HOST is set
-FIRESTORE_EMULATOR_HOST = os.getenv('FIRESTORE_EMULATOR_HOST')
-if FIRESTORE_EMULATOR_HOST:
-    os.environ['FIRESTORE_EMULATOR_HOST'] = FIRESTORE_EMULATOR_HOST
-    print(f"[Firestore] Using emulator at {FIRESTORE_EMULATOR_HOST}")
-
 PROJECT_ID = os.getenv('PROJECT_ID')
+DATABASE_ID = os.getenv('FIRESTORE_DATABASE_ID', 'vigenair-db')
 USERS_COLLECTION = 'users'
 APP_SETTINGS_SUBCOLLECTION = 'appSettings'
 ACTIVE_SETTING_SUBCOLLECTION = 'activeSetting'
 ACTIVE_SETTING_DOC = 'default'
 
 def get_firestore_client():
-    return firestore.Client(project=PROJECT_ID)
+    return firestore.Client(project=PROJECT_ID, database=DATABASE_ID)
 
 def get_user_settings(user_id: str) -> dict | None:
     """Gets the active settings for a given user."""
@@ -64,4 +59,5 @@ def get_saved_setting_by_id(user_id: str, setting_id: str) -> dict | None:
     db = get_firestore_client()
     doc_ref = db.collection(USERS_COLLECTION).document(user_id).collection(APP_SETTINGS_SUBCOLLECTION).document(setting_id)
     doc = doc_ref.get()
+    return doc.to_dict() if doc.exists else None
     return doc.to_dict() if doc.exists else None

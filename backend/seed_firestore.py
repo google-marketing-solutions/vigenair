@@ -1,7 +1,7 @@
 from google.cloud import firestore
 import os
 
-os.environ['FIRESTORE_EMULATOR_HOST'] = '127.0.0.1:8181'
+
 os.environ['PROJECT_ID'] = 'demos-dev-467317'
 
 db = firestore.Client(project=os.environ['PROJECT_ID'])
