@@ -1,0 +1,150 @@
+{
+  "_0": {
+    "variant_id": 0,
+    "av_segments": {
+      "_1": {
+        "av_segment_id": "1",
+        "start_s": 0,
+        "end_s": 4.462791
+      },
+      "_2": {
+        "av_segment_id": "2",
+        "start_s": 4.5045,
+        "end_s": 6.798458
+      },
+      "_3.1": {
+        "av_segment_id": "3.1",
+        "start_s": 6.840166,
+        "end_s": 11.450631
+      },
+      "_10": {
+        "av_segment_id": "10",
+        "start_s": 26.818458,
+        "end_s": 28.77875
+      },
+      "_11": {
+        "av_segment_id": "11",
+        "start_s": 28.820458,
+        "end_s": 29.988291
+      }
+    },
+    "title": "Master Your Coffee with Pixel 10's Smart Guidance",
+    "description": "This combination focuses on the \"Gemini Live\" feature's ability to provide real-time, augmented reality guidance, specifically for operating a coffee machine. Scene 1 sets the stage by introducing the phone and the people interacting with the unboxed item. Scene 2 introduces the coffee machine with an intriguing off-screen question, pulling the viewer in. Scene 3.1 then directly demonstrates the problem-solving capability of Gemini Live with clear visual and audio guidance. Scene 11 provides a swift and recognizable brand conclusion. This structure ensures a clear narrative about one key feature, making it concise and impactful within the duration.",
+    "score": 4,
+    "score_reasoning": "A - Attention:\n    Impactful Opening (score: 2): Scene 1 presents the product name and logo initially, then transitions to intriguing shots of people looking into a box, establishing curiosity and direct engagement.\n    Audio Engagement (score: 2): Scene 2 and 3.1 feature off-screen speech (\"Can you show me how to make a double?\", \"First, press the filter size button...\") which provides clear instructions and guides the narrative, enhancing engagement.\n    Visual Interest (score: 1): The combination uses a mix of product shots, human interaction, and the augmented reality interface of Gemini Live, offering dynamic visuals.\nB - Branding:\n    Early Branding (score: 2): \"Google Pixel 10\" text and the Google logo are prominent in Scene 1, establishing the brand immediately.\n    Frequent Branding (score: 1): The brand is seen at the start (Scene 1) and end (Scene 11). While the feature (Gemini Live) is intrinsic to the Pixel, more direct phone-brand visuals could enhance frequency within the body of the ad.\n    Branding Variety (score: 0): Branding elements are primarily the logo and product name. More overt product shots or consistent on-screen branding would enhance variety.\nC - Connection:\n    Human Presence (score: 2): Scene 1 shows people, including close-ups, engaging with the product, and Scene 2 shows them manipulating the coffee machine, fostering immediate relatability.\n    Context and Relevance (score: 1): The coffee machine scenario is highly relatable for many viewers, showcasing the phone's practical application in an everyday context.\n    Simplicity and Differentiation (score: 2): The message is very clear: the Pixel 10 helps you operate complex devices like a coffee machine step-by-step, effectively differentiating its smart guidance feature.\nD - Direction:\n    Clear Call to Action (score: 0): The video ends with the Google logo but lacks an explicit on-screen call to action.",
+    "render_settings": {
+      "generate_image_assets": true,
+      "generate_text_assets": true,
+      "formats": [
+        "horizontal",
+        "vertical",
+        "square"
+      ],
+      "use_music_overlay": false,
+      "use_continuous_audio": false,
+      "fade_out": false,
+      "overlay_type": "variant_start"
+    },
+    "variants": {
+      "horizontal": "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0_h.mp4",
+      "square": "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0_s.mp4",
+      "vertical": "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0_v.mp4"
+    },
+    "texts": [
+      {
+        "headline": "Google Pixel 10 AI Phone",
+        "description": "Experience Gemini Live on Pixel 10. Get yours today."
+      },
+      {
+        "headline": "Gemini Live on Pixel 10",
+        "description": "AI-powered assistance for everyday tasks. Shop now."
+      },
+      {
+        "headline": "Pixel 10 Smart Features",
+        "description": "Unlock new possibilities with Gemini Live. Learn more."
+      },
+      {
+        "headline": "Next-Gen Pixel 10",
+        "description": "Innovative AI for seamless living. Discover more."
+      },
+      {
+        "headline": "Pixel 10 AI Assistant",
+        "description": "Your intelligent companion for every moment. Buy now."
+      }
+    ],
+    "images": {
+      "horizontal": [
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/1.png",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/2.png",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/horizontal/3.png"
+      ],
+      "square": [
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/1.png",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/2.png",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/3.png",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/4.jpg",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/5.jpg",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/6.jpg",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/square/7.jpg"
+      ],
+      "vertical": [
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/1.png",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/2.png",
+        "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_0/assets/vertical/3.png"
+      ]
+    }
+  },
+  "_1": {
+    "variant_id": 1,
+    "av_segments": {
+      "_11": {
+        "av_segment_id": "11",
+        "start_s": 28.820458,
+        "end_s": 29.988291
+      },
+      "_3.2": {
+        "av_segment_id": "3.2",
+        "start_s": 11.450631,
+        "end_s": 12.887875
+      },
+      "_4": {
+        "av_segment_id": "4",
+        "start_s": 12.929583,
+        "end_s": 14.76475
+      },
+      "_5": {
+        "av_segment_id": "5",
+        "start_s": 14.806458,
+        "end_s": 19.352666
+      },
+      "_6": {
+        "av_segment_id": "6",
+        "start_s": 19.394375,
+        "end_s": 20.854166
+      },
+      "_10": {
+        "av_segment_id": "10",
+        "start_s": 26.818458,
+        "end_s": 28.77875
+      }
+    },
+    "title": "Pixel 10: From Unboxing to Enhanced Photography",
+    "description": "This combination focuses on the unboxing experience and the enhanced photography capabilities of the Google Pixel 10. Scene 1 provides a strong opening with brand introduction and a hint of the unboxing experience. Scene 5 directly showcases the intuitive camera app, its \"Coach\" feature, and automatic zoom, highlighting ease of use and advanced features. The transition to Scene 10 brings back the sleek product shot, reinforcing the brand and phone design. Finally, Scene 11 serves as a clear brand conclusion. The selection aims to be concise while delivering a clear message about user-friendly features and strong branding, fitting within the duration requirement.",
+    "score": 4,
+    "score_reasoning": "A - Attention:\n    Impactful Opening (score: 2): Scene 1 starts with a clear product name and logo, followed by an intriguing shot of people looking into a box, effectively grabbing attention.\n    Audio Engagement (score: 0): This combination lacks specific off-screen speech or prominent audio cues beyond potential background music/SFX from the original scenes, making audio engagement less effective.\n    Visual Interest (score: 1): The combination features a product shot, an interactive camera interface, and a final brand logo, providing varied visual elements.\nB - Branding:\n    Early Branding (score: 2): \"Google Pixel 10\" text and the Google logo are prominently displayed at the start of Scene 1, ensuring early brand recognition.\n    Frequent Branding (score: 2): The brand is present at the beginning (Scene 1), through the product and its features (Scene 5 through the Pixel's camera app), the re-appearance of the product (Scene 10), and the final logo (Scene 11).\n    Branding Variety (score: 1): The combination uses direct branding (logo, product name), product display, and feature demonstration as branding assets.\nC - Connection:\n    Human Presence (score: 2): Scene 1 shows people engaging with the product packaging, and Scene 5 features a person interacting with the phone's camera, including a clear shot of the person being photographed, adding relatability.\n    Context and Relevance (score: 1): The kayaking scenario in Scene 5 provides a relatable context for using the phone's camera for outdoor activities.\n    Simplicity and Differentiation (score: 1): The message focuses on the camera's ease of use and advanced features (like \"Zoom in to 2x\" and \"Take the photo\" prompts), making it simple and highlighting a key differentiator.\nD - Direction:\n    Clear Call to Action (score: 0): The video ends with the Google logo but lacks a specific on-screen call to action.",
+    "render_settings": {
+      "generate_image_assets": false,
+      "generate_text_assets": false,
+      "formats": [
+        "horizontal"
+      ],
+      "use_music_overlay": false,
+      "use_continuous_audio": false,
+      "fade_out": false,
+      "overlay_type": "variant_start"
+    },
+    "variants": {
+      "horizontal": "assets/pixel10.mp4--1234567890123--abcdef/Sample--1746417355000-combos/combo_1_h.mp4"
+    }
+  }
+}

@@ -32,8 +32,7 @@ import {
 
 // const HORIZONTAL_SAMPLE_FOLDER = 'horizontal.mp4--1234567890123--abcdef';
 const AUDI_SAMPLE_FOLDER = 'audi.mp4--1234567890123--abcdef';
-const PIXEL8_SAMPLE_FOLDER = 'pixel8_en.mp4--1234567890123--abcdef';
-const PIXEL9_SAMPLE_FOLDER = 'pixel9_de.mp4--1234567890123--abcdef';
+const PIXEL10_SAMPLE_FOLDER = 'pixel10.mp4--1234567890123--abcdef';
 const COMBOS_FOLDER = 'Sample--1746417355000-combos';
 
 @Injectable({
@@ -118,11 +117,7 @@ export class ApiCallsService implements ApiCalls {
       setTimeout(() => {
         this.ngZone.run(() => {
           subscriber.next({
-            runs: [
-              AUDI_SAMPLE_FOLDER,
-              PIXEL8_SAMPLE_FOLDER,
-              PIXEL9_SAMPLE_FOLDER,
-            ],
+            runs: [AUDI_SAMPLE_FOLDER, PIXEL10_SAMPLE_FOLDER],
             encodedUserId: 'abcdef',
           });
           subscriber.complete();

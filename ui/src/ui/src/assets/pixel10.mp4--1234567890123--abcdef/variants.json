@@ -1,0 +1,88 @@
+[
+  {
+    "title": "Master Your Coffee with Pixel 10's Smart Guidance",
+    "score": 4,
+    "description": "This combination focuses on the \"Gemini Live\" feature's ability to provide real-time, augmented reality guidance, specifically for operating a coffee machine. Scene 1 sets the stage by introducing the phone and the people interacting with the unboxed item. Scene 2 introduces the coffee machine with an intriguing off-screen question, pulling the viewer in. Scene 3.1 then directly demonstrates the problem-solving capability of Gemini Live with clear visual and audio guidance. Scene 11 provides a swift and recognizable brand conclusion. This structure ensures a clear narrative about one key feature, making it concise and impactful within the duration.",
+    "reasoning": "A - Attention:\n    Impactful Opening (score: 2): Scene 1 presents the product name and logo initially, then transitions to intriguing shots of people looking into a box, establishing curiosity and direct engagement.\n    Audio Engagement (score: 2): Scene 2 and 3.1 feature off-screen speech (\"Can you show me how to make a double?\", \"First, press the filter size button...\") which provides clear instructions and guides the narrative, enhancing engagement.\n    Visual Interest (score: 1): The combination uses a mix of product shots, human interaction, and the augmented reality interface of Gemini Live, offering dynamic visuals.\nB - Branding:\n    Early Branding (score: 2): \"Google Pixel 10\" text and the Google logo are prominent in Scene 1, establishing the brand immediately.\n    Frequent Branding (score: 1): The brand is seen at the start (Scene 1) and end (Scene 11). While the feature (Gemini Live) is intrinsic to the Pixel, more direct phone-brand visuals could enhance frequency within the body of the ad.\n    Branding Variety (score: 0): Branding elements are primarily the logo and product name. More overt product shots or consistent on-screen branding would enhance variety.\nC - Connection:\n    Human Presence (score: 2): Scene 1 shows people, including close-ups, engaging with the product, and Scene 2 shows them manipulating the coffee machine, fostering immediate relatability.\n    Context and Relevance (score: 1): The coffee machine scenario is highly relatable for many viewers, showcasing the phone's practical application in an everyday context.\n    Simplicity and Differentiation (score: 2): The message is very clear: the Pixel 10 helps you operate complex devices like a coffee machine step-by-step, effectively differentiating its smart guidance feature.\nD - Direction:\n    Clear Call to Action (score: 0): The video ends with the Google logo but lacks an explicit on-screen call to action.",
+    "duration": "0:14",
+    "scenes": ["1", "2", "3.1", "10", "11"],
+    "av_segments": [
+      {
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/1.jpg",
+        "av_segment_id": "1",
+        "end_s": 4.462791,
+        "start_s": 0
+      },
+      {
+        "start_s": 4.5045,
+        "end_s": 6.798458,
+        "av_segment_id": "2",
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/2.jpg"
+      },
+      {
+        "start_s": 6.840166,
+        "av_segment_id": "3.1",
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/3.1.jpg",
+        "end_s": 11.450631
+      },
+      {
+        "start_s": 26.818458,
+        "end_s": 28.77875,
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/10.jpg",
+        "av_segment_id": "10"
+      },
+      {
+        "start_s": 28.820458,
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/11.jpg",
+        "end_s": 29.988291,
+        "av_segment_id": "11"
+      }
+    ]
+  },
+  {
+    "duration": "0:12",
+    "score": 4,
+    "description": "This combination focuses on the unboxing experience and the enhanced photography capabilities of the Google Pixel 10. Scene 1 provides a strong opening with brand introduction and a hint of the unboxing experience. Scene 5 directly showcases the intuitive camera app, its \"Coach\" feature, and automatic zoom, highlighting ease of use and advanced features. The transition to Scene 10 brings back the sleek product shot, reinforcing the brand and phone design. Finally, Scene 11 serves as a clear brand conclusion. The selection aims to be concise while delivering a clear message about user-friendly features and strong branding, fitting within the duration requirement.",
+    "reasoning": "A - Attention:\n    Impactful Opening (score: 2): Scene 1 starts with a clear product name and logo, followed by an intriguing shot of people looking into a box, effectively grabbing attention.\n    Audio Engagement (score: 0): This combination lacks specific off-screen speech or prominent audio cues beyond potential background music/SFX from the original scenes, making audio engagement less effective.\n    Visual Interest (score: 1): The combination features a product shot, an interactive camera interface, and a final brand logo, providing varied visual elements.\nB - Branding:\n    Early Branding (score: 2): \"Google Pixel 10\" text and the Google logo are prominently displayed at the start of Scene 1, ensuring early brand recognition.\n    Frequent Branding (score: 2): The brand is present at the beginning (Scene 1), through the product and its features (Scene 5 through the Pixel's camera app), the re-appearance of the product (Scene 10), and the final logo (Scene 11).\n    Branding Variety (score: 1): The combination uses direct branding (logo, product name), product display, and feature demonstration as branding assets.\nC - Connection:\n    Human Presence (score: 2): Scene 1 shows people engaging with the product packaging, and Scene 5 features a person interacting with the phone's camera, including a clear shot of the person being photographed, adding relatability.\n    Context and Relevance (score: 1): The kayaking scenario in Scene 5 provides a relatable context for using the phone's camera for outdoor activities.\n    Simplicity and Differentiation (score: 1): The message focuses on the camera's ease of use and advanced features (like \"Zoom in to 2x\" and \"Take the photo\" prompts), making it simple and highlighting a key differentiator.\nD - Direction:\n    Clear Call to Action (score: 0): The video ends with the Google logo but lacks a specific on-screen call to action.",
+    "scenes": ["11", "3.2", "4", "5", "6", "10"],
+    "title": "Pixel 10: From Unboxing to Enhanced Photography",
+    "av_segments": [
+      {
+        "start_s": 28.820458,
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/11.jpg",
+        "av_segment_id": "11",
+        "end_s": 29.988291
+      },
+      {
+        "start_s": 11.450631,
+        "av_segment_id": "3.2",
+        "end_s": 12.887875,
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/3.2.jpg"
+      },
+      {
+        "start_s": 12.929583,
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/4.jpg",
+        "av_segment_id": "4",
+        "end_s": 14.76475
+      },
+      {
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/5.jpg",
+        "start_s": 14.806458,
+        "av_segment_id": "5",
+        "end_s": 19.352666
+      },
+      {
+        "end_s": 20.854166,
+        "av_segment_id": "6",
+        "start_s": 19.394375,
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/6.jpg"
+      },
+      {
+        "av_segment_id": "10",
+        "end_s": 28.77875,
+        "segment_screenshot_uri": "https://storage.mtls.cloud.google.com/vigenair-vigenair/pixel10.mp4--w--1755804738789--bWZla3J5QGdvb2dsZS5jb20%3D/av_segments_cuts/10.jpg",
+        "start_s": 26.818458
+      }
+    ]
+  }
+]
