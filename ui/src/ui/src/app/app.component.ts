@@ -130,6 +130,8 @@ export class AppComponent {
   analysisJson?: any;
   activeVideoObjects?: any[];
   videoObjects?: any[];
+  squarePreviewAnalysis?: any;
+  verticalPreviewAnalysis?: any;
   squareVideoObjects?: any[];
   verticalVideoObjects?: any[];
   combosJson?: any;
@@ -803,14 +805,14 @@ export class AppComponent {
           }
           const previewFilter = (e: { entity: { description: string } }) =>
             e.entity.description === 'crop-area';
-          const squarePreviewAnalysis = JSON.parse(previews.square);
+          this.squarePreviewAnalysis = JSON.parse(previews.square);
           this.squareVideoObjects = this.parseAnalysis(
-            squarePreviewAnalysis,
+            this.squarePreviewAnalysis,
             previewFilter
           );
-          const verticalPreviewAnalysis = JSON.parse(previews.vertical);
+          this.verticalPreviewAnalysis = JSON.parse(previews.vertical);
           this.verticalVideoObjects = this.parseAnalysis(
-            verticalPreviewAnalysis,
+            this.verticalPreviewAnalysis,
             previewFilter
           );
         },
@@ -1200,6 +1202,8 @@ export class AppComponent {
         queueName: this.renderQueueName,
         squareCropAnalysis: this.squareVideoObjects,
         verticalCropAnalysis: this.verticalVideoObjects,
+        squarePreview: this.squarePreviewAnalysis,
+        verticalPreview: this.verticalPreviewAnalysis,
         sourceDimensions: {
           w: this.previewVideoElem.nativeElement.videoWidth,
           h: this.previewVideoElem.nativeElement.videoHeight,

@@ -136,6 +136,15 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
       CONFIG.cloudStorage.files.formats.square,
       'text/plain'
     );
+    StorageManager.uploadFile(
+      Utilities.base64Encode(
+        JSON.stringify(renderQueue.squarePreview),
+        Utilities.Charset.UTF_8
+      ),
+      folder,
+      CONFIG.cloudStorage.files.formats.square.replace('.txt', '.json'),
+      'application/json'
+    );
   }
 
   if (renderQueue.verticalCropAnalysis) {
@@ -158,6 +167,15 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
       folder,
       CONFIG.cloudStorage.files.formats.vertical,
       'text/plain'
+    );
+    StorageManager.uploadFile(
+      Utilities.base64Encode(
+        JSON.stringify(renderQueue.verticalPreview),
+        Utilities.Charset.UTF_8
+      ),
+      folder,
+      CONFIG.cloudStorage.files.formats.vertical.replace('.txt', '.json'),
+      'application/json'
     );
   }
 

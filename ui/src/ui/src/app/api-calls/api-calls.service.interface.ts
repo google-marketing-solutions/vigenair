@@ -87,6 +87,8 @@ export interface RenderQueue {
   queueName: string;
   squareCropAnalysis: any;
   verticalCropAnalysis: any;
+  squarePreview: any;
+  verticalPreview: any;
   sourceDimensions: { w: number; h: number };
 }
 
