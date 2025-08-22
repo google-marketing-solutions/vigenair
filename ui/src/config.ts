@@ -16,7 +16,7 @@
 
 export const CONFIG = {
   cloudStorage: {
-    bucket: '<gcs-bucket>',
+    bucket: 'demos-dev-467317-vigenair',
     endpointBase: 'https://storage.googleapis.com/storage/v1',
     uploadEndpointBase: 'https://storage.googleapis.com/upload/storage/v1',
     authenticatedEndpointBase: 'https://storage.mtls.cloud.google.com',
@@ -38,8 +38,8 @@ export const CONFIG = {
   },
   vertexAi: {
     endpoint: 'aiplatform.googleapis.com',
-    projectId: '<gcp-project-id>',
-    location: '<vertexai-region>',
+    projectId: 'demos-dev-467317',
+    location: 'us-central1',
     quotaLimitDelay: 10 * 1000, // 10s,
     model: 'gemini-2.5-flash',
     modelParams: {

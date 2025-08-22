@@ -17,6 +17,7 @@
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, inject, ViewChild, OnInit } from '@angular/core';
+import { PlatformService } from './core/services/platform.service';
 import { FormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -128,11 +129,13 @@ export class AppComponent implements OnInit {
   userEmail: string = '';
 
   private loadUserEmail() {
-    if (location.hostname === 'localhost') {
-      this.userEmail = 'testuser@example.com';
-    } else {
-      const email = (window as any).Session?.getActiveUser()?.getEmail();
-      this.userEmail = email || 'testuser@example.com';
+    if (this.platformService.isBrowser) {
+      if (location.hostname === 'localhost') {
+        this.userEmail = 'testuser@example.com';
+      } else {
+        const email = (window as any).Session?.getActiveUser()?.getEmail();
+        this.userEmail = email || 'testuser@example.com';
+      }
     }
   }
 
@@ -259,16 +262,19 @@ export class AppComponent implements OnInit {
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
-    private appSettingsService: AppSettingsService
+    private appSettingsService: AppSettingsService,
+    public platformService: PlatformService
   ) {
     this.loadUserEmail();
-    this.styleTag = this.getOrCreateStyleElement('dynamic-theme-styles');
+    if (this.platformService.isBrowser) {
+      this.styleTag = this.getOrCreateStyleElement('dynamic-theme-styles');
+    }
     this.getPreviousRuns();
     this.getWebAppUrl();
 
     // Allow locally served app to process query params.
     // Production env (Apps Script) is handled via ngAfterViewInit()
-    if (!environment.production) {
+    if (!environment.production && this.platformService.isBrowser) {
       inject(ActivatedRoute).queryParams.subscribe(params => {
         const inputCombosFolder = params['inputCombosFolder'];
         if (inputCombosFolder) {
@@ -279,8 +285,6 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
-  // Mock user 
-  this.userEmail = 'testuser@example.com';
     // On app load, fetch latest settings from backend
     this.appSettingsService.getSettings().subscribe(settings => {
       this.applySettings(settings);
@@ -291,17 +295,19 @@ export class AppComponent implements OnInit {
     });
 
     // Re-apply theme class from localStorage (if present)
-    const primary = localStorage.getItem('primary-color');
-    if (primary) {
-      document.body.classList.forEach(cls => {
-        if (cls.startsWith('primary-theme-')) document.body.classList.remove(cls);
-      });
-      document.body.classList.add(`primary-theme-${primary.replace('#', '')}`);
+    if (this.platformService.isBrowser) {
+      const primary = localStorage.getItem('primary-color');
+      if (primary) {
+        document.body.classList.forEach(cls => {
+          if (cls.startsWith('primary-theme-')) document.body.classList.remove(cls);
+        });
+        document.body.classList.add(`primary-theme-${primary.replace('#', '')}`);
+      }
     }
   }
 
   applySettings(settings: AppSettings) {
-    if (settings.primaryColor) {
+    if (settings.primaryColor && this.platformService.isBrowser) {
       const primary = settings.primaryColor;
       const contrast = this.getContrastColor(primary);
       const hover = this.getHoverColor(primary);
@@ -339,6 +345,9 @@ export class AppComponent implements OnInit {
   }
 
   private getOrCreateStyleElement(id: string): HTMLStyleElement {
+    if (!this.platformService.isBrowser) {
+      throw new Error('getOrCreateStyleElement should only be called in the browser');
+    }
     let styleTag = document.getElementById(id) as HTMLStyleElement;
     if (!styleTag) {
       styleTag = document.createElement('style');
@@ -367,11 +376,13 @@ export class AppComponent implements OnInit {
   }
 
   ngAfterViewInit() {
-    const inputCombosFolder = document.querySelector(
-      '#input-combos-folder'
-    ) as HTMLInputElement;
-    if (inputCombosFolder && inputCombosFolder.value) {
-      this.handleInputCombosFolder(inputCombosFolder.value);
+    if (this.platformService.isBrowser) {
+      const inputCombosFolder = document.querySelector(
+        '#input-combos-folder'
+      ) as HTMLInputElement;
+      if (inputCombosFolder && inputCombosFolder.value) {
+        this.handleInputCombosFolder(inputCombosFolder.value);
+      }
     }
   }
 

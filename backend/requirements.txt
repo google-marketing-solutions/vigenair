@@ -1,6 +1,8 @@
 fastapi
 uvicorn[standard]
+gunicorn
 google-cloud-firestore
 google-cloud-storage
 python-dotenv
 python-multipart
+functions-framework

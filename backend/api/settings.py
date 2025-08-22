@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from typing import List
 
-from backend.services import firestore_service, storage_service
-from backend.models.settings import (
+from ..services import firestore_service, storage_service
+from ..models.settings import (
     AppSettings,
     SavedAppSettings,
     UpdateSettingsPayload,

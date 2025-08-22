@@ -1,4 +1,20 @@
+/**
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import { Component, OnInit, Inject } from '@angular/core';
+import { PlatformService } from '../core/services/platform.service';
 import { AppSettingsService, AppSettings } from '../services/app-settings.service';
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -41,7 +57,8 @@ export class SettingsDialogComponent implements OnInit {
     private appSettingsService: AppSettingsService,
     private snackBar: MatSnackBar,
     public dialogRef: MatDialogRef<SettingsDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any
+    @Inject(MAT_DIALOG_DATA) public data: any,
+    public platformService: PlatformService
   ) {
     if (this.data?.editMode) {
       this.editMode = true;
@@ -51,9 +68,11 @@ export class SettingsDialogComponent implements OnInit {
       }
     }
     // Set initial color from theme service
-    const currentColor = localStorage.getItem('themeColor');
-    if (currentColor) {
-      this.primaryColor = currentColor;
+    if (this.platformService.isBrowser) {
+      const currentColor = localStorage.getItem('themeColor');
+      if (currentColor) {
+        this.primaryColor = currentColor;
+      }
     }
   }
 
@@ -138,7 +157,7 @@ export class SettingsDialogComponent implements OnInit {
         this.snackBar.open('Settings saved successfully!', 'Close', { duration: 2000 });
         this.dialogRef.close({ saved: true, setting: savedSetting });
         // Store theme color in localStorage for persistence
-        if (settingsToSave.primaryColor) {
+        if (settingsToSave.primaryColor && this.platformService.isBrowser) {
           localStorage.setItem('primary-color', settingsToSave.primaryColor);
         }
       },

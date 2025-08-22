@@ -1,6 +1,22 @@
+/**
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import { CommonModule } from '@angular/common';
 import { AppSettingsService, AppSettings } from '../../services/app-settings.service';
 import { Component, Inject, OnInit } from '@angular/core';
+import { PlatformService } from '../../core/services/platform.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -52,7 +68,8 @@ export class SavedSettingsDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: { currentSettings: any },
     private appSettingsService: AppSettingsService,
     private dialog: MatDialog,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    public platformService: PlatformService
   ) { }
 
   ngOnInit() {
@@ -168,7 +185,7 @@ export class SavedSettingsDialogComponent implements OnInit {
         });
         this.dialogRef.close({ applied: true, settings: setting });
         // Store theme color in localStorage for persistence
-        if (setting.primaryColor) {
+        if (setting.primaryColor && this.platformService.isBrowser) {
           localStorage.setItem('primary-color', setting.primaryColor);
         }
       },

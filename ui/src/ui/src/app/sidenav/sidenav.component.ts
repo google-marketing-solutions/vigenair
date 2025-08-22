@@ -1,5 +1,21 @@
+/**
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { PlatformService } from '../core/services/platform.service';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -46,12 +62,16 @@ export class SidenavComponent implements OnInit {
   @ViewChild('settingsSidenav') settingsSidenav!: MatSidenav;
   @ViewChild('logoInput') logoInput!: ElementRef;
 
-  constructor(private snackBar: MatSnackBar) {
-    this.loadPersonalizationSettings();
+  constructor(private snackBar: MatSnackBar, public platformService: PlatformService) {
+    if (this.platformService.isBrowser) {
+      this.loadPersonalizationSettings();
+    }
   }
 
   ngOnInit() {
-    this.loadSavedSettingsList();
+    if (this.platformService.isBrowser) {
+      this.loadSavedSettingsList();
+    }
   }
 
   // UI Personalization Methods
@@ -72,6 +92,7 @@ export class SidenavComponent implements OnInit {
 
   // Save current settings to the list and update localStorage
   saveSettings() {
+    if (!this.platformService.isBrowser) return;
     const settings = {
       brandName: this.brandName,
       logo: this.logoPreview,
@@ -100,6 +121,7 @@ export class SidenavComponent implements OnInit {
   }
 
   resetSettings() {
+    if (!this.platformService.isBrowser) return;
     localStorage.removeItem('uiPersonalizationSettings');
     // Reset to defaults
     this.brandName = '';
@@ -120,23 +142,27 @@ export class SidenavComponent implements OnInit {
 
   // Load the saved settings list from localStorage
   loadSavedSettingsList() {
+    if (!this.platformService.isBrowser) return;
     this.savedSettingsList = this.getSavedSettingsList();
   }
 
   // Helper to get the saved settings list from localStorage
   getSavedSettingsList() {
+    if (!this.platformService.isBrowser) return [];
     const list = localStorage.getItem('uiSavedSettingsList');
     return list ? JSON.parse(list) : [];
   }
 
   // Delete a saved setting by index
   deleteSavedSetting(index: number) {
+    if (!this.platformService.isBrowser) return;
     this.savedSettingsList.splice(index, 1);
     localStorage.setItem('uiSavedSettingsList', JSON.stringify(this.savedSettingsList));
   }
 
   // Apply a saved setting
   applySavedSetting(index: number) {
+    if (!this.platformService.isBrowser) return;
     const setting = this.savedSettingsList[index];
     this.brandName = setting.brandName;
     this.logoPreview = setting.logo;
@@ -151,6 +177,7 @@ export class SidenavComponent implements OnInit {
   }
 
   loadPersonalizationSettings() {
+    if (!this.platformService.isBrowser) return;
     const savedSettings = localStorage.getItem('uiPersonalizationSettings');
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
@@ -162,6 +189,7 @@ export class SidenavComponent implements OnInit {
   }
 
   applyDynamicTheme() {
+    if (!this.platformService.isBrowser) return;
     // This is the method responsible for changing the UI colors
     let styleElement = document.getElementById('dynamic-theme-styles') as HTMLStyleElement;
     if (!styleElement) {
