@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 PROJECT_ID = os.getenv("PROJECT_ID")
 USERS_COLLECTION = "users"
 APP_SETTINGS_SUBCOLLECTION = "appSettings"
-ACTIVE_SETTING_SUBCOLLECTION = "activeSettings"
-ACTIVE_SETTING_DOC = "current"
+ACTIVE_SETTING_SUBCOLLECTION = "activeSetting"
+ACTIVE_SETTING_DOC = "default"
 
 def get_firestore_client():
     try:

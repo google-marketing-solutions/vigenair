@@ -1,61 +1,47 @@
-print("--- SCRIPT START ---")
 
-import functions_framework
-print("--- IMPORTED: functions_framework ---")
-
-from fastapi import FastAPI
-print("--- IMPORTED: FastAPI ---")
-
+import logging
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
-print("--- IMPORTED: CORSMiddleware ---")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("vigenair.main")
 
 try:
-    from .api import settings
-    print("--- IMPORTED: .api.settings ---")
-except ImportError as e:
-    print(f"--- FAILED to import .api.settings: {e} ---")
-    # We can raise the error again if we want the script to halt here on failure
+    from api import settings
+    logger.info("Successfully imported api.settings and router.")
+except Exception as e:
+    logger.error(f"Failed to import api.settings: {e}")
     raise
 
-print("--- CREATING: FastAPI app instance ---")
 app = FastAPI()
-print("--- SUCCESS: FastAPI app instance created ---")
 
-
-# CORS configuration
 origins = [
     "http://localhost:4200",
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
     "http://localhost:8000",
+    "https://vigenair-backend-647572723706.us-central1.run.app",
+    "https://us-central1-demos-dev-467317.cloudfunctions.net/vigenair-backend",
     "https://n-vddslye5gra3nedbsoh5w66r27dyohl33wucu4q-0lu-script.googleusercontent.com",
 ]
-
-print("--- CONFIGURING: CORSMiddleware ---")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "x-user-id"],
 )
-print("--- SUCCESS: CORSMiddleware configured ---")
 
+app.include_router(settings.router, prefix="/api")
 
-print("--- INCLUDING: Settings router ---")
-app.include_router(settings.router)
-print("--- SUCCESS: Settings router included ---")
-
+@app.get("/healthz")
+def health_check():
+    return {"status": "ok"}
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
-print("--- SUCCESS: Root endpoint defined ---")
+    return {"message": "ViGenAir backend is running"}
 
-
-@functions_framework.http
-def http_entry_point(request):
-    """HTTP Cloud Function that serves the FastAPI app."""
-    return app(request.scope, request.receive, request.send)
-print("--- SUCCESS: HTTP entry point defined ---")
-print("--- SCRIPT END ---")
+@app.options("/api/settings")
+def options_settings():
+    return Response(status_code=200)

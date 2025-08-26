@@ -27,7 +27,8 @@ export interface AppSettings {
 
 @Injectable({ providedIn: 'root' })
 export class AppSettingsService {
-  private apiBase = '/api/settings';
+  private apiBase = 'https://vigenair-backend-647572723706.us-central1.run.app/api/settings';
+  
   public settingsChanged$ = new Subject<AppSettings>();
 
   constructor(private http: HttpClient) {
