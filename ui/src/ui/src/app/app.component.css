@@ -1,3 +1,61 @@
+/* Force style for custom primary buttons using ::ng-deep */
+::ng-deep .custom-primary-btn.mat-raised-button.mat-primary {
+  background-color: var(--primary-color) !important;
+  color: var(--primary-contrast-color, #fff) !important;
+  border-color: var(--primary-color) !important;
+}
+::ng-deep .custom-primary-btn.mat-raised-button.mat-primary:hover {
+  background-color: var(--primary-hover-color) !important;
+}
+/* Hard override using ::ng-deep for Angular Material primary buttons */
+body[class^="primary-theme-"] ::ng-deep .mat-raised-button.mat-primary,
+body[class^="primary-theme-"] ::ng-deep .mat-flat-button.mat-primary,
+body[class^="primary-theme-"] ::ng-deep .mat-stroked-button.mat-primary,
+body[class^="primary-theme-"] ::ng-deep .mat-icon-button.mat-primary,
+body[class^="primary-theme-"] ::ng-deep button.mat-raised-button.mat-primary,
+body[class^="primary-theme-"] ::ng-deep button.mat-flat-button.mat-primary,
+body[class^="primary-theme-"] ::ng-deep button.mat-stroked-button.mat-primary,
+body[class^="primary-theme-"] ::ng-deep button.mat-icon-button.mat-primary {
+  background-color: var(--primary-color) !important;
+  color: var(--primary-contrast-color, #fff) !important;
+  border-color: var(--primary-color) !important;
+}
+
+body[class^="primary-theme-"] ::ng-deep .mat-raised-button.mat-primary:hover,
+body[class^="primary-theme-"] ::ng-deep .mat-flat-button.mat-primary:hover,
+body[class^="primary-theme-"] ::ng-deep .mat-stroked-button.mat-primary:hover,
+body[class^="primary-theme-"] ::ng-deep .mat-icon-button.mat-primary:hover {
+  background-color: var(--primary-hover-color) !important;
+}
+/* Override Angular Material primary button color using your theme variable */
+body[class^="primary-theme-"] .mat-raised-button.mat-primary,
+body[class^="primary-theme-"] .mat-flat-button.mat-primary,
+body[class^="primary-theme-"] .mat-stroked-button.mat-primary,
+body[class^="primary-theme-"] .mat-icon-button.mat-primary,
+body[class^="primary-theme-"] button.mat-raised-button.mat-primary,
+body[class^="primary-theme-"] button.mat-flat-button.mat-primary,
+body[class^="primary-theme-"] button.mat-stroked-button.mat-primary,
+body[class^="primary-theme-"] button.mat-icon-button.mat-primary {
+  background-color: var(--primary-color) !important;
+  color: var(--primary-contrast-color, #fff) !important;
+  border-color: var(--primary-color) !important;
+}
+
+body[class^="primary-theme-"] .mat-raised-button.mat-primary:hover,
+body[class^="primary-theme-"] .mat-flat-button.mat-primary:hover,
+body[class^="primary-theme-"] .mat-stroked-button.mat-primary:hover,
+body[class^="primary-theme-"] .mat-icon-button.mat-primary:hover {
+  background-color: var(--primary-hover-color) !important;
+}
+/* Global theme classes for dynamic button color */
+body[class^="primary-theme-"] button,
+body[class^="primary-theme-"] .mat-raised-button,
+body[class^="primary-theme-"] .mat-flat-button,
+body[class^="primary-theme-"] .mat-button,
+body[class^="primary-theme-"] .mat-icon-button {
+  background-color: var(--primary-color) !important;
+  color: var(--primary-contrast-color, #fff) !important;
+}
 /*
 Copyright 2024 Google LLC
 
@@ -13,6 +71,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+/* ...existing code... */
 
 .row {
   display: flex;
@@ -117,7 +177,6 @@ segments-list {
 .sticky {
   position: sticky;
   top: 0;
-  z-index: 1;
   display: flex;
   flex-direction: row;
 }
@@ -139,10 +198,6 @@ mat-divider {
 }
 
 ::ng-deep #mat-badge-content-0 {
-  position: sticky;
-  font-family: 'Roboto';
-  font-size: 11px;
-  font-weight: 500;
 }
 
 .header-text,
@@ -273,4 +328,17 @@ mat-divider {
   margin-top: 0px;
   margin-bottom: 16px;
   justify-content: start;
+}
+
+.logo-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  max-width: 100px;
+  pointer-events: none;
+}
+
+.logo-preview {
+  max-width: 100px;
+  margin-top: 8px;
 }

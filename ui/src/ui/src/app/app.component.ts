@@ -16,7 +16,8 @@
 
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, inject, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, ViewChild, OnInit } from '@angular/core';
+import { PlatformService } from './core/services/platform.service';
 import { FormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -57,6 +58,7 @@ import { CONFIG } from '../../../config';
 import { StringUtil } from '../../../string-util';
 import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
+import { AppSettingsService, AppSettings } from './services/app-settings.service';
 import {
   AbcdType,
   AvSegment,
@@ -74,6 +76,8 @@ import { FileChooserComponent } from './file-chooser/file-chooser.component';
 import { SmartFramingDialog } from './framing-dialog/framing-dialog.component';
 import { SegmentsListComponent } from './segments-list/segments-list.component';
 import { VideoComboComponent } from './video-combo/video-combo.component';
+import { SettingsDialogComponent } from './settings-dialog/settings-dialog.component';
+import { SavedSettingsDialogComponent } from './settings-dialog/saved-settings-dialog/saved-settings-dialog.component';
 
 type ProcessStatus = 'hourglass_top' | 'pending' | 'check_circle';
 
@@ -115,11 +119,32 @@ export type FramingDialogData = {
     MatDialogModule,
     MatProgressSpinnerModule,
     CdkDrag,
+    SettingsDialogComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  private styleTag!: HTMLStyleElement;
+  userEmail: string = '';
+
+  private loadUserEmail() {
+    if (this.platformService.isBrowser) {
+      if (location.hostname === 'localhost') {
+        this.userEmail = 'testuser@example.com';
+      } else {
+        const email = (window as any).Session?.getActiveUser()?.getEmail();
+        this.userEmail = email || 'testuser@example.com';
+      }
+    }
+  }
+
+  frameInterval?: number;
+  folderGcsPath: string = '';
+  logoUrl: string = '';
+  brandName: string = '';
+  primaryColor: string = '#3f51b5';
+
   loading = false;
   generatingVariants = false;
   rendering = false;
@@ -143,10 +168,39 @@ export class AppComponent {
   analysisStatus: ProcessStatus = 'hourglass_top';
   combinationStatus: ProcessStatus = 'hourglass_top';
   segmentsStatus: ProcessStatus = 'hourglass_top';
+  // ...existing code...
+
+
+  openSettingsDialog() {
+    const dialogRef = this.dialog.open(SavedSettingsDialogComponent, {
+      width: '700px',
+      maxHeight: '90vh',
+      panelClass: 'custom-dialog'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.applied) {
+        this.applySettings(result.settings);
+      }
+    });
+  }
+
+  // Additional properties to fix missing property errors
+  folder: string = '';
+  combosFolder: string = '';
+  encodedUserId?: string;
   canvas?: CanvasRenderingContext2D;
-  frameInterval?: number;
-  currentSegmentId?: number;
+    currentSegmentId?: string | number;
+  // ...existing code continues...
   prompt = '';
+  // For template usage: Math and JSON
+  math = Math;
+  json = JSON;
+
+  // Getter for template to ensure number type
+  get currentSegmentIdNumber(): number {
+    return typeof this.currentSegmentId === 'string' ? Number(this.currentSegmentId) || 0 : this.currentSegmentId || 0;
+  }
   selectedAbcdType: AbcdType = 'awareness';
   evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
   duration = 0;
@@ -156,14 +210,8 @@ export class AppComponent {
   fadeOut = false;
   demandGenAssets = true;
   analyseAudio = true;
-  previousRuns: string[] | undefined;
-  previousRenders: PreviousRender[] | undefined;
-  encodedUserId: string | undefined;
-  folder = '';
-  folderGcsPath = '';
-  combosFolder = '';
-  math = Math;
-  json = JSON;
+  previousRuns?: string[];
+  previousRenders?: PreviousRender[];
   stars: number[] = new Array(5).fill(0);
   renderQueue: RenderQueueVariant[] = [];
   renderQueueJsonArray: string[] = [];
@@ -181,9 +229,7 @@ export class AppComponent {
   videoWidth = CONFIG.defaultVideoWidth;
   videoHeight = CONFIG.defaultVideoHeight;
   maxSquareWidth = CONFIG.defaultVideoHeight;
-  maxVerticalWidth =
-    CONFIG.defaultVideoHeight *
-    (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth);
+  maxVerticalWidth = CONFIG.defaultVideoHeight * (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth);
   maxNonLandscapeHeight = CONFIG.defaultVideoHeight;
   maxRetries = CONFIG.maxRetries;
   showApprovalStatus = false;
@@ -194,10 +240,8 @@ export class AppComponent {
   segmentSplitting = false;
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
-  @ViewChild('previewVideoElem')
-  previewVideoElem!: ElementRef<HTMLVideoElement>;
-  @ViewChild('previewTrackElem')
-  previewTrackElem!: ElementRef<HTMLTrackElement>;
+  @ViewChild('previewVideoElem') previewVideoElem!: ElementRef<HTMLVideoElement>;
+  @ViewChild('previewTrackElem') previewTrackElem!: ElementRef<HTMLTrackElement>;
   @ViewChild('videoUploadPanel') videoUploadPanel!: MatExpansionPanel;
   @ViewChild('videoMagicPanel') videoMagicPanel!: MatExpansionPanel;
   @ViewChild('magicCanvas') magicCanvas!: ElementRef<HTMLCanvasElement>;
@@ -205,30 +249,32 @@ export class AppComponent {
   @ViewChild('segmentModeToggle') segmentModeToggle!: MatButtonToggleGroup;
   @ViewChild('videosFilterToggle') videosFilterToggle!: MatSlideToggle;
   @ViewChild('renderQueueSidenav') renderQueueSidenav!: MatSidenav;
-  @ViewChild('renderQueueButtonSpan')
-  renderQueueButtonSpan!: ElementRef<HTMLSpanElement>;
+  @ViewChild('renderQueueButtonSpan') renderQueueButtonSpan!: ElementRef<HTMLSpanElement>;
   @ViewChild('reorderSegmentsToggle') reorderSegmentsToggle?: MatSlideToggle;
   @ViewChild('previewToggleGroup') previewToggleGroup!: MatButtonToggleGroup;
-  @ViewChild('canvasDragElement')
-  canvasDragElement?: ElementRef<HTMLDivElement>;
+  @ViewChild('canvasDragElement') canvasDragElement?: ElementRef<HTMLDivElement>;
   @ViewChild('renderFormatsToggle') renderFormatsToggle!: MatButtonToggleGroup;
-  @ViewChild('evalPromptTextarea')
-  evalPromptTextarea?: ElementRef<HTMLTextAreaElement>;
-  @ViewChild('evalPromptPlaceholder')
-  evalPromptPlaceholder?: ElementRef<HTMLDivElement>;
+  @ViewChild('evalPromptTextarea') evalPromptTextarea?: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('evalPromptPlaceholder') evalPromptPlaceholder?: ElementRef<HTMLDivElement>;
   @ViewChild(FileChooserComponent) fileChooserComponent!: FileChooserComponent;
 
   constructor(
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private appSettingsService: AppSettingsService,
+    public platformService: PlatformService
   ) {
+    this.loadUserEmail();
+    if (this.platformService.isBrowser) {
+      this.styleTag = this.getOrCreateStyleElement('dynamic-theme-styles');
+    }
     this.getPreviousRuns();
     this.getWebAppUrl();
 
     // Allow locally served app to process query params.
     // Production env (Apps Script) is handled via ngAfterViewInit()
-    if (!environment.production) {
+    if (!environment.production && this.platformService.isBrowser) {
       inject(ActivatedRoute).queryParams.subscribe(params => {
         const inputCombosFolder = params['inputCombosFolder'];
         if (inputCombosFolder) {
@@ -238,12 +284,105 @@ export class AppComponent {
     }
   }
 
+  ngOnInit() {
+    // On app load, fetch latest settings from backend
+    this.appSettingsService.getSettings().subscribe(settings => {
+      this.applySettings(settings);
+    });
+    // Listen for changes (e.g., after save)
+    this.appSettingsService.settingsChanged$.subscribe(settings => {
+      this.applySettings(settings);
+    });
+
+    // Re-apply theme class from localStorage (if present)
+    if (this.platformService.isBrowser) {
+      const primary = localStorage.getItem('primary-color');
+      if (primary) {
+        document.body.classList.forEach(cls => {
+          if (cls.startsWith('primary-theme-')) document.body.classList.remove(cls);
+        });
+        document.body.classList.add(`primary-theme-${primary.replace('#', '')}`);
+      }
+    }
+  }
+
+  applySettings(settings: AppSettings) {
+    if (settings.primaryColor && this.platformService.isBrowser) {
+      const primary = settings.primaryColor;
+      const contrast = this.getContrastColor(primary);
+      const hover = this.getHoverColor(primary);
+
+      document.documentElement.style.setProperty('--primary-color', primary);
+      document.documentElement.style.setProperty('--primary-contrast-color', contrast);
+      document.documentElement.style.setProperty('--primary-hover-color', hover);
+
+      localStorage.setItem('primary-color', primary);
+      localStorage.setItem('primary-contrast-color', contrast);
+      localStorage.setItem('primary-hover-color', hover);
+
+      this.primaryColor = primary;
+
+      // Remove any previous theme class
+      document.body.classList.forEach(cls => {
+        if (cls.startsWith('primary-theme-')) document.body.classList.remove(cls);
+      });
+      // Add new theme class based on color hex (e.g., #3f51b5 => primary-theme-1976d2)
+      document.body.classList.add(`primary-theme-${primary.replace('#', '')}`);
+    }
+    this.logoUrl = settings.logoUrl || 'https://services.google.com/fh/files/misc/vigenair_logo.png';
+    this.brandName = settings.brandName || 'ViGenAiR';
+  }
+
+  // Helper to get a slightly darker hover color
+  private getHoverColor(hex: string): string {
+    let c = hex.startsWith('#') ? hex.substring(1) : hex;
+    let rgb = [
+      parseInt(c.substring(0,2),16),
+      parseInt(c.substring(2,4),16),
+      parseInt(c.substring(4,6),16)
+    ].map(v => Math.max(0, Math.floor(v * 0.9)));
+    return `#${rgb.map(v => v.toString(16).padStart(2,'0')).join('')}`;
+  }
+
+  private getOrCreateStyleElement(id: string): HTMLStyleElement {
+    if (!this.platformService.isBrowser) {
+      throw new Error('getOrCreateStyleElement should only be called in the browser');
+    }
+    let styleTag = document.getElementById(id) as HTMLStyleElement;
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = id;
+      document.head.appendChild(styleTag);
+    }
+    return styleTag;
+  }
+
+  getContrastColor(hex: string): string {
+    if (hex.indexOf('#') === 0) {
+      hex = hex.slice(1);
+    }
+    if (hex.length === 3) {
+      hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    if (hex.length !== 6) {
+      return '#ffffff'; // Default to white for invalid hex
+    }
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    // Standard luminance formula
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#000000' : '#ffffff';
+  }
+
   ngAfterViewInit() {
-    const inputCombosFolder = document.querySelector(
-      '#input-combos-folder'
-    ) as HTMLInputElement;
-    if (inputCombosFolder && inputCombosFolder.value) {
-      this.handleInputCombosFolder(inputCombosFolder.value);
+    if (this.platformService.isBrowser) {
+      const inputCombosFolder = document.querySelector(
+        '#input-combos-folder'
+      ) as HTMLInputElement;
+      if (inputCombosFolder && inputCombosFolder.value) {
+        this.handleInputCombosFolder(inputCombosFolder.value);
+      }
     }
   }
 

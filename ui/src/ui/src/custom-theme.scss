@@ -18,6 +18,8 @@ limitations under the License.
 // Custom Theming for Angular Material
 // For more information: https://material.angular.io/guide/theming
 @use '@angular/material' as mat;
+@use 'sass:map';
+
 // Plus imports for other components in your app.
 
 // Include the common styles for Angular Material. We include this here so that you only
@@ -28,7 +30,20 @@ limitations under the License.
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
-$ui-primary: mat.define-palette(mat.$indigo-palette);
+
+:root {
+  --primary-color: #3f51b5;
+  --primary-contrast-color: #fff;
+}
+
+$dynamic-primary-palette: map.merge(mat.$indigo-palette, (
+  500: var(--primary-color),
+  contrast: map.merge(map.get(mat.$indigo-palette, contrast), (
+    500: var(--primary-contrast-color)
+  ))
+));
+
+$ui-primary: mat.define-palette($dynamic-primary-palette);
 $ui-accent: mat.define-palette(mat.$pink-palette, A200, A100, A400);
 
 // The warn palette is optional (defaults to red).
@@ -48,4 +63,3 @@ $ui-theme: mat.define-light-theme((
 // Alternatively, you can import and @include the theme mixins for each component
 // that you are using.
 @include mat.all-component-themes($ui-theme);
-

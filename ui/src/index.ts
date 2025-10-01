@@ -46,6 +46,17 @@ function getEncodedUserId() {
 
   return StringUtil.gcsSanitise(encodedUserId);
 }
+// Expose getUserEmail globally for Angular services
+function getUserEmail() {
+  const email = Session.getActiveUser().getEmail();
+  return email ? email : 'Unknown User';
+}
+
+// Expose getUserEmail and getEncodedUserId globally for Angular services, only if window is defined
+if (typeof window !== 'undefined') {
+  (window as any).getUserEmail = getUserEmail;
+  (window as any).getEncodedUserId = getEncodedUserId;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getRunsFromGcs() {

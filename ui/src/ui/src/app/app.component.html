@@ -18,10 +18,11 @@ limitations under the License.
   <span style="margin-right: auto">
     <span style="font-size: 1.5em; display: flex; align-items: center">
       <img
-        src="https://services.google.com/fh/files/misc/vigenair_logo.png"
+        [src]="logoUrl"
         width="40px"
+        alt="Brand Logo"
       />
-      <span style="margin-left: 12px">ViGenAiR</span>
+      <span style="margin-left: 12px">{{ brandName }}</span>
     </span></span
   >
   <span class="header-text">
@@ -32,6 +33,19 @@ limitations under the License.
     ></span
   >
   <span style="margin-left: auto"></span>
+  <span *ngIf="userEmail" style="font-size: 0.95em; color: #f8f7f7; margin-left: 4px;">
+      {{ userEmail }}
+    </span>
+  <span #settingsButtonSpan style="display: flex; align-items: center; gap: 8px;">
+    <button
+      mat-icon-button
+      matTooltip="App Settings"
+      (click)="openSettingsDialog()"
+    >
+      <mat-icon>settings</mat-icon>
+    </button>
+    
+  </span>
   <span #renderQueueButtonSpan>
     <button
       mat-icon-button
@@ -55,6 +69,7 @@ limitations under the License.
   <mat-progress-bar mode="indeterminate"></mat-progress-bar>
 </div>
 <mat-sidenav-container style="height: calc(100% - 68px)">
+  <!-- Settings sidenav removed; now using dialog -->
   <mat-sidenav-content>
     <mat-expansion-panel #videoUploadPanel expanded>
       <mat-expansion-panel-header>
@@ -304,7 +319,7 @@ limitations under the License.
           [segmentMode]="segmentModeToggle.value"
           [allowSelection]="variants !== undefined"
           [draggable]="reorderSegmentsToggle?.checked ?? false"
-          [currentSegmentId]="currentSegmentId || 0"
+          [currentSegmentId]="currentSegmentIdNumber"
           [segmentMarkers]="segmentMarkers"
           (seekToSegmentEvent)="seekToSegment($event)"
           (segmentSplitEvent)="splitSegment($event)"
@@ -435,6 +450,7 @@ limitations under the License.
             type="button"
             mat-raised-button
             color="primary"
+            class="custom-primary-btn"
             (click)="generateVariants()"
             [disabled]="loading"
           >
