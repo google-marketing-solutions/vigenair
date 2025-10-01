@@ -76,9 +76,7 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 ## Overview
 
-**ViGenAiR** *(pronounced vision-air)* harnesses the power of multimodal Generative AI models on Google Cloud Platform (GCP) to automatically transform long-form Video Ads into shorter variants, in multiple ad formats, targeting different audiences. It is your AI-powered creative partner, generating video, image and text assets to power [Demand Gen](https://support.google.com/google-ads/answer/13695777?hl=en) and [YouTube video campaigns](https://support.google.com/youtube/answer/2375497?hl=en). ViGenAiR is an acronym for **Vi**deo **Gen**eration via **A**ds **R**ecrafting, and is more colloquially referred to as *Vigenair*. Check out the tool's sizzle reel on YouTube by clicking on the image below:
-
-<center><a href="https://www.youtube.com/watch?v=jUp7O8T2opA" target="_blank"><img src="https://img.youtube.com/vi/jUp7O8T2opA/0.jpg" alt="ViGenAiR Sizzle" /></a></center>
+**ViGenAiR** *(pronounced vision-air)* harnesses the power of multimodal Generative AI models on Google Cloud Platform (GCP) to automatically transform long-form Video Ads into shorter variants, in multiple ad formats, targeting different audiences. It is your AI-powered creative partner, generating video, image and text assets to power [Demand Gen](https://support.google.com/google-ads/answer/13695777?hl=en) and [YouTube video campaigns](https://support.google.com/youtube/answer/2375497?hl=en). ViGenAiR is an acronym for **Vi**deo **Gen**eration via **A**ds **R**ecrafting, and is more colloquially referred to as *Vigenair*.
 
 > Note: **Looking to take action on your Demand Gen insights and recommendations?** Try [Demand Gen Pulse](https://github.com/google-marketing-solutions/dgpulse), a Looker Studio Dashboard that gives you a single source of truth for your Demand Gen campaigns across accounts. It surfaces creative best practices and flags when they are not adopted, and provides additional insights including audience performance and conversion health.
 
