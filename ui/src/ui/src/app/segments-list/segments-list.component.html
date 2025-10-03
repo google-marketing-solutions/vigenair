@@ -19,6 +19,13 @@ limitations under the License.
   [ngClass]="segmentMode === 'preview' ? 'filmstrip' : 'content'"
   cdkScrollable
 >
+  <button
+    type="button"
+    (click)="combineSegments()"
+    [disabled]="selectedForCombine.size === 0"
+  >
+    Combine selected ({{ selectedForCombine.size }})
+  </button>
   <div
     cdkDropList
     cdkDropListAutoScrollStep="50"
@@ -30,6 +37,7 @@ limitations under the License.
     "
     (cdkDropListDropped)="drop($event)"
   >
+
     @for (segment of segmentList; track segment; let i = $index) {
       <div style="position: relative">
         <div
@@ -46,6 +54,9 @@ limitations under the License.
           "
           [style.margin-bottom]="segmentMode !== 'preview' ? '16px' : ''"
         >
+          <button type="button" (click)="toggleCombineSelection(segment.av_segment_id)">
+            {{ selectedForCombine.has(segment.av_segment_id) ? '☑' : '☐' }}
+          </button>
           <div
             [ngClass]="segmentMode === 'preview' ? 'drag-element' : ''"
             style="display: flex"

@@ -1364,4 +1364,15 @@ export class AppComponent {
       error: err => this.failHandler(err),
     });
   }
+
+  onCombineSegments(segmentIds: string[]) {
+    this.loading = true;
+    this.apiCallsService.combineSegments(this.folder!, segmentIds).subscribe({
+      next: result => {
+        console.log(result);
+        this.getAvSegments();
+      },
+      error: () => { this.loading = false; }
+    });
+  }
 }

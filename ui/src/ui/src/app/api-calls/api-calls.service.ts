@@ -424,4 +424,23 @@ export class ApiCallsService implements ApiCalls {
         .splitSegment(gcsFolder, segmentMarkers);
     });
   }
+
+  combineSegments(gcsFolder: string, segmentIds: string[]): Observable<string> {
+    return new Observable<string>((subscriber) => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      google.script.run
+      .withSuccessHandler((response: string) => {
+        this.ngZone.run(() => {
+          subscriber.next(response);
+          subscriber.complete();
+        });
+      })
+      .withFailureHandler((error: Error) => {
+        console.error('Encountered an unexpected error while combining segments! Error: ', error);
+        subscriber.error(error);
+      })
+      .combineSegments(gcsFolder, segmentIds);
+      });
+    }
 }

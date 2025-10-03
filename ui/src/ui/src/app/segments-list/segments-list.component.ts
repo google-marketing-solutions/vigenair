@@ -71,6 +71,7 @@ export class SegmentsListComponent {
 
   @Output() seekToSegmentEvent = new EventEmitter<string>();
   @Output() segmentSplitEvent = new EventEmitter<SegmentMarker[]>();
+  @Output() segmentCombineEvent = new EventEmitter<string[]>();
 
   @ViewChildren('segmentVideoElem')
   segmentVideoElems?: QueryList<ElementRef<HTMLVideoElement>>;
@@ -78,7 +79,10 @@ export class SegmentsListComponent {
   segmentCanvasElems?: QueryList<ElementRef<HTMLCanvasElement>>;
 
   segmentMarkerPositions: Record<string, number[]> = {};
+  selectedForCombine: Set<string> = new Set();
+
   splitting = false;
+  combining = false;
 
   CONFIG = CONFIG;
 
@@ -229,5 +233,28 @@ export class SegmentsListComponent {
       (segment: AvSegment) => segment.av_segment_id === segmentId
     ).splitting = true;
     this.clearSegmentMarkers(segmentId);
+  }
+
+  toggleCombineSelection(av_segment_id: string) {
+    console.log('here')
+    if (this.selectedForCombine.has(av_segment_id)) {
+      this.selectedForCombine.delete(av_segment_id);
+    } else {
+      this.selectedForCombine.add(av_segment_id);
+    }
+
+    console.log(this.selectedForCombine);
+  }
+
+  combineSegments() {
+    if (this.selectedForCombine.size < 2) {
+      return;
+    }
+    const ordered = this.segmentList!
+      .map((s: AvSegment) => s.av_segment_id)
+      .filter(id => this.selectedForCombine.has(id));
+    this.segmentCombineEvent.emit(ordered);
+    // this.combining = true;
+    this.selectedForCombine.clear();
   }
 }

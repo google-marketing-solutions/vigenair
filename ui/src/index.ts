@@ -249,6 +249,41 @@ function splitSegment(
   return String(segmentMarkers[0].av_segment_id);
 }
 
+function combineSegments(
+  gcsFolder: string,
+  segmentIds: string[],
+): string {
+  
+  // Preserve current state (snapshot current data.json)
+  StorageManager.renameFile(
+    `${gcsFolder}/${CONFIG.cloudStorage.files.data}`,
+    `${gcsFolder}/${CONFIG.cloudStorage.files.presplit}`,
+  );
+
+  // Prepare intent payload
+  const payload = {
+    segment_ids: segmentIds,
+  };
+
+  const encodedJson = Utilities.base64Encode(
+    JSON.stringify(payload),
+    Utilities.Charset.UTF_8,
+  );
+
+  // Write timestamped combine marker (e.g., 1696320000000_combine.json)
+  const combineFileName =
+    `${Date.now()}${CONFIG.cloudStorage.files.combine}`;
+  StorageManager.uploadFile(
+    encodedJson,
+    gcsFolder,
+    combineFileName,
+    'application/json',
+  );
+
+  // Return a simple hint for UI/logs
+  return `${segmentIds[0]}..${segmentIds[segmentIds.length - 1]}`;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function doGet(e: GoogleAppsScript.Events.DoGet) {
   const output = HtmlService.createTemplateFromFile('ui')

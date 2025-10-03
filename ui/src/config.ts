@@ -16,7 +16,7 @@
 
 export const CONFIG = {
   cloudStorage: {
-    bucket: '<gcs-bucket>',
+    bucket: 'billingindiaclients-vigenair',
     endpointBase: 'https://storage.googleapis.com/storage/v1',
     uploadEndpointBase: 'https://storage.googleapis.com/upload/storage/v1',
     authenticatedEndpointBase: 'https://storage.mtls.cloud.google.com',
@@ -27,6 +27,7 @@ export const CONFIG = {
       data: 'data.json',
       presplit: 'presplit_data.json',
       split: '_split.json',
+      combine: "_combine.json",
       combos: 'combos.json',
       render: 'render.json',
       approval: 'approval.json',
@@ -38,8 +39,8 @@ export const CONFIG = {
   },
   vertexAi: {
     endpoint: 'aiplatform.googleapis.com',
-    projectId: '<gcp-project-id>',
-    location: '<vertexai-region>',
+    projectId: 'billingindiaclients',
+    location: 'asia-south1',
     quotaLimitDelay: 10 * 1000, // 10s,
     model: 'gemini-2.5-flash',
     modelParams: {
