@@ -198,6 +198,13 @@ class TriggerFile:
         ConfigService.INPUT_EXTRACTION_SPLIT_SEGMENT_SUFFIX
     )
 
+  def is_extractor_combine_segment_trigger(self) -> bool:
+      """Check if this is a combine segment trigger (e.g., 1_combine.json)."""
+      return (
+              ConfigService.INPUT_EXTRACTION_COMBINE_SUFFIX in self.file_name_ext
+              and self.file_ext == 'json'
+      )
+
   def is_combiner_initial_trigger(self) -> bool:
     return self.file_name_ext == ConfigService.INPUT_RENDERING_FILE
 

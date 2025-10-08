@@ -87,6 +87,7 @@ INPUT_RENDERING_FINALISE_FILE = 'finalise.txt'
 INPUT_EXTRACTION_FINALISE_FILE = 'extract_finalise.txt'
 INPUT_EXTRACTION_FINALISE_SUFFIX = '_finalise.txt'
 INPUT_EXTRACTION_SPLIT_SEGMENT_SUFFIX = '_split.json'
+INPUT_EXTRACTION_COMBINE_SUFFIX = '_combine'  # For detecting combine.json files
 INPUT_EXTRACTION_FINALISE_COUNT = 2
 INPUT_EXTRACTION_FINALISE_AUDIO_FILE = (
     f'audio{INPUT_EXTRACTION_FINALISE_SUFFIX}'
@@ -112,7 +113,7 @@ OUTPUT_COMBINATIONS_FILE = 'combos.json'
 OUTPUT_AV_SEGMENTS_DIR = 'av_segments_cuts'
 OUTPUT_ANALYSIS_CHUNKS_DIR = 'analysis_chunks'
 OUTPUT_COMBINATION_ASSETS_DIR = 'assets'
-
+OUTPUT_COMBINED_VIDEOS_DIR = 'combined_videos'  # Folder for combined videos
 GCS_BASE_URL = 'https://storage.mtls.cloud.google.com'
 
 SEGMENT_SCREENSHOT_EXT = '.jpg'

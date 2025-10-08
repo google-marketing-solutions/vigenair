@@ -29,7 +29,8 @@ import shutil
 import tempfile
 from typing import Sequence, Tuple
 from urllib import parse
-
+import time
+import uuid
 import audio as AudioService
 import config as ConfigService
 import extractor.audio_extractor as AudioExtractor
@@ -489,6 +490,176 @@ class Extractor:
     )
     return optimised_av_segments
 
+  def combine_av_segments(self):
+      """
+      Combine video segments based on combine.json instructions.
+
+      Expected combine.json format:
+      {
+          "segment_ids": ["2", "3", "4"]  // Required: segments to combine (minimum 2)
+      }
+
+      Combine file naming convention: {timestamp}_combine.json
+      Example: 1728287654321_combine.json
+
+      Process:
+      - Downloads specified segments from av_segments_cuts/
+      - Concatenates them in the order specified
+      - Saves to combined_videos/ with unique filename: {timestamp}_{uuid}.mp4
+      - Original segments remain UNCHANGED
+      """
+      logging.info(
+          'COMBINING - Starting combine operation: %s',
+          self.media_file.full_gcs_path
+      )
+
+      tmp_dir = tempfile.mkdtemp()
+
+      try:
+          # ========================================
+          # STEP 1: Download and parse combine.json
+          # ========================================
+          combine_file_contents = StorageService.download_gcs_file(
+              file_path=self.media_file,
+              bucket_name=self.gcs_bucket_name,
+              fetch_contents=True,
+          )
+
+          # Check if file was downloaded successfully
+          if combine_file_contents is None:
+              raise FileNotFoundError(
+                  f'Combine file not found: {self.media_file.full_gcs_path}'
+              )
+
+          combine_instructions = json.loads(combine_file_contents.decode('utf-8'))
+
+          # Validate segment_ids exists
+          if 'segment_ids' not in combine_instructions:
+              raise ValueError(
+                  'Missing required field: segment_ids in combine.json'
+              )
+
+          segments_to_combine = combine_instructions['segment_ids']
+
+          # Validate segment_ids is a list
+          if not isinstance(segments_to_combine, list):
+              raise ValueError(
+                  f'segment_ids must be a list, got: {type(segments_to_combine)}'
+              )
+
+          # Validate at least 2 segments
+          if len(segments_to_combine) < 2:
+              raise ValueError(
+                  f'Need at least 2 segments to combine, got: {len(segments_to_combine)}'
+              )
+
+          logging.info(
+              'COMBINING - Will combine %d segments in order: %s',
+              len(segments_to_combine),
+              segments_to_combine
+          )
+
+          # ========================================
+          # STEP 2: Download segment video files IN ORDER
+          # ========================================
+          segment_video_files = []
+          for seg_id in segments_to_combine:
+              seg_path = str(pathlib.Path(
+                  self.media_file.gcs_root_folder,
+                  ConfigService.OUTPUT_AV_SEGMENTS_DIR,
+                  f'{seg_id}.mp4'
+              ))
+
+              try:
+                  file_path = StorageService.download_gcs_file(
+                      file_path=Utils.TriggerFile(seg_path),
+                      output_dir=tmp_dir,
+                      bucket_name=self.gcs_bucket_name,
+                  )
+                  segment_video_files.append(file_path)
+                  logging.info('COMBINING - Downloaded segment %s', seg_id)
+
+              except Exception as e:
+                  raise ValueError(
+                      f'Failed to download segment {seg_id}: {e}'
+                  )
+
+          # ========================================
+          # STEP 3: Create FFmpeg concat file
+          # ========================================
+          concat_file_path = os.path.join(tmp_dir, 'concat.txt')
+          with open(concat_file_path, 'w', encoding='utf-8') as f:
+              for file_path in segment_video_files:
+                  f.write(f"file '{file_path}'\n")
+
+          logging.info(
+              'COMBINING - Created concat file with %d segments',
+              len(segment_video_files)
+          )
+
+          # ========================================
+          # STEP 4: Generate unique output filename
+          # ========================================
+          timestamp = int(time.time() * 1000)  # milliseconds
+          unique_id = str(uuid.uuid4())[:8]  # first 8 chars of UUID
+          combined_filename = f"{timestamp}_{unique_id}.mp4"
+          combined_video_path = os.path.join(tmp_dir, combined_filename)
+
+          logging.info('COMBINING - Output filename: %s', combined_filename)
+
+          # ========================================
+          # STEP 5: Concatenate videos with FFmpeg
+          # ========================================
+          Utils.execute_subprocess_commands(
+              cmds=[
+                  'ffmpeg',
+                  '-f', 'concat',
+                  '-safe', '0',
+                  '-i', concat_file_path,
+                  '-c', 'copy',
+                  combined_video_path,
+              ],
+              description=f'Concatenate segments {segments_to_combine}',
+          )
+
+          logging.info('COMBINING - Created combined video')
+
+          # ========================================
+          # STEP 6: Upload to combined_videos/ folder
+          # ========================================
+          gcs_destination = str(pathlib.Path(
+              self.media_file.gcs_root_folder,
+              ConfigService.OUTPUT_COMBINED_VIDEOS_DIR,
+              combined_filename
+          ))
+
+          StorageService.upload_gcs_file(
+              file_path=combined_video_path,
+              bucket_name=self.gcs_bucket_name,
+              destination_file_name=gcs_destination,
+          )
+
+          logging.info(
+              'COMBINING - Uploaded combined video to: gs://%s/%s',
+              self.gcs_bucket_name,
+              gcs_destination
+          )
+
+          logging.info('COMBINING - Combine operation completed successfully!')
+
+      except ValueError as e:
+          logging.error('COMBINING - Validation error: %s', e)
+          raise
+
+      except Exception as e:
+          logging.error('COMBINING - Error during combine operation: %s', e)
+          raise
+
+      finally:
+          # Cleanup temp directory
+          if os.path.exists(tmp_dir):
+              shutil.rmtree(tmp_dir, ignore_errors=True)
+
   def enhance_av_segments(
       self,
       video_file_path: str,
@@ -644,6 +815,8 @@ class Extractor:
         bucket_name=self.gcs_bucket_name,
     )
     logging.info('SPLITTING - Split operation completed successfully!')
+
+
 
 
 def _finalise_split(
@@ -1093,3 +1266,5 @@ def _get_entities(
   )
 
   return list(set(entities))
+
+

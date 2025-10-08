@@ -30,6 +30,7 @@ import functions_framework
 from google.api_core.client_info import ClientInfo
 from google.cloud import logging as cloudlogging
 import utils as Utils
+import os
 
 
 @functions_framework.cloud_event
@@ -39,11 +40,22 @@ def gcs_file_uploaded(cloud_event: Dict[str, Any]):
   Args:
     cloud_event: The Eventarc trigger event.
   """
-  lg_client = cloudlogging.Client(
-      client_info=ClientInfo(user_agent=ConfigService.USER_AGENT_ID)
-  )
-  lg_client.setup_logging()
-
+  if os.environ.get('K_SERVICE'):  # This env var exists in Cloud Run
+    # Production: Use Cloud Logging
+    try:
+      lg_client = cloudlogging.Client(
+        client_info=ClientInfo(user_agent=ConfigService.USER_AGENT_ID)
+      )
+      lg_client.setup_logging()
+    except Exception:
+      pass
+  else:
+    # Local dev: Use standard logging
+    logging.basicConfig(
+      level=logging.INFO,
+      format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    logging.info('Local development mode - Cloud Logging disabled')
   data = cloud_event.data
   bucket = data['bucket']
   filepath = data['name']
@@ -91,6 +103,13 @@ def gcs_file_uploaded(cloud_event: Dict[str, Any]):
         gcs_bucket_name=bucket, media_file=trigger_file
     )
     extractor_instance.split_av_segment()
+  elif trigger_file.is_extractor_combine_segment_trigger():
+    logging.info('TRIGGER - Extractor combine segment trigger')
+    extractor_instance = ExtractorService.Extractor(
+      gcs_bucket_name=bucket, media_file=trigger_file
+    )
+    extractor_instance.combine_av_segments()
+
   elif trigger_file.is_combiner_initial_trigger():
     logging.info('TRIGGER - Combiner initial trigger')
     combiner_instance = CombinerService.Combiner(
