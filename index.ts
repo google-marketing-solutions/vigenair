@@ -116,7 +116,6 @@ const config = UserConfigManager.getUserConfig();
   }
 
   if (response.deployUi) {
-    await UiDeploymentHandler.createScriptProject();
     UiDeploymentHandler.deployUi(response.vertexAiRegion);
   }
 })();

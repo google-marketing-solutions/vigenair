@@ -20,6 +20,6 @@ data "google_project" "project_info" {}
 
 resource "google_project_iam_member" "vigenair_user" {
   project = var.project_id
-  role    = "roles/aiplatform.use"
+  role    = "roles/aiplatform.user"
   member  = var.vigenair_user_principal
 }

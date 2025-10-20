@@ -24,22 +24,11 @@ async function copyUiToBackend() {
   try {
     console.log(`Preparing UI for Cloud Run deployment...`);
 
-    // 1. Ensure the Angular build output directory exists
-    if (!(await fs.pathExists(uiDist))) {
-      console.error(
-        `Angular build output directory not found: ${uiDist}`
-      );
-      console.error(
-        'Please ensure you have run "npm run build-ui" first.'
-      );
-      process.exit(1);
-    }
-
-    // 2. Clean up the target directory in ui-backend
+    // 1. Clean up the target directory in ui-backend
     console.log(`Cleaning up target directory: ${cloudRunTargetDir}`);
     await fs.emptyDir(cloudRunTargetDir); // Ensures directory exists and is empty
 
-    // 3. Copy files from Angular build output to ui-backend/public, excluding 'assets'
+    // 2. Copy files from Angular build output to ui-backend/public, excluding 'assets'
     console.log(
       `Copying files from ${uiDist} to ${cloudRunTargetDir}...`
     );

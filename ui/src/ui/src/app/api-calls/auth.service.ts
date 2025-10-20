@@ -30,7 +30,6 @@ export class AuthService {
   private tokenRequestSubject: ReplaySubject<string> | null = null;
 
   constructor(private ngZone: NgZone) {
-
     this.initializeGsiClient();
   }
 

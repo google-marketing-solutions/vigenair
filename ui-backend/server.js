@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const {IapValidator, ServiceMetadataConfig} = require('./iapValidator');
+const {IapValidator, ServiceMetadataConfig} = require('./iap-validator');
 
 const app = express();
 const port = 8080;
