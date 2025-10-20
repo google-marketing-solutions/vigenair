@@ -32,6 +32,7 @@ interface Config {
   gcsLocation?: string;
   vertexAiRegion?: string;
   googleOauthClientId?: string;
+  userPrincipal?: string;
 }
 
 interface ConfigReplace {
@@ -46,9 +47,9 @@ export interface PromptsResponse {
   deployUi: boolean;
   gcpRegion?: string;
   gcsLocation?: string;
-  webappDomainAccess?: boolean;
   vertexAiRegion?: string;
   googleOauthClientId?: string;
+  userPrincipal?: string;
 }
 
 export class GcpDeploymentHandler {
@@ -102,6 +103,7 @@ export class UiDeploymentHandler {
     console.log("Deploying the UI Web App...");
     spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
     const projectId = UserConfigManager.getUserConfig().gcpProjectId;
+    const userPrincipal = UserConfigManager.getUserConfig().userPrincipal;
     const uiDeploymentRegion = uiRegion || DEFAULT_GCP_REGION;
     const envVarsList: string[] = [];
     if(options?.iapServiceId) {
@@ -135,6 +137,14 @@ export class UiDeploymentHandler {
       --project=${projectId} \
       --region=${uiDeploymentRegion} \
       --iap`, { stdio: "inherit", shell: true });
+
+    spawn.sync(`gcloud beta iap web add-iam-policy-binding \
+      --service=${CLOUD_RUN_UI_SERVICE_NAME} \
+      --resource-type=cloud-run \
+      --project=${projectId} \
+      --region=${uiDeploymentRegion} \
+      --member=${userPrincipal} \
+      --role='roles/iap.httpsResourceAccessor'`, { stdio: "inherit", shell: true });
   }
 }
 
@@ -189,6 +199,7 @@ export class UserConfigManager {
       .replace(":", "-")}${GCS_BUCKET_NAME_SUFFIX}`;
     const vertexAiRegion = response.vertexAiRegion || DEFAULT_GCP_REGION;
     const googleOauthClientId = response.googleOauthClientId || '';
+    const userPrincipal = response.userPrincipal || '';
 
     configReplace({
       regex: "<gcp-project-id>",
@@ -218,19 +229,18 @@ export class UserConfigManager {
         replacement: gcsLocation,
         paths: ["./service/deploy.sh", "./terraform/terraform.tfvars"],
       });
+
+      configReplace({
+        regex: "<vigenair-user-principal>",
+        replacement: userPrincipal,
+        paths: ["./service/deploy.sh", "./terraform/terraform.tfvars"],
+      });
     }
     configReplace({
       regex: "<gcs-bucket>",
       replacement: gcsBucket,
       paths: ["./service/deploy.sh", "./ui/src/config.ts"],
     });
-    if (response.webappDomainAccess) {
-      configReplace({
-        regex: "MYSELF",
-        replacement: "DOMAIN",
-        paths: ["./ui/appsscript.json"],
-      });
-    }
     if (response.deployUi) {
       configReplace({
         regex: "<vertexai-region>",

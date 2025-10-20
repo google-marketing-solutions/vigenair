@@ -72,20 +72,20 @@ const config = UserConfigManager.getUserConfig();
       intitial: config.gcsLocation ?? DEFAULT_GCS_LOCATION,
     },
     {
+      type: "text",
+      name: "userPrincipal",
+      message: `Enter the user principal for access and use the ViGenAiR app, the principal should start with 'user:', 'group:' or 'domain:' followed by the principal ID - [${
+        config.userPrincipal
+          ? `Current: ${config.userPrincipal}`
+          : ''
+      }]:`,
+      initial: config.userPrincipal ?? "",
+    },
+    {
       type: "toggle",
       name: "deployUi",
       message: "Would you like to deploy the UI?",
       initial: true,
-      active: "Yes",
-      inactive: "No",
-    },
-    {
-      type: (prev: boolean, values: PromptsResponse, prompt: unknown) =>
-        values.deployUi ? "toggle" : null,
-      name: "webappDomainAccess",
-      message:
-        "Are you a Google Workspace user and would like to deploy the application for all users in your domain?",
-      initial: false,
       active: "Yes",
       inactive: "No",
     },
