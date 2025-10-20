@@ -41,11 +41,14 @@ export const CONFIG = {
     projectId: '<gcp-project-id>',
     location: '<vertexai-region>',
     quotaLimitDelay: 10 * 1000, // 10s,
-    model: 'gemini-2.0-flash',
+    model: 'gemini-2.5-flash',
     modelParams: {
       temperature: 1,
       topP: 1,
       maxOutputTokens: 2048,
+      thinkingConfig: {
+        thinkingBudget: 0,
+      },
     },
     generationPrompt: `**Objective:** Generate shorter, highly engaging video ad scripts by strategically combining scenes from a provided script, focusing on maximizing impact and adhering to specific criteria.
 
@@ -78,8 +81,9 @@ export const CONFIG = {
     {{{{generationEvalPromptPart}}}}
 
     **Constraints (Strictly Enforce):**
-        *   Each combination must include *more than one scene* but *never all scenes* from the original script.
+        *   Each combination must include *more than one scene* but *never all scenes* from the original script {{videoScript}}.
         *   Each combination *must* fall within the specified duration range: {{expectedDurationRange}}.
+        *   Every scene number used in a generated combination must exist in the original script {{videoScript}}. Generating a combination that includes a non-existent scene number (e.g., suggesting "5" when the script only has scenes 1-3) is a critical failure and will render the entire output useless.
 
     **Output Format (Strictly Enforce):**
 
@@ -92,7 +96,7 @@ export const CONFIG = {
     ABCD: [Detailed evaluation per criterion and reasoning for your score, including specific examples from the combination that support your evaluation]
 
     Separate each combination with the delimiter: "## Combination".
-    Any deviation from this format will be considered a failure.
+    Any deviation from this format will be considered a critical failure.
 
 
     **Input:**

@@ -28,6 +28,7 @@ import {
 import { PreviewHelper, VideoIntelligence } from './preview';
 import { ScriptUtil } from './script-util';
 import { StorageManager } from './storage';
+import { StringUtil } from './string-util';
 import {
   GeneratePreviewsResponse,
   GenerationSettings,
@@ -43,7 +44,7 @@ function getEncodedUserId() {
     ? Utilities.base64Encode(Session.getActiveUser().getEmail())
     : Session.getTemporaryActiveUserKey();
 
-  return encodedUserId;
+  return StringUtil.gcsSanitise(encodedUserId);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

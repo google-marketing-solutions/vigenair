@@ -262,6 +262,7 @@ export class UserConfigManager {
         gcsLocation,
         vertexAiRegion,
         googleOauthClientId,
+        userPrincipal,
       })
     );
     console.log();

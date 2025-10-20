@@ -23,6 +23,7 @@ import { GenerationHelper } from './generation';
 import { AuthService } from './auth.service';
 import { StorageManager } from './storage';
 
+import { StringUtil } from '../../../../string-util';
 import {
   ApiCalls,
   GeneratePreviewsResponse,
@@ -72,7 +73,7 @@ export class ApiCallsService implements ApiCalls {
     const videoFolderTranscriptionSuffix =
       CONFIG.defaultTranscriptionService.charAt(0);
     // eslint-disable-next-line no-useless-escape
-    const sanitisedFileName = file.name.replace(/[#\[\]*?:"<>|]/g, ''); // See https://cloud.google.com/storage/docs/objects#naming
+    const sanitisedFileName = StringUtil.gcsSanitise(file.name);
     const folder = `${sanitisedFileName}${CONFIG.videoFolderNameSeparator}${analyseAudio ? videoFolderTranscriptionSuffix : CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
 
     return this.storageManager.uploadBlob(file, folder, filename, contentType).pipe(

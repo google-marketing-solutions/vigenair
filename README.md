@@ -32,9 +32,11 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [July 2025]
+  * `frontend` + `backend`: Added support for Gemini 2.5 models along with a few fixes and enhancements to the variants generation prompts.
 * [May 2025]
   * Significantly reduced the number of deployment steps by utilising Cloud Shell to deploy both backend and frontend components. Read more [here](#get-started).
-* [March + April 2025]
+* [April 2025]
   * `frontend` + `backend`: Added functionality to cut segments by adding *split markers* and re-running the extraction process. Read more [here](#22-segment-splitting).
 * [February 2025]
   * `frontend`: You can now choose objective-specific ABCDs (Awareness, Consideration, Action, or Shorts) in the *Advanced settings* section of variants generation. Read more [here](#41-variants-generation).
@@ -49,7 +51,6 @@ Update to the latest version by running `npm run update-app` after pulling the l
   * `frontend`: During variants generation, users can now preview the total duration of their variant directly as they are selecting/deselecting segments.
   * `frontend`: The ABCDs evaluation section per variant may now additionally include recommendations on how to improve the video's content to make it more engaging.
   * `frontend`: Improved user instruction following for the variants generation prompt and simplified the input process; you no longer need a separate checkbox to include or exclude elements - just specify your requirements directly in the prompt.
-  * `frontend` + `backend`: Added support for Gemini 2.0.
 * [November 2024]
   * `frontend` + `backend`: General bug fixes and performance improvements.
   * `frontend` + `backend`: Added possibility to select the timing for audio and music overlays. Read more [here](#42-user-controls-for-video-rendering).
@@ -75,9 +76,7 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 ## Overview
 
-**ViGenAiR** *(pronounced vision-air)* harnesses the power of multimodal Generative AI models on Google Cloud Platform (GCP) to automatically transform long-form Video Ads into shorter variants, in multiple ad formats, targeting different audiences. It is your AI-powered creative partner, generating video, image and text assets to power [Demand Gen](https://support.google.com/google-ads/answer/13695777?hl=en) and [YouTube video campaigns](https://support.google.com/youtube/answer/2375497?hl=en). ViGenAiR is an acronym for **Vi**deo **Gen**eration via **A**ds **R**ecrafting, and is more colloquially referred to as *Vigenair*. Check out the tool's sizzle reel on YouTube by clicking on the image below:
-
-<center><a href="https://www.youtube.com/watch?v=jUp7O8T2opA" target="_blank"><img src="https://img.youtube.com/vi/jUp7O8T2opA/0.jpg" alt="ViGenAiR Sizzle" /></a></center>
+**ViGenAiR** *(pronounced vision-air)* harnesses the power of multimodal Generative AI models on Google Cloud Platform (GCP) to automatically transform long-form Video Ads into shorter variants, in multiple ad formats, targeting different audiences. It is your AI-powered creative partner, generating video, image and text assets to power [Demand Gen](https://support.google.com/google-ads/answer/13695777?hl=en) and [YouTube video campaigns](https://support.google.com/youtube/answer/2375497?hl=en). ViGenAiR is an acronym for **Vi**deo **Gen**eration via **A**ds **R**ecrafting, and is more colloquially referred to as *Vigenair*.
 
 > Note: **Looking to take action on your Demand Gen insights and recommendations?** Try [Demand Gen Pulse](https://github.com/google-marketing-solutions/dgpulse), a Looker Studio Dashboard that gives you a single source of truth for your Demand Gen campaigns across accounts. It surfaces creative best practices and flags when they are not adopted, and provides additional insights including audience performance and conversion health.
 
@@ -115,6 +114,9 @@ If you will also deploy Vigenair, you need to have the following additional role
 
 * `Storage Admin` for the entire project OR `Storage Legacy Bucket Writer` on the <code>*<gcp_project_id>*-vigenair</code> bucket. See [IAM Roles for Cloud Storage](https://cloud.google.com/storage/docs/access-control/iam-roles) for more information.
 * `Cloud Functions Developer` to deploy and manage Cloud Functions. See [IAM Roles for Cloud Functions](https://cloud.google.com/functions/docs/reference/iam/roles) for more information.
+* `Service Usage Admin` and `Service Account User` roles to implement the Cloud
+  Function under the Service Account. Additionally, it is critical that the user
+  deploying Vigenair must be added to the Service Account's Credentials.
 * `Project IAM Admin` to be able to run the commands that set up roles and policy bindings in the deployment script. See [IAM access control](https://cloud.google.com/resource-manager/docs/access-control-proj) for more information.
 
 > The Vigenair [setup and deployment script](#get-started) will create the following components automatically:
