@@ -86,7 +86,7 @@ Please ensure you have fulfilled all role prerequisites mentioned under [Require
 
 First, click on the button below:
 
-[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=oauth2-impl&show=terminal)
+[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=cloud&show=terminal)
 
 Once the cloud shell terminal is ready and the GitHub repository has been cloned successfully, run `npm start`:
 
