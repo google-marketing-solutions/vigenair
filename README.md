@@ -84,28 +84,23 @@ Update to the latest version by running `npm run update-app` after pulling the l
 
 Please ensure you have fulfilled all role prerequisites mentioned under [Requirements](#requirements).
 
-First, navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API, then click on the button below:
+First, click on the button below:
 
-[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=main&show=terminal)
+[![Deploy on Google Cloud](https://deploy.cloud.run/button.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https%3A%2F%2Fgithub.com%2Fgoogle-marketing-solutions%2Fvigenair&cloudshell_git_branch=oauth2-impl&show=terminal)
 
 Once the cloud shell terminal is ready and the GitHub repository has been cloned successfully, run `npm start`:
 
-* You will be prompted to login via Clasp. Copy the full authorisation URL posted in the cloud shell terminal (clicking on it will not work properly) and open it in your local browser. Login to your account, then copy the entire URL of the resulting page and paste it back into the cloud shell terminal (the browser will show you an error that the page is unreachable, which is correct and expected).
-* Next, enter your GCP Project ID when prompted, then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
+* Enter your GCP Project ID when prompted, then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
   * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
-  * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
+  * When deploying the UI, you will be asked if you want others in your domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
 
-The `npm start` script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to a new Apps Script project, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
+The `npm start` script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to the Cloud Run service, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
 
 See [How Vigenair Works](#how-vigenair-works) for more details on the different components of the solution.
 
-> If you encounter unexpected errors during the installation please [reset your Cloud Shell environment](https://cloud.google.com/shell/docs/resetting-cloud-shell#reset-shell) to ensure you are running the latest versions of gcloud, node, npm and clasp.
+> If you encounter unexpected errors during the installation please [reset your Cloud Shell environment](https://cloud.google.com/shell/docs/resetting-cloud-shell#reset-shell) to ensure you are running the latest versions of gcloud, node and npm.
 >> Note: If using a completely new GCP project with no prior deployments of Cloud Run / Cloud Functions, you may receive [Eventarc permission denied errors](https://cloud.google.com/eventarc/docs/troubleshooting#trigger-error) when deploying the `vigenair` Cloud Function for the very first time. Please wait a few minutes ([up to seven](https://cloud.google.com/iam/docs/access-change-propagation)) for all necessary permissions to propagate before retrying the `npm start` command.
 >>> Additional note: You may also use Terraform to deploy the Vigenair backend. This can be done by setting the `USE_TERRAFORM_FOR_GCP_DEPLOYMENT` constant in [common.ts](common.ts) to `true` and ensuring that [Terraform is installed](https://developer.hashicorp.com/terraform/tutorials/gcp-get-started/install-cli) before running the `npm start` command.
-
-### Managing Apps Script Deployments
-
-The `npm start` and `npm run update-app` scripts manage deployments for you; a new deployment is always created and existing ones get archived, so that the version of the web app you use has the latest changes from your local copy of this repository. If you would like to manually manage deployments, you may do so by navigating to the [Apps Script home page](https://script.google.com), locating and selecting the `ViGenAiR` project, then managing deployments via the *Deploy* button/dropdown in the top-right corner of the page.
 
 ### Requirements
 
@@ -128,7 +123,27 @@ If you will also deploy Vigenair, you need to have the following additional role
 >
 > * A Google Cloud Storage (GCS) bucket named <code>*<gcp_project_id>*-vigenair</code>
 > * A Cloud Function (2nd gen) named `vigenair` that fulfills both the [Extractor and Combiner services](#solution-details). Refer to [deploy.sh](./service/deploy.sh) for specs.
-> * An Apps Script deployment for the frontend web app.
+> * An Cloud Run deployment for the frontend web app.
+
+### Managing Front End Deployment on Cloud Run
+To deploy the ViGenAiR UI on Cloud Run, follow these steps:
+1.  Create an OAuth 2.0 Client ID:
+    * Follow the [guide](https://support.google.com/workspacemigrate/answer/9222992?hl=en) to create a Web Application OAuth Client ID. This is essential for user authentication and authorizing access to backend resources.
+    * After creation, note down the OAuth Client ID. You will need this during the deployment process.
+1.  Configure for Cloud Run Deployment:
+    * Open the [common.ts](common.ts) file in your local repository.
+    * Set the `DEPLOY_UI_ON_CLOUD_RUN` constant to `true`. This tells the deployment script to target Cloud Run.
+1.  Run the Deployment Script:
+    * Execute `npm start` as outlined in the [Get Started](#get-started) section.
+    * During the deployment, you will be prompted to provide the OAuth Client ID you created.
+    * The script will package the Angular UI with the ui-backend application (located at ui-backend/server.js) and deploy it as a Cloud Run service.
+1.  Secure Cloud Run with Identity-Aware Proxy (IAP):
+    * The `ui-backend` expects the Cloud Run service to be secured by IAP. It validates an IAP-provided JWT assertion token before serving content.
+    * Follow the [Enabling IAP for Cloud Run](https://cloud.google.com/iap/docs/enabling-cloud-run) guide to secure your new Cloud Run service.
+    * Once IAP is enabled, you will get an IAP-protected URL for your UI application. Note this URL.
+1.  Update OAuth Client Configuration:
+    * Go back to your OAuth 2.0 Client ID settings in the Google Cloud Console.
+    * Add the IAP-protected URL (from step 4) to the **Authorized JavaScript origins**.
 
 ## Why use Vigenair?
 
@@ -148,7 +163,7 @@ Vigenair focuses on the *Creative* pillar to help potentially **unlock ~50% ROI*
 
 ## How Vigenair works
 
-Vigenair's frontend is an Angular Progressive Web App (PWA) hosted on Google Apps Script and accessible via a [web app deployment](https://developers.google.com/apps-script/guides/web). Users must authenticate with a Google account in order to use the Vigenair web app. Backend services are hosted on [Cloud Functions 2nd gen](https://cloud.google.com/functions/docs/concepts/version-comparison), and are triggered via Cloud Storage (GCS). Decoupling the UI and core services via GCS significantly reduces authentication overhead and effectively implements separation of concerns between the frontend and backend layers.
+Vigenair's frontend is an Angular Progressive Web App (PWA) hosted on Google Cloud Run and accessible via a [Cloud Console](https://console.cloud.google.com/run). Users must authenticate with a Google account in order to use the Vigenair web app. Backend services are hosted on [Cloud Functions 2nd gen](https://cloud.google.com/functions/docs/concepts/version-comparison), and are triggered via Cloud Storage (GCS). Decoupling the UI and core services via GCS significantly reduces authentication overhead and effectively implements separation of concerns between the frontend and backend layers.
 
 Vigenair uses Gemini on Vertex AI to *holistically* understand and analyse the content and storyline of a Video Ad, **automatically** splitting it into *coherent* audio/video segments that are then used to generate different shorter variants and Ad formats. Vigenair analyses the spoken dialogue in a video (if present), the visually changing shots, on-screen entities such as any identified logos and/or text, and background music and effects. It then uses all of this information to combine sections of the video together that are *coherent*; segments that won't be cut mid-dialogue nor mid-scene, and that are semantically and contextually related to one another. These coherent A/V segments serve as the building blocks for both GenAI and user-driven recombination.
 
@@ -184,7 +199,7 @@ Users upload or select videos they have previously analysed via the UI's `Video 
   * `input_video_filename`: The name of the video file as it was stored on the user's file system.
   * Optional `--n` suffix to the filename: For those videos where the *Analyse voice-over* checkbox was **unchecked**.
   * `timestamp`: Current timestamp in **microseconds** (e.g. 1234567890123)
-  * `encoded_user_id`: Base64 encoded version of the [user's email](https://developers.google.com/apps-script/reference/base/user#getemail) - if available - otherwise Apps Script's [temp User ID](https://developers.google.com/apps-script/reference/base/session#gettemporaryactiveuserkey).
+  * `encoded_user_id`: Base64 encoded version of the [user's email](https://developers.google.com/apps-script/reference/base/user#getemail) - if available.
 
 #### 2.1. Video Processing and Extraction
 
@@ -331,15 +346,12 @@ The UI continuously queries GCS for updates. Once a `combos.json` is available, 
 <center><img src='./img/rendered.png' width="600px" alt="Vigenair UI: Rendered videos display with 'share' icon" /></center>
 <center><img src='./img/rendered-assets.png' width="600px" alt="Vigenair UI: Rendered image and text assets" /></center>
 
-> Note: Due to an [ongoing Apps Script issue](https://issuetracker.google.com/issues/170799249), users viewing the application via "share" links **must** be granted the `Editor` role on the underlying Apps Script project. This can be done by navigating to the [Apps Script home page](https://script.google.com), locating the `ViGenAiR` script and using the [more vertical](https://fonts.google.com/icons?selected=Material+Symbols+Outlined:more_vert) to `Share`.
-
 ### Pricing and Quotas
 
 Users are priced according to their usage of Google (Cloud and Workspace) services as detailed below. In summary, Processing *1 min of video and generating 5 variants* would cost around **$2 to $6** based on your Cloud Functions configuration. You may modify the multimodal and language models used by Vigenair by modifying the `CONFIG_VISION_MODEL` and `CONFIG_TEXT_MODEL` environment variables respectively for the Cloud Function in [deploy.sh](./service/deploy.sh), as well as the `CONFIG.vertexAi.model` property in [config.ts](ui/src/config.ts) for the frontend web app. The most cost-effective setup is using `Gemini 1.5 Flash` (default), for both multimodal and text-only use cases, also considering [quota limits](https://cloud.google.com/vertex-ai/generative-ai/docs/quotas#quotas_by_region_and_model) per model.
 
 For more information, refer to this detailed [Cloud pricing calculator](https://cloud.google.com/products/calculator/?dl=CiQzNTJkZmI0Yy05NjAzLTRlNjYtOWJkNy05ZjhiOTgxODE0MWUQBBokRkU5NkJFQzItNTE3OS00NDA5LTgwOUItQ0JFOTI3NDdEMjFB) example using `Gemini 1.5 Flash`. The breakdown of the charges are:
 
-* Apps Script (where the UI is hosted): **Free of charge**. Apps Script services have [daily quotas](https://developers.google.com/apps-script/guides/services/quotas) and the one for *URL Fetch calls* is relevant for Vigenair. Assuming a rule of thumb of *100 URL Fetch* calls per video, you would be able to process **200 videos per day** as a standard user, and **1000 videos per day** as a Workspace user.
 * Cloud Storage: The storage of input and generated videos, along with intermediate media files (voice-over, background music, segment thumbnails, different JSON files for the UI, etc.). Pricing varies depending on region and duration, and you can assume a rule of thumb of **100MB per 1 min of video**, which would fall within the Cloud **free** tier. Refer to the full [pricing guide](https://cloud.google.com/storage/pricing) for more information.
 * Cloud Functions (which includes Cloud Build, Eventarc and Aritfact Registry): The processing, or *up*, time only; idle-time won't be billed, unless [minimum instances](https://cloud.google.com/functions/docs/configuring/min-instances) are configured. Weigh the impact of [cold starts](https://cloud.google.com/functions/docs/concepts/execution-environment#cold-starts) vs. potential cost and decide whether to set `min-instances=1` in [deploy.sh](./service/deploy.sh) accordingly. Vigenair's cloud function is triggered for *any* file upload into the GCS bucket, and so you can assume a threshold of **max 100 invocations and 5 min of processing time per 1 min of video**, which would cost around **$1.3** with `8 GiB (2 vCPU)`, **$2.6** with `16 GiB (4 vCPU)`, and **$5.3** with `32 GiB (8 vCPU)`. Refer to the full [pricing guide](https://cloud.google.com/functions/pricing) for more information.
 * Vertex AI generative models:
@@ -360,10 +372,8 @@ Beyond the information outlined in our [Contributing Guide](CONTRIBUTING.md), yo
 ### Build and Serve the Angular UI
 
 1. Make sure your system has an up-to-date installation of [Node.js and npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
-1. Install [clasp](https://github.com/google/clasp) by running `npm install @google/clasp -g`, then login via `clasp login`.
-1. Navigate to the [Apps Script Settings page](https://script.google.com/home/usersettings) and `enable` the Apps Script API.
 1. Navigate to the directory where the source code lives and run `cd ui`
 1. Run `npm install` to install dependencies.
-1. Run `npm run deploy` to build, test and deploy (via [clasp](https://github.com/google/clasp)) all UI and Apps Script code to the target Apps Script project.
+1. Run `npm run deploy` to build, test.
 1. Navigate to the directory where the Angular UI lives: `cd src/ui`
 1. Run `ng serve` to launch the Angular UI locally with Hot Module Replacement (HMR) during development.

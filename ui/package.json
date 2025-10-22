@@ -13,10 +13,7 @@
     "license": "license-check-and-add add -f license-config.json",
     "test": "jest test/ --passWithNoTests --detectOpenHandles",
     "test-ui": "npm run test --prefix src/ui",
-    "deploy": "npm run lint && npm run test && npm run build && ncp appsscript.json dist/appsscript.json && ncp .clasp-dev.json .clasp.json && npm run build-ui && npm run deploy-ui && clasp push -f",
-    "deploy-ui": "node deploy-ui.mjs",
-    "deploy:dev": "npm run lint && npm run test && npm run build && ncp appsscript.json dist/appsscript.json && ncp .clasp-dev.json .clasp.json && npm run build-ui && npm run deploy-ui && clasp push && clasp undeploy -a && clasp deploy",
-    "deploy:prod": "npm run lint && npm run test && npm run build && ncp appsscript.json dist/appsscript.json && ncp .clasp-prod.json .clasp.json && npm run build-ui && npm run deploy-ui && clasp push && clasp undeploy -a && clasp deploy",
+    "deploy": "npm run lint && npm run test && npm run build && npm run build-ui && node build-ui-cloud-run.mjs",
     "serve-ui": "cd src/ui && ng serve",
     "postinstall": "cd src/ui && npm install "
   },
@@ -24,7 +21,6 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@google/clasp": "^3.0.4-alpha",
     "@types/google-apps-script": "^1.0.79",
     "@types/jest": "^29.5.11",
     "@typescript-eslint/eslint-plugin": "^6.20.0",

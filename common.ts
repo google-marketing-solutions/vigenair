@@ -23,13 +23,16 @@ const spawn = require("cross-spawn");
 export const DEFAULT_GCP_REGION = "us-central1";
 export const DEFAULT_GCS_LOCATION = "us";
 const GCS_BUCKET_NAME_SUFFIX = "-vigenair";
-const USE_TERRAFORM_FOR_GCP_DEPLOYMENT = false;
+const USE_TERRAFORM_FOR_GCP_DEPLOYMENT = true;
+const CLOUD_RUN_UI_SERVICE_NAME = "vigenair-web"
 
 interface Config {
   gcpProjectId?: string;
   gcpRegion?: string;
   gcsLocation?: string;
   vertexAiRegion?: string;
+  googleOauthClientId?: string;
+  userPrincipal?: string;
 }
 
 interface ConfigReplace {
@@ -44,69 +47,9 @@ export interface PromptsResponse {
   deployUi: boolean;
   gcpRegion?: string;
   gcsLocation?: string;
-  webappDomainAccess?: boolean;
   vertexAiRegion?: string;
-}
-
-class ClaspManager {
-  private static async isLoggedIn() {
-    return await fs.exists(path.join(os.homedir(), ".clasprc.json"));
-  }
-
-  static async login() {
-    const loggedIn = await ClaspManager.isLoggedIn();
-
-    if (!loggedIn) {
-      console.log("Logging in via clasp...");
-      spawn.sync("clasp", ["login", "--no-localhost"], {
-        stdio: "inherit",
-      });
-    }
-  }
-
-  static async isConfigured(rootDir: string) {
-    return (
-      (await fs.exists(path.join(rootDir, ".clasp-dev.json"))) ||
-      (await fs.exists(path.join(rootDir, "dist", ".clasp.json")))
-    );
-  }
-
-  static extractScriptLink(output: string) {
-    const scriptLink = output.match(/.*: ([^\n]*)/);
-
-    return scriptLink?.length ? scriptLink[1] : "Not found";
-  }
-
-  static async create(
-    title: string,
-    scriptRootDir: string,
-    filesRootDir: string
-  ) {
-    fs.ensureDirSync(path.join(filesRootDir, scriptRootDir));
-    const res = spawn.sync(
-      "clasp",
-      [
-        "create",
-        "--type",
-        "standalone",
-        "--rootDir",
-        scriptRootDir,
-        "--title",
-        title,
-      ],
-      { encoding: "utf-8" }
-    );
-
-    await fs.move(".clasp.json", path.join(filesRootDir, ".clasp-dev.json"));
-    await fs.copyFile(
-      path.join(filesRootDir, ".clasp-dev.json"),
-      path.join(filesRootDir, ".clasp-prod.json")
-    );
-    await fs.remove(path.join(scriptRootDir, "appsscript.json"));
-    const output = res.output.join();
-
-    return ClaspManager.extractScriptLink(output);
-  }
+  googleOauthClientId?: string;
+  userPrincipal?: string;
 }
 
 export class GcpDeploymentHandler {
@@ -151,39 +94,57 @@ export class GcpDeploymentHandler {
 }
 
 export class UiDeploymentHandler {
-  static async createScriptProject() {
-    console.log();
-    await ClaspManager.login();
-
-    const claspConfigExists = await ClaspManager.isConfigured("./ui");
-    if (claspConfigExists) {
-      return;
+  static deployUi(uiRegion: string,
+    options?: {
+      iapServiceId?: string;
+      serviceUrlOveride?: string;
     }
-    console.log();
-    console.log("Creating Apps Script Project...");
-    const scriptLink = await ClaspManager.create("ViGenAiR", "./dist", "./ui");
-    console.log();
-    console.log("IMPORTANT -> Apps Script Link:", scriptLink);
-    console.log();
-  }
-
-  static deployUi() {
+  ) {
     console.log("Deploying the UI Web App...");
     spawn.sync("npm run deploy-ui", { stdio: "inherit", shell: true });
-    const res = spawn.sync("cd ui && clasp undeploy -a && clasp deploy", {
-      stdio: "pipe",
-      shell: true,
-      encoding: "utf8",
-    });
-    const lastNonEmptyLine = res.output[1]
-      .split("\n")
-      .findLast((line: string) => line.trim().length > 0);
-    let webAppLink = lastNonEmptyLine.match(/- (.*) @.*/);
-    webAppLink = webAppLink?.length
-      ? `https://script.google.com/macros/s/${webAppLink[1]}/exec`
-      : "Could not extract UI Web App link from npm output! Please check the output manually.";
-    console.log();
-    console.log(`IMPORTANT -> UI Web App Link: ${webAppLink}`);
+    const projectId = UserConfigManager.getUserConfig().gcpProjectId;
+    const userPrincipal = UserConfigManager.getUserConfig().userPrincipal;
+    const uiDeploymentRegion = uiRegion || DEFAULT_GCP_REGION;
+    const envVarsList: string[] = [];
+    if(options?.iapServiceId) {
+      envVarsList.push(`IAP_SERVICE_ID=${options.iapServiceId}`);
+    }
+    if(options?.serviceUrlOveride) {
+      envVarsList.push(`SERVICE_URL_OVERRIDE=${options.serviceUrlOveride}`);
+    }
+    let envVarsArgument = "";
+    if (envVarsList.length > 0) {
+      envVarsArgument = ` --set-env-vars=${envVarsList.join(",")}`;
+    }
+
+    spawn.sync(`cd ui-backend && gcloud run deploy ${CLOUD_RUN_UI_SERVICE_NAME} \
+      --project=${projectId} \
+      --region=${uiDeploymentRegion} \
+      --no-allow-unauthenticated \
+      --source .${envVarsArgument}`, { stdio: "inherit", shell: true });
+
+    spawn.sync(`gcloud beta services identity create \
+      --service=iap.googleapis.com \
+      --project=${projectId}`, { stdio: "inherit", shell: true });
+
+    spawn.sync(`gcloud run services add-iam-policy-binding ${CLOUD_RUN_UI_SERVICE_NAME} \
+      --project=${projectId} \
+      --region=${uiDeploymentRegion} \
+      --member="serviceAccount:service-$(gcloud projects describe ${projectId}  --format='value(projectNumber)')@gcp-sa-iap.iam.gserviceaccount.com" \
+      --role='roles/run.invoker'`, { stdio: "inherit", shell: true });
+
+    spawn.sync(`gcloud beta run services update ${CLOUD_RUN_UI_SERVICE_NAME} \
+      --project=${projectId} \
+      --region=${uiDeploymentRegion} \
+      --iap`, { stdio: "inherit", shell: true });
+
+    spawn.sync(`gcloud beta iap web add-iam-policy-binding \
+      --service=${CLOUD_RUN_UI_SERVICE_NAME} \
+      --resource-type=cloud-run \
+      --project=${projectId} \
+      --region=${uiDeploymentRegion} \
+      --member=${userPrincipal} \
+      --role='roles/iap.httpsResourceAccessor'`, { stdio: "inherit", shell: true });
   }
 }
 
@@ -237,6 +198,8 @@ export class UserConfigManager {
       .replace(".", "-")
       .replace(":", "-")}${GCS_BUCKET_NAME_SUFFIX}`;
     const vertexAiRegion = response.vertexAiRegion || DEFAULT_GCP_REGION;
+    const googleOauthClientId = response.googleOauthClientId || '';
+    const userPrincipal = response.userPrincipal || '';
 
     configReplace({
       regex: "<gcp-project-id>",
@@ -266,23 +229,28 @@ export class UserConfigManager {
         replacement: gcsLocation,
         paths: ["./service/deploy.sh", "./terraform/terraform.tfvars"],
       });
+
+      configReplace({
+        regex: "<vigenair-user-principal>",
+        replacement: userPrincipal,
+        paths: ["./service/deploy.sh", "./terraform/terraform.tfvars"],
+      });
     }
     configReplace({
       regex: "<gcs-bucket>",
       replacement: gcsBucket,
       paths: ["./service/deploy.sh", "./ui/src/config.ts"],
     });
-    if (response.webappDomainAccess) {
-      configReplace({
-        regex: "MYSELF",
-        replacement: "DOMAIN",
-        paths: ["./ui/appsscript.json"],
-      });
-    }
     if (response.deployUi) {
       configReplace({
         regex: "<vertexai-region>",
         replacement: vertexAiRegion,
+        paths: ["./ui/src/config.ts"],
+      });
+
+      configReplace({
+        regex: "<google-oauth-client-id>",
+        replacement: googleOauthClientId,
         paths: ["./ui/src/config.ts"],
       });
     }
@@ -293,6 +261,8 @@ export class UserConfigManager {
         gcpRegion,
         gcsLocation,
         vertexAiRegion,
+        googleOauthClientId,
+        userPrincipal,
       })
     );
     console.log();

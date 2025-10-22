@@ -16,8 +16,12 @@
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { catchError, Observable, of, retry, switchMap, timer } from 'rxjs';
+import { catchError, Observable, of, retry, switchMap, timer, map, forkJoin} from 'rxjs';
 import { CONFIG } from '../../../../config';
+import { PreviewHelper } from './preview';
+import { GenerationHelper } from './generation';
+import { AuthService } from './auth.service';
+import { StorageManager } from './storage';
 
 import { StringUtil } from '../../../../string-util';
 import {
@@ -33,13 +37,17 @@ import {
   VariantTextAsset,
 } from './api-calls.service.interface';
 
+
 @Injectable({
   providedIn: 'root',
 })
 export class ApiCallsService implements ApiCalls {
   constructor(
     private ngZone: NgZone,
-    private httpClient: HttpClient
+    private httpClient: HttpClient,
+    private authService: AuthService,
+    private storageManager: StorageManager,
+    private generationHelper: GenerationHelper
   ) {}
 
   loadPreviousRun(folder: string): string[] {
@@ -50,25 +58,7 @@ export class ApiCallsService implements ApiCalls {
   }
 
   getUserAuthToken(): Observable<string> {
-    return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((userAuthToken: string) => {
-          this.ngZone.run(() => {
-            subscriber.next(userAuthToken);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Could not retrieve the user auth token! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .getUserAuthToken();
-    }).pipe(
+    return this.authService.getAccessToken().pipe(
       retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
     );
   }
@@ -85,37 +75,62 @@ export class ApiCallsService implements ApiCalls {
     // eslint-disable-next-line no-useless-escape
     const sanitisedFileName = StringUtil.gcsSanitise(file.name);
     const folder = `${sanitisedFileName}${CONFIG.videoFolderNameSeparator}${analyseAudio ? videoFolderTranscriptionSuffix : CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
-    const fullName = encodeURIComponent(`${folder}/${filename}`);
-    const url = `${CONFIG.cloudStorage.uploadEndpointBase}/b/${CONFIG.cloudStorage.bucket}/o?uploadType=media&name=${fullName}`;
 
-    return this.getUserAuthToken().pipe(
-      switchMap(userAuthToken =>
-        this.httpClient
-          .post(url, file, {
-            headers: new HttpHeaders({
-              'Authorization': `Bearer ${userAuthToken}`,
-              'Content-Type': contentType,
-            }),
-          })
-          .pipe(
-            switchMap(response => {
-              console.log('Upload complete!', response);
-              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/input.mp4`;
-              return of([folder, videoFilePath]);
-            }),
-            catchError(error => {
-              console.error('Upload failed with error: ', error);
-              throw error;
-            })
-          )
-      )
+    return this.storageManager.uploadBlob(file, folder, filename, contentType).pipe(
+      map(response => {
+        const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/input.mp4`;
+        return [folder, videoFilePath];
+      }),
+      catchError(error => {
+        console.error('Upload failed with error: ', error);
+        throw error;
+      })
     );
   }
 
+  deleteFile(filePath: string): void {
+    const gcsUrl = `${CONFIG.cloudStorage.endpointBase}/b/${CONFIG.cloudStorage.bucket}/o/${encodeURIComponent(filePath)}`;
+    this.getUserAuthToken().pipe(
+      switchMap(userAuthToken =>
+        this.httpClient.delete(gcsUrl, {
+          headers: new HttpHeaders({
+            Authorization: `Bearer ${userAuthToken}`,
+          }),
+        })
+        .pipe(
+          map(() => console.log(`Deleted ${filePath}`)),
+          catchError(error => {
+            console.error('Delete file failed with error: ', error);
+            throw error;
+          })
+        )
+    ));
+  }
+
+
   deleteGcsFolder(folder: string): void {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    google.script.run.deleteGcsFolder(folder);
+    const gcsUrl = this.getStorageUrl('', folder);
+    this.getUserAuthToken().pipe(
+      switchMap(userAuthToken =>
+        this.httpClient.get(gcsUrl, {
+          responseType: 'json',
+          headers: new HttpHeaders({
+            Authorization: `Bearer ${userAuthToken}`,
+          }),
+        }).pipe(
+          map((response: any) => {
+            response.items.forEach((item: any) => {
+              this.deleteFile(item.name);
+            });
+            console.log(`Deleted video folder ${folder}`);
+          }),
+          catchError(error => {
+            console.error('Delete folder failed with error: ', error);
+            throw error;
+          })
+        )
+      )
+    );
   }
 
   getFromGcs(url: string, retryDelay = 0, maxRetries = 0): Observable<string> {
@@ -147,27 +162,7 @@ export class ApiCallsService implements ApiCalls {
     gcsFolder: string,
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]> {
-    return new Observable<GenerateVariantsResponse[]>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((variants: GenerateVariantsResponse[]) => {
-          this.ngZone.run(() => {
-            subscriber.next(variants);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Encountered an unexpected error while generating variants! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .generateVariants(gcsFolder, settings);
-    }).pipe(
-      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
-    );
+    return this.generationHelper.generateVariants(gcsFolder, settings);
   }
 
   generatePreviews(
@@ -176,74 +171,85 @@ export class ApiCallsService implements ApiCalls {
     segments: any,
     settings: PreviewSettings
   ): Observable<GeneratePreviewsResponse> {
-    return new Observable<GeneratePreviewsResponse>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((previews: GeneratePreviewsResponse) => {
-          this.ngZone.run(() => {
-            subscriber.next(previews);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Encountered an unexpected error while generating format previews! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .generatePreviews(analysis, segments, settings);
-    }).pipe(
-      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+
+    const sourceDimensions = settings.sourceDimensions;
+    const squarePreview = PreviewHelper.createPreview(
+      segments,
+      analysis,
+      sourceDimensions,
+      { w: sourceDimensions.h, h: sourceDimensions.h },
+      settings.weights
     );
+    const verticalPreview = PreviewHelper.createPreview(
+      segments,
+      analysis,
+      sourceDimensions,
+      {
+        w: sourceDimensions.h * (sourceDimensions.h / sourceDimensions.w),
+        h: sourceDimensions.h,
+      },
+      settings.weights
+    );
+
+    return of({
+      square: JSON.stringify(squarePreview),
+      vertical: JSON.stringify(verticalPreview),
+    });
+  }
+
+  getStorageUrl(delimiter = '/', prefix?: string): string {
+    let url = `${CONFIG.cloudStorage.endpointBase}/b/${CONFIG.cloudStorage.bucket}/o?`;
+    if (delimiter) {
+      url += `delimiter=${encodeURIComponent(delimiter)}`;
+    }
+    if (prefix) {
+      if (!url.endsWith('?')) {
+        url += '&';
+      }
+      url += `prefix=${encodeURIComponent(prefix)}`;
+    }
+    return url;
   }
 
   getRunsFromGcs(): Observable<PreviousRunsResponse> {
-    return new Observable<PreviousRunsResponse>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((response: PreviousRunsResponse) => {
-          this.ngZone.run(() => {
-            subscriber.next(response);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Could not retrieve previous runs from GCS! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .getRunsFromGcs();
+    return forkJoin({
+      runs: this.storageManager.listObjects(),
+      user: this.getCurrentUser()
     }).pipe(
-      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+      switchMap(({runs, user}) => {
+        return of({
+          encodedUserId: btoa(user),
+          runs: runs
+        });
+      })
     );
   }
 
   getRendersFromGcs(gcsFolder: string): Observable<string[]> {
-    return new Observable<string[]>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((response: string[]) => {
-          this.ngZone.run(() => {
-            subscriber.next(response);
-            subscriber.complete();
-          });
+    const url = this.getStorageUrl('/', `${gcsFolder}/`);
+    return this.getUserAuthToken().pipe(
+      switchMap(userAuthToken =>
+        this.httpClient.get(url, {
+          responseType: 'json',
+          headers: new HttpHeaders({
+            Authorization: `Bearer ${userAuthToken}`,
+          }),
         })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Could not retrieve previous renders from GCS! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .getRendersFromGcs(gcsFolder);
-    }).pipe(
-      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+          .pipe(
+            switchMap((response: any) => {
+              const renders = (response?.prefixes || []).map((prefix: string) =>
+                prefix.replace(gcsFolder ?? '', '').split('/')[0]
+              )
+              .filter((elem: string) => elem.endsWith('-combos'));
+              return of(renders);
+
+            }),
+            catchError(error => {
+              console.error('Load renders failed with error: ', error);
+              throw error;
+            })
+          )
+      )
     );
   }
 
@@ -251,26 +257,70 @@ export class ApiCallsService implements ApiCalls {
     gcsFolder: string,
     renderQueue: RenderQueue
   ): Observable<string> {
-    return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((response: string) => {
-          this.ngZone.run(() => {
-            subscriber.next(response);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Encountered an unexpected error while rendering variants! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .renderVariants(gcsFolder, renderQueue);
-    });
+    const queueNamePrefix = renderQueue.queueName
+    ? `${renderQueue.queueName}${CONFIG.videoFolderNameSeparator}`
+    : '';
+  const folder = `${gcsFolder}/${queueNamePrefix}${Date.now()}-combos`;
+  const uploadTasks: Observable<unknown>[] = [];
+
+  if (renderQueue.squareCropAnalysis) {
+    const encodedSquareCropCommands = PreviewHelper.generateCropCommands(
+      renderQueue.squareCropAnalysis,
+      {
+        w: renderQueue.sourceDimensions.h,
+        h: renderQueue.sourceDimensions.h,
+      },
+      CONFIG.defaultVideoHeight
+    );
+    uploadTasks.push(
+      this.storageManager.uploadStringContent(
+        encodedSquareCropCommands,
+        folder,
+        CONFIG.cloudStorage.files.formats.square
+      )
+    );
   }
+
+  if (renderQueue.verticalCropAnalysis) {
+    const encodedVerticalCropCommands =
+      PreviewHelper.generateCropCommands(
+        renderQueue.verticalCropAnalysis,
+        {
+          w:
+            renderQueue.sourceDimensions.h *
+            (renderQueue.sourceDimensions.h / renderQueue.sourceDimensions.w),
+          h: renderQueue.sourceDimensions.h,
+        },
+        CONFIG.defaultVideoHeight *
+          (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth)
+      );
+    uploadTasks.push(
+      this.storageManager.uploadStringContent(
+        encodedVerticalCropCommands,
+        folder,
+        CONFIG.cloudStorage.files.formats.vertical
+      )
+    );
+  }
+
+  const encodedRenderQueueJson = JSON.stringify(renderQueue.queue);
+  uploadTasks.push(
+    this.storageManager.uploadStringContent(
+      encodedRenderQueueJson,
+      folder,
+      CONFIG.cloudStorage.files.render,
+      'application/json'
+    )
+  );
+
+  return forkJoin(uploadTasks).pipe(
+    map(() => folder),
+    catchError(error => {
+      console.error('Render variants failed with error: ', error);
+      throw error;
+    })
+  );
+}
 
   getGcsFolderPath(folder: string): Observable<string> {
     return of(
@@ -279,24 +329,33 @@ export class ApiCallsService implements ApiCalls {
   }
 
   getWebAppUrl(): Observable<string> {
-    return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((response: string) => {
-          this.ngZone.run(() => {
-            subscriber.next(response);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error('Could not retrieve the Web App URL! Error: ', error);
-          subscriber.error(error);
-        })
-        .getWebAppUrl();
-    }).pipe(
-      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    return this.httpClient.get('service_url', {
+      responseType: 'json',
+    })
+    .pipe(
+      switchMap((response: any) => {
+        return of(response?.url);
+      }),
+      catchError(error => {
+        console.error('Failed to get service url: ', error);
+        throw error;
+      })
     );
+  }
+
+  getCurrentUser(): Observable<string> {
+    return this.httpClient.get('userinfo', {
+      responseType: 'text',
+    })
+      .pipe(
+        switchMap((response: any) => {
+          return of(response);
+        }),
+        catchError(error => {
+          console.error('Failed to get user info: ', error);
+          throw error;
+        })
+      );
   }
 
   regenerateTextAsset(
@@ -304,25 +363,10 @@ export class ApiCallsService implements ApiCalls {
     textAsset: VariantTextAsset,
     textAssetLanguage: string
   ): Observable<VariantTextAsset> {
-    return new Observable<VariantTextAsset>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((textAsset: VariantTextAsset) => {
-          this.ngZone.run(() => {
-            textAsset.approved = true;
-            textAsset.editable = false;
-            subscriber.next(textAsset);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error('Could not regenerate text asset! Error: ', error);
-          subscriber.error(error);
-        })
-        .regenerateTextAsset(variantVideoPath, textAsset, textAssetLanguage);
-    }).pipe(
-      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
+    return this.generationHelper.generateTextAsset(
+      variantVideoPath,
+      textAsset,
+      textAssetLanguage
     );
   }
 
@@ -330,72 +374,33 @@ export class ApiCallsService implements ApiCalls {
     folder: string,
     combos: RenderedVariant[]
   ): Observable<boolean> {
-    return new Observable<boolean>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((response: boolean) => {
-          this.ngZone.run(() => {
-            subscriber.next(response);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error('Error while storing approval status! Error: ', error);
-          subscriber.error(error);
-        })
-        .storeApprovalStatus(folder, combos);
-    });
+    const combosStr = JSON.stringify(combos);
+    return this.storageManager.uploadStringContent(
+      combosStr,
+      folder,
+      CONFIG.cloudStorage.files.approval,
+      'application/json'
+    ).pipe(
+      map(() => true),
+      catchError(error => {
+        console.error('Error while storing approval status! Error: ', error);
+        throw error;
+      })
+    );
   }
 
   getVideoLanguage(gcsFolder: string): Observable<string> {
-    return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((videoLanguage: string) => {
-          this.ngZone.run(() => {
-            subscriber.next(videoLanguage);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Could not retrieve the video language! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .getVideoLanguage(gcsFolder);
-    }).pipe(
-      retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
-    );
+    return this.generationHelper.getVideoLanguage(gcsFolder);
   }
 
   generateTextAssets(
     variantVideoPath: string,
     textAssetsLanguage: string
   ): Observable<VariantTextAsset[]> {
-    return new Observable<VariantTextAsset[]>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((textAssets: VariantTextAsset[]) => {
-          this.ngZone.run(() => {
-            textAssets.forEach(textAsset => {
-              textAsset.approved = true;
-              textAsset.editable = false;
-            });
-            subscriber.next(textAssets);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error('Could not generate text assets! Error: ', error);
-          subscriber.error(error);
-        })
-        .generateTextAssets(variantVideoPath, textAssetsLanguage);
-    }).pipe(
+    return this.generationHelper.generateTextAssets(
+      variantVideoPath,
+      textAssetsLanguage
+    ).pipe(
       retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
     );
   }
@@ -404,24 +409,23 @@ export class ApiCallsService implements ApiCalls {
     gcsFolder: string,
     segmentMarkers: SegmentMarker[]
   ): Observable<string> {
-    return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      google.script.run
-        .withSuccessHandler((response: string) => {
-          this.ngZone.run(() => {
-            subscriber.next(response);
-            subscriber.complete();
-          });
-        })
-        .withFailureHandler((error: Error) => {
-          console.error(
-            'Encountered an unexpected error while splitting a segment! Error: ',
-            error
-          );
-          subscriber.error(error);
-        })
-        .splitSegment(gcsFolder, segmentMarkers);
-    });
+    const segmentMarkersStr = JSON.stringify(segmentMarkers);
+    this.storageManager.renameFile(
+      `${gcsFolder}/${CONFIG.cloudStorage.files.data}`,
+      `${gcsFolder}/${CONFIG.cloudStorage.files.presplit}`
+    );
+    return this.storageManager.uploadStringContent(
+      segmentMarkersStr,
+      gcsFolder,
+      `${Date.now()}${CONFIG.cloudStorage.files.split}`,
+      'application/json'
+    ).pipe(
+      map(() => String(segmentMarkers[0].av_segment_id)),
+      catchError(error => {
+        console.error('Encountered an unexpected error while splitting a segment! Error: ',
+          error);
+        throw error;
+      })
+    );
   }
 }

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-project_id   = "<gcp-project-id>"
-region       = "<gcp-region>"
-gcs_location = "<gcs-location>"
+project_id              = "<gcp-project-id>"
+region                  = "<gcp-region>"
+gcs_location            = "<gcs-location>"
+vigenair_user_principal = "<vigenair-user-principal>"
