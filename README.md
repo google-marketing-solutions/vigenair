@@ -142,7 +142,7 @@ To deploy the ViGenAiR UI on Cloud Run, follow these steps:
     * The script automatically sets up [IAP protection](https://cloud.google.com/iap/docs/enabling-cloud-run) for the UI service.
     * Once IAP is enabled, you will get an IAP-protected URL for your UI application. Note this URL.
 1.  Update OAuth Client Configuration:
-    * Go back to your [OAuth 2.0 Client ID settings](https://console.cloud..google.com/apis/credentials) in the Google Cloud Console.
+    * Go back to your [OAuth 2.0 Client ID settings](https://console.cloud.google.com/apis/credentials) in the Google Cloud Console.
     * Add the IAP-protected URL (from previous step) to the **Authorized JavaScript origins**.
 
 ## Why use Vigenair?
