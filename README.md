@@ -92,7 +92,10 @@ Once the cloud shell terminal is ready and the GitHub repository has been cloned
 
 * Enter your GCP Project ID when prompted, then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
   * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
-  * When deploying the UI, you will be asked if you want others in your domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
+  * You will be prompted to enter a user principal, which specifies the users that you want to give access to the ViGenAiR application, here you have three options:
+    1. Grant for a specific user, in that case the value should be the the following format `user:<user-mail>`
+    2. For a group of users: `group:<group-email>`
+    3. For an entire domain: `domain:<your-domain-name>`
 
 The `npm start` script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to the Cloud Run service, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
 
@@ -130,20 +133,17 @@ To deploy the ViGenAiR UI on Cloud Run, follow these steps:
 1.  Create an OAuth 2.0 Client ID:
     * Follow the [guide](https://support.google.com/workspacemigrate/answer/9222992?hl=en) to create a Web Application OAuth Client ID. This is essential for user authentication and authorizing access to backend resources.
     * After creation, note down the OAuth Client ID. You will need this during the deployment process.
-1.  Configure for Cloud Run Deployment:
-    * Open the [common.ts](common.ts) file in your local repository.
-    * Set the `DEPLOY_UI_ON_CLOUD_RUN` constant to `true`. This tells the deployment script to target Cloud Run.
 1.  Run the Deployment Script:
     * Execute `npm start` as outlined in the [Get Started](#get-started) section.
-    * During the deployment, you will be prompted to provide the OAuth Client ID you created.
+    * Enter the user principal that you want grant access to the ViGenAiR web app, detail outlined in the [Get Started](#get-started) section.
+    * Select `Yes` when prompted to deploy the UI.
+    * During the deployment, you will be prompted to provide the OAuth Client ID you created.    
     * The script will package the Angular UI with the ui-backend application (located at ui-backend/server.js) and deploy it as a Cloud Run service.
-1.  Secure Cloud Run with Identity-Aware Proxy (IAP):
-    * The `ui-backend` expects the Cloud Run service to be secured by IAP. It validates an IAP-provided JWT assertion token before serving content.
-    * Follow the [Enabling IAP for Cloud Run](https://cloud.google.com/iap/docs/enabling-cloud-run) guide to secure your new Cloud Run service.
+    * The script automatically sets up [IAP protection](https://cloud.google.com/iap/docs/enabling-cloud-run) for the UI service.
     * Once IAP is enabled, you will get an IAP-protected URL for your UI application. Note this URL.
 1.  Update OAuth Client Configuration:
-    * Go back to your OAuth 2.0 Client ID settings in the Google Cloud Console.
-    * Add the IAP-protected URL (from step 4) to the **Authorized JavaScript origins**.
+    * Go back to your [OAuth 2.0 Client ID settings](https://console.cloud.google.com/apis/credentials) in the Google Cloud Console.
+    * Add the IAP-protected URL (from previous step) to the **Authorized JavaScript origins**.
 
 ## Why use Vigenair?
 
