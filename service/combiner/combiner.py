@@ -19,12 +19,14 @@ based on user-specific rendering settings.
 """
 
 import dataclasses
+import enum
 import gc
 import json
 import logging
 import os
 import pathlib
 import re
+import subprocess
 import sys
 import tempfile
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
@@ -38,6 +40,31 @@ import vertexai
 from vertexai.generative_models import GenerativeModel, Part
 
 
+@enum.unique
+class VideoFormat(enum.Enum):
+    """Enum for video formats."""
+    SQUARE = ('1:1', 'square')
+    VERTICAL = ('9:16', 'vertical')
+    HORIZONTAL = ('16:9', 'horizontal')
+    THREE_FOUR = ('3:4', '3_4')
+    FOUR_THREE = ('4:3', '4_3')
+
+    def __init__(self, aspect_ratio_str, type_name):
+        self.aspect_ratio_str = aspect_ratio_str
+        self.type_name = type_name
+
+    @classmethod
+    def from_aspect_ratio(cls, aspect_ratio_str: str) -> 'VideoFormat':
+        for member in cls:
+            if member.aspect_ratio_str == aspect_ratio_str:
+                return member
+        raise ValueError(f'Unknown aspect ratio: {aspect_ratio_str}')
+
+    @property
+    def is_horizontal(self) -> bool:
+        return self == VideoFormat.HORIZONTAL
+
+
 @dataclasses.dataclass(init=False)
 class VideoVariantRenderSettings:
   """Represents the settings for a video variant.
@@ -45,20 +72,17 @@ class VideoVariantRenderSettings:
   Attributes:
     generate_image_assets: Whether to generate image assets.
     generate_text_assets: Whether to generate text assets.
-    formats: Which formats to render (horizontal, square, vertical).
-    use_music_overlay: Whether to use the music overlay feature, where a
-      contiguous section of the input's background music will be used for the
-      video variant instead of the individual segments' background music.
+    formats: Which formats to render.
+    use_music_overlay: Whether to use the music overlay feature.
     use_continuous_audio: Whether to use a contiguous section of the input's
-      audio track for the video variant instead of the individual segments'
-      audio track portions.
+      audio.
     fade_out: Whether to fade out the end of the video variant.
     overlay_type: How to overlay music / audio for the variant.
   """
 
   generate_image_assets: bool = False
   generate_text_assets: bool = False
-  formats: Sequence[Utils.RenderFormatType] = None
+  formats: Sequence[VideoFormat] = dataclasses.field(default_factory=list)
   use_music_overlay: bool = False
   use_continuous_audio: bool = False
   fade_out: bool = False
@@ -67,15 +91,31 @@ class VideoVariantRenderSettings:
   def __init__(self, **kwargs):
     field_names = set([f.name for f in dataclasses.fields(self)])
     for k, v in kwargs.items():
-      if k in field_names:
+      if k == 'formats' and v is not None:
+        parsed_formats = []
+        if isinstance(v, Sequence):
+          for fmt_str in v:
+            try:
+              parsed_formats.append(VideoFormat.from_aspect_ratio(fmt_str))
+            except ValueError:
+              logging.warning(
+                  'Invalid format aspect ratio "%s" in render_settings and '
+                  'will be skipped.',
+                  fmt_str
+              )
+        setattr(self, k, parsed_formats)
+      elif k in field_names:
         setattr(self, k, v)
+
+    if getattr(self, 'formats', None) is None:
+        self.formats = []
 
   def __str__(self):
     return (
         'VideoVariantRenderSettings('
         f'generate_image_assets={self.generate_image_assets}, '
         f'generate_text_assets={self.generate_text_assets}, '
-        f'formats={self.formats}, '
+        f'formats={[f.aspect_ratio_str for f in self.formats]}, '
         f'use_music_overlay={self.use_music_overlay}, '
         f'use_continuous_audio={self.use_continuous_audio}, '
         f'fade_out={self.fade_out}, '
@@ -154,14 +194,14 @@ class VideoVariant:
 class Combiner:
   """Encapsulates all the combination logic."""
 
+  CROP_FILENAME_TEMPLATE = 'crop_{format_type}{video_ext}'
+
   def __init__(self, gcs_bucket_name: str, render_file: Utils.TriggerFile):
     """Initialiser.
 
     Args:
       gcs_bucket_name: The GCS bucket to read from and store files in.
-      render_file: Path to the input rendering file, which is in a
-        `<timestamp>-combos` subdirectory of the root video folder (see
-        `extractor.Extractor` for more information on root folder naming).
+      render_file: Path to the input rendering file.
     """
     self.gcs_bucket_name = gcs_bucket_name
     self.render_file = render_file
@@ -257,6 +297,12 @@ class Combiner:
         bucket_name=self.gcs_bucket_name,
     )
     logging.info('RENDERING - Video file path: %s', video_file_path)
+    _update_or_create_video_metadata(
+        video_file_path=video_file_path,
+        root_video_folder=root_video_folder,
+        gcs_bucket_name=self.gcs_bucket_name,
+        tmp_dir=tmp_dir,
+    )
     _, video_ext = os.path.splitext(video_file_path)
     has_audio = StorageService.download_gcs_file(
         file_path=Utils.TriggerFile(
@@ -306,40 +352,26 @@ class Combiner:
         fetch_contents=True,
     ) or ConfigService.DEFAULT_VIDEO_LANGUAGE
     logging.info('RENDERING - Video language: %s', video_language)
-    square_video_file_path = StorageService.download_gcs_file(
-        file_path=Utils.TriggerFile(
-            str(
-                pathlib.Path(
-                    self.render_file.gcs_folder,
-                    ConfigService.INPUT_SQUARE_CROP_FILE.replace(
-                        '.txt', video_ext
-                    )
-                )
-            )
-        ),
-        output_dir=tmp_dir,
-        bucket_name=self.gcs_bucket_name,
-    )
-    logging.info(
-        'RENDERING - Square video file path: %s', square_video_file_path
-    )
-    vertical_video_file_path = StorageService.download_gcs_file(
-        file_path=Utils.TriggerFile(
-            str(
-                pathlib.Path(
-                    self.render_file.gcs_folder,
-                    ConfigService.INPUT_VERTICAL_CROP_FILE.replace(
-                        '.txt', video_ext
-                    )
-                )
-            )
-        ),
-        output_dir=tmp_dir,
-        bucket_name=self.gcs_bucket_name,
-    )
-    logging.info(
-        'RENDERING - Vertical video file path: %s', vertical_video_file_path
-    )
+
+    # Download the pre-cropped *video* files
+    local_crop_video_file_paths = {}
+    for vf_member in VideoFormat:
+      if vf_member.is_horizontal:
+        continue
+
+      crop_video_file_name = Combiner.CROP_FILENAME_TEMPLATE.format(
+          format_type=vf_member.type_name, video_ext=video_ext
+      )
+      gcs_path = str(
+          pathlib.Path(self.render_file.gcs_folder, crop_video_file_name))
+      local_path = StorageService.download_gcs_file(
+          file_path=Utils.TriggerFile(gcs_path),
+          output_dir=tmp_dir,
+          bucket_name=self.gcs_bucket_name,
+      )
+      if local_path:
+          local_crop_video_file_paths[vf_member] = local_path
+
     render_file_contents = StorageService.download_gcs_file(
         file_path=self.render_file,
         bucket_name=self.gcs_bucket_name,
@@ -358,8 +390,7 @@ class Combiner:
         gcs_folder_path=self.render_file.gcs_folder,
         gcs_bucket_name=self.gcs_bucket_name,
         video_file_path=video_file_path,
-        square_video_file_path=square_video_file_path,
-        vertical_video_file_path=vertical_video_file_path,
+        crop_video_file_paths=local_crop_video_file_paths,
         has_audio=has_audio,
         speech_track_path=speech_track_path,
         music_track_path=music_track_path,
@@ -368,6 +399,11 @@ class Combiner:
         video_language=video_language,
     )
     combo = dataclasses.asdict(video_variant)
+    if 'render_settings' in combo and 'formats' in combo['render_settings']:
+        combo['render_settings']['formats'] = [
+            f.aspect_ratio_str for f in combo['render_settings']['formats']
+        ]
+
     combo.update(rendered_variant_paths)
     combo['av_segments'] = {
         f'_{segment_id}': segment
@@ -399,8 +435,8 @@ class Combiner:
     )
 
   def initial_render(self):
-    """Renders videos based on the input rendering settings."""
-    logging.info('COMBINER - Starting rendering...')
+    """Creates cropped video files for all required formats."""
+    logging.info('COMBINER - Starting initial render (cropping)...')
     tmp_dir = tempfile.mkdtemp()
     root_video_folder = self.render_file.gcs_root_folder
     video_file_name = next(
@@ -419,34 +455,28 @@ class Combiner:
         bucket_name=self.gcs_bucket_name,
     )
     logging.info('RENDERING - Video file path: %s', video_file_path)
-    square_crop_file_path = StorageService.download_gcs_file(
-        file_path=Utils.TriggerFile(
-            str(
-                pathlib.Path(
-                    self.render_file.gcs_folder,
-                    ConfigService.INPUT_SQUARE_CROP_FILE
-                )
-            )
-        ),
-        output_dir=tmp_dir,
-        bucket_name=self.gcs_bucket_name,
+    _update_or_create_video_metadata(
+        video_file_path=video_file_path,
+        root_video_folder=root_video_folder,
+        gcs_bucket_name=self.gcs_bucket_name,
+        tmp_dir=tmp_dir,
     )
-    logging.info('RENDERING - Square crop commands: %s', square_crop_file_path)
-    vertical_crop_file_path = StorageService.download_gcs_file(
-        file_path=Utils.TriggerFile(
-            str(
-                pathlib.Path(
-                    self.render_file.gcs_folder,
-                    ConfigService.INPUT_VERTICAL_CROP_FILE
-                )
-            )
-        ),
-        output_dir=tmp_dir,
-        bucket_name=self.gcs_bucket_name,
-    )
-    logging.info(
-        'RENDERING - Vertical crop commands: %s', vertical_crop_file_path
-    )
+
+    crop_cmd_file_paths = {}
+    for vf_member in VideoFormat:
+      if vf_member.is_horizontal:
+        continue
+      crop_file_name = f'crop_{vf_member.type_name}.txt'
+      crop_path = StorageService.download_gcs_file(
+          file_path=Utils.TriggerFile(
+              str(pathlib.Path(self.render_file.gcs_folder, crop_file_name))
+          ),
+          output_dir=tmp_dir,
+          bucket_name=self.gcs_bucket_name,
+      )
+      if crop_path:
+        crop_cmd_file_paths[vf_member] = crop_path
+
     render_file_contents = StorageService.download_gcs_file(
         file_path=self.render_file,
         bucket_name=self.gcs_bucket_name,
@@ -459,7 +489,7 @@ class Combiner:
         )
     )
     logging.info(
-        'RENDERING - Rendering %d video variants: %r',
+        'RENDERING - Cropping for %d video variants: %r',
         len(video_variants),
         video_variants,
     )
@@ -467,8 +497,7 @@ class Combiner:
     _create_cropped_videos(
         video_variants=video_variants,
         video_file_path=video_file_path,
-        square_crop_file_path=square_crop_file_path,
-        vertical_crop_file_path=vertical_crop_file_path,
+        crop_cmd_file_paths=crop_cmd_file_paths,
         output_dir=combos_dir,
     )
     StorageService.upload_gcs_dir(
@@ -482,9 +511,14 @@ class Combiner:
           f'_{ConfigService.INPUT_RENDERING_FILE}'
       )
       variant_dict = dataclasses.asdict(video_variant)
-      variant_dict['av_segments'] = [
-          s for s in variant_dict['av_segments'].values()
-      ]
+      if ('render_settings' in variant_dict and
+          'formats' in variant_dict['render_settings']):
+          variant_dict['render_settings']['formats'] = [
+              f.aspect_ratio_str
+              for f in variant_dict['render_settings']['formats']
+          ]
+      variant_dict['av_segments'] = list(variant_dict['av_segments'].values())
+
       variant_json_path = os.path.join(
           combos_dir,
           variant_destination_file_path,
@@ -503,7 +537,7 @@ class Combiner:
           ),
       )
     gc.collect()
-    logging.info('COMBINER - Initial render completed successfully!')
+    logging.info('COMBINER - Initial render (cropping) completed successfully!')
 
 
 def _video_variant_mapper(index_variant_dict_tuple: Tuple[int, Dict[str, Any]]):
@@ -528,104 +562,71 @@ def _video_variant_mapper(index_variant_dict_tuple: Tuple[int, Dict[str, Any]]):
 def _create_cropped_videos(
     video_variants: Sequence[VideoVariant],
     video_file_path: str,
-    square_crop_file_path: Optional[str],
-    vertical_crop_file_path: Optional[str],
+    crop_cmd_file_paths: Dict[VideoFormat, str],
     output_dir: str,
-) -> Tuple[Optional[str], Optional[str]]:
-  """Creates cropped videos for the given video variants.
-
-  Args:
-    video_variants: The video variants to create cropped videos for.
-    video_file_path: The path to the input video file.
-    square_crop_file_path: The square crop commands file, or None.
-    vertical_crop_file_path: The vertical crop commands file, or None.
-    output_dir: The output directory to use.
-
-  Returns:
-    The paths to the square and vertical cropped videos.
-  """
-  square_video_file_path = None
-  vertical_video_file_path = None
+) -> Dict[VideoFormat, str]:
+  """Creates cropped videos for the given video variants."""
+  cropped_video_paths = {}
   _, video_ext = os.path.splitext(video_file_path)
 
-  if bool(
-      list(
-          filter(
-              lambda variant: Utils.RenderFormatType.SQUARE.value in variant.
-              render_settings.formats, video_variants
-          )
-      )
-  ):
-    square_video_file_path = _create_cropped_video(
-        video_file_path=video_file_path,
-        crop_file_path=square_crop_file_path,
-        output_dir=output_dir,
-        format_type=Utils.RenderFormatType.SQUARE.value,
-        video_ext=video_ext,
+  for vf_member, crop_cmd_file_path in crop_cmd_file_paths.items():
+    needs_format = any(
+        vf_member in variant.render_settings.formats
+        for variant in video_variants
     )
-  if bool(
-      list(
-          filter(
-              lambda variant: Utils.RenderFormatType.VERTICAL.value in variant.
-              render_settings.formats, video_variants
-          )
+    if needs_format:
+      cropped_video_path = _create_cropped_video(
+          video_file_path=video_file_path,
+          crop_cmd_file_path=crop_cmd_file_path,
+          output_dir=output_dir,
+          format_type=vf_member.type_name,
+          video_ext=video_ext,
       )
-  ):
-    vertical_video_file_path = _create_cropped_video(
-        video_file_path=video_file_path,
-        crop_file_path=vertical_crop_file_path,
-        output_dir=output_dir,
-        format_type=Utils.RenderFormatType.VERTICAL.value,
-        video_ext=video_ext,
-    )
-
-  return square_video_file_path, vertical_video_file_path
+      if cropped_video_path:
+        cropped_video_paths[vf_member] = cropped_video_path
+  return cropped_video_paths
 
 
 def _create_cropped_video(
     video_file_path: str,
-    crop_file_path: Optional[str],
+    crop_cmd_file_path: Optional[str],
     output_dir: str,
     format_type: str,
     video_ext: str,
 ) -> Optional[str]:
-  """Creates a cropped video for the given format.
+  """Creates a single cropped video file."""
+  if not crop_cmd_file_path:
+    return None
 
-  Args:
-    video_file_path: The path to the input video file.
-    crop_file_path: The crop commands file, or None.
-    output_dir: The output directory to use.
-    format_type: The format to create a cropped video for.
-    video_ext: The extension of the video file.
+  with open(crop_cmd_file_path, mode='r', encoding='utf8') as f:
+    first_line = f.readline().strip()
+  matches = re.search(r'crop w (.*), crop h (.*);', first_line)
 
-  Returns:
-    The paths to the cropped video, or None.
-  """
-  cropped_video_path = None
-  if crop_file_path:
-    with open(crop_file_path, mode='r', encoding='utf8') as f:
-      first_line = f.readline().strip()
-    matches = re.search(r'crop w (.*), crop h (.*);', first_line)
+  w = matches.group(1) if matches else None
+  h = matches.group(2) if matches else None
 
-    w = matches.group(1) if matches else None
-    h = matches.group(2) if matches else None
-
-    cropped_video_path = str(
-        pathlib.Path(output_dir, f'{format_type}{video_ext}')
+  if w and h:
+    file_name = Combiner.CROP_FILENAME_TEMPLATE.format(
+        format_type=format_type, video_ext=video_ext
     )
+    cropped_video_path = str(pathlib.Path(output_dir, file_name))
     Utils.execute_subprocess_commands(
         cmds=[
             'ffmpeg',
             '-i',
             video_file_path,
             '-filter_complex',
-            f'[0:v]sendcmd=f={crop_file_path},crop[cropped];'
+            f'[0:v]sendcmd=f={crop_cmd_file_path},crop[cropped];'
             f'[cropped]crop={w}:{h}',
             cropped_video_path,
         ],
         description=(f'render full {format_type} format using ffmpeg'),
     )
-  return cropped_video_path
+    return cropped_video_path
+  else:
+    logging.warning('Could not parse crop dimensions from %s',
+                    crop_cmd_file_path)
+    return None
 
 
 def _render_video_variant(
@@ -633,37 +634,18 @@ def _render_video_variant(
     gcs_folder_path: str,
     gcs_bucket_name: str,
     video_file_path: str,
-    square_video_file_path: Optional[str],
-    vertical_video_file_path: Optional[str],
+    crop_video_file_paths: Dict[VideoFormat, str],
     has_audio: bool,
     speech_track_path: Optional[str],
     music_track_path: Optional[str],
     video_variant: VideoVariant,
     vision_model: GenerativeModel,
     video_language: str,
-) -> Dict[str, str]:
-  """Renders a video variant in all formats.
-
-  Args:
-    output_dir: The output directory to use.
-    gcs_folder_path: The GCS folder path to use.
-    gcs_bucket_name: The GCS bucket name to upload to.
-    video_file_path: The path to the input video file.
-    square_video_file_path: The path to the square crop of the input video file.
-    vertical_video_file_path: The path to the vertical crop of the input video
-      file.
-    has_audio: Whether the video has an audio track.
-    speech_track_path: The path to the video's speech track, or None.
-    music_track_path: The path to the video's music track, or None.
-    video_variant: The video variant to be rendered.
-    vision_model: The vision model to use.
-    video_language: The video language.
-
-  Returns:
-    The rendered paths keyed by the format type.
-  """
+) -> Dict[str, Any]:
+  """Renders a video variant in all formats."""
   logging.info('RENDERING - Rendering video variant: %s', video_variant)
   _, video_ext = os.path.splitext(video_file_path)
+  # ... (rest of the function is the same as before)
   shot_groups = _group_consecutive_segments(
       list(video_variant.av_segments.keys())
   )
@@ -711,10 +693,9 @@ def _render_video_variant(
           f'{video_variant.variant_id} using ffmpeg'
       ),
   )
+
   rendered_paths = {
-      Utils.RenderFormatType.HORIZONTAL.value: {
-          'path': horizontal_combo_name
-      }
+      VideoFormat.HORIZONTAL: {'path': horizontal_combo_name}
   }
   if video_variant.render_settings.generate_image_assets:
     StorageService.upload_gcs_dir(
@@ -729,29 +710,26 @@ def _render_video_variant(
         gcs_folder_path=gcs_folder_path,
         output_path=output_dir,
         variant_id=video_variant.variant_id,
-        format_type=Utils.RenderFormatType.HORIZONTAL.value,
+        format_type=VideoFormat.HORIZONTAL.type_name,
     )
     if assets:
-      rendered_paths[Utils.RenderFormatType.HORIZONTAL.value]['images'] = assets
+      rendered_paths[VideoFormat.HORIZONTAL]['images'] = assets
 
   formats_to_render = {}
-  if (
-      Utils.RenderFormatType.SQUARE.value
-      in video_variant.render_settings.formats
-  ):
-    formats_to_render[Utils.RenderFormatType.SQUARE.value] = {
-        'blur_filter': ConfigService.FFMPEG_SQUARE_BLUR_FILTER,
-        'crop_file_path': square_video_file_path
+  for vf_member in video_variant.render_settings.formats:
+    if vf_member.is_horizontal:
+      continue
+
+    blur_filter = ConfigService.FFMPEG_SQUARE_BLUR_FILTER
+    if vf_member == VideoFormat.VERTICAL:
+      blur_filter = ConfigService.FFMPEG_VERTICAL_BLUR_FILTER
+
+    formats_to_render[vf_member] = {
+        'blur_filter': blur_filter,
+        'crop_file_path': crop_video_file_paths.get(vf_member)
     }
-  if (
-      Utils.RenderFormatType.VERTICAL.value
-      in video_variant.render_settings.formats
-  ):
-    formats_to_render[Utils.RenderFormatType.VERTICAL.value] = {
-        'blur_filter': ConfigService.FFMPEG_VERTICAL_BLUR_FILTER,
-        'crop_file_path': vertical_video_file_path
-    }
-  for format_type, format_instructions in formats_to_render.items():
+
+  for vf_member, format_instructions in formats_to_render.items():
     format_ffmpeg_cmds = None
     if format_instructions['crop_file_path']:
       format_ffmpeg_cmds = _get_variant_ffmpeg_commands(
@@ -765,14 +743,14 @@ def _render_video_variant(
           music_overlay_select_filter=music_overlay_select_filter,
           continuous_audio_select_filter=continuous_audio_select_filter,
       )
-    rendered_paths[format_type] = _render_format(
+    rendered_paths[vf_member] = _render_format(
         vision_model=vision_model,
         input_video_path=horizontal_combo_path,
         output_path=output_dir,
         gcs_bucket_name=gcs_bucket_name,
         gcs_folder_path=gcs_folder_path,
         variant_id=video_variant.variant_id,
-        format_type=format_type,
+        video_format=vf_member,
         generate_image_assets=(
             video_variant.render_settings.generate_image_assets
         ),
@@ -790,7 +768,8 @@ def _render_video_variant(
     text_assets = _generate_text_assets(
         vision_model=vision_model,
         gcs_video_path=(
-            f'gs://{gcs_bucket_name}/{gcs_folder_path}/{horizontal_combo_name}'
+            f'gs://{gcs_bucket_name}/{gcs_folder_path}/'
+            f'{horizontal_combo_name}'
         ),
         video_language=video_language,
         video_variant=video_variant,
@@ -798,15 +777,16 @@ def _render_video_variant(
     if text_assets:
       result['texts'] = text_assets
 
-  for format_type, rendered_path in rendered_paths.items():
-    result['variants'][format_type] = (
+  for vf_member, rendered_path in rendered_paths.items():
+    format_str = vf_member.aspect_ratio_str
+    result['variants'][format_str] = (
         f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/'
         f'{parse.quote(gcs_folder_path)}/{rendered_path["path"]}'
     )
     if 'images' in rendered_path:
       if 'images' not in result:
         result['images'] = {}
-      result['images'][format_type] = rendered_path['images']
+      result['images'][format_str] = rendered_path['images']
 
   return result
 
@@ -862,32 +842,19 @@ def _render_format(
     gcs_bucket_name: str,
     gcs_folder_path: str,
     variant_id: int,
-    format_type: str,
+    video_format: VideoFormat,
     generate_image_assets: bool,
     video_filter: str,
     ffmpeg_cmds: Optional[Sequence[str]],
 ) -> Dict[str, Union[str, Sequence[str]]]:
-  """Renders a video variant in a specific format.
-
-  Args:
-    vision_model: The generative vision model to use.
-    input_video_path: The path to the input video to render.
-    output_path: The path to output to.
-    gcs_bucket_name: The name of the GCS bucket to upload to.
-    gcs_folder_path: The path to the GCS folder to upload to.
-    variant_id: The id of the variant to render.
-    format_type: The type of the output format (horizontal, vertical, square).
-    generate_image_assets: Whether to generate image assets for the variant.
-    video_filter: The ffmpeg video filter to use.
-    ffmpeg_cmds: The ffmpeg commands to use.
-  Returns:
-    The rendered video's format name.
-  """
+  """Renders a video variant in a specific format."""
+  format_type_str = video_format.type_name
   logging.info(
-      'RENDERING - Rendering variant %s format: %s', variant_id, format_type
+      'RENDERING - Rendering variant %s format: %s (%s)',
+      variant_id, video_format.aspect_ratio_str, format_type_str
   )
   _, video_ext = os.path.splitext(input_video_path)
-  format_name = f'combo_{variant_id}_{format_type[0]}{video_ext}'
+  format_name = f'combo_{variant_id}_{format_type_str[0]}{video_ext}'
   output_video_path = str(pathlib.Path(output_path, format_name))
 
   if ffmpeg_cmds:
@@ -895,7 +862,8 @@ def _render_format(
     Utils.execute_subprocess_commands(
         cmds=ffmpeg_cmds,
         description=(
-            f'render {format_type} variant with id {variant_id} using ffmpeg'
+            f'render {format_type_str} variant with id {variant_id} '
+            'using ffmpeg'
         ),
     )
   else:
@@ -910,7 +878,7 @@ def _render_format(
             output_video_path,
         ],
         description=(
-            f'render {format_type} variant with id {variant_id} and '
+            f'render {format_type_str} variant with id {variant_id} and '
             'blur filter using ffmpeg'
         ),
     )
@@ -930,7 +898,7 @@ def _render_format(
         gcs_folder_path=gcs_folder_path,
         output_path=output_path,
         variant_id=variant_id,
-        format_type=format_type,
+        format_type=format_type_str,
     )
     if assets:
       output['images'] = assets
@@ -944,17 +912,7 @@ def _generate_text_assets(
     video_language: str,
     video_variant: VideoVariant,
 ) -> Optional[Sequence[Dict[str, str]]]:
-  """Generates text ad assets for a video variant.
-
-  Args:
-    vision_model: The vision model to use for text generation.
-    gcs_video_path: The path to the video to generate text assets for.
-    video_language: The language of the video.
-    video_variant: The video variant to use for text generation.
-
-  Returns:
-    The generated text assets.
-  """
+  """Generates text ad assets for a video variant."""
   prompt = ConfigService.GENERATE_ASSETS_PROMPT.format(
       video_language=video_language
   )
@@ -988,24 +946,32 @@ def _generate_text_assets(
         result = re.findall(
             ConfigService.GENERATE_ASSETS_PATTERN, result, re.MULTILINE
         )
-        rows.append([entry.strip() for entry in result[0]])
-      assets = pd.DataFrame(rows, columns=[
-          'headline',
-          'description',
-      ]).to_dict(orient='records')
-      logging.info(
-          'ASSETS - Generated text assets for variant %d: %r',
-          video_variant.variant_id,
-          assets,
-      )
+        if result and len(result[0]) == 2:
+          rows.append([entry.strip() for entry in result[0]])
+        else:
+          logging.warning('Skipping malformed text asset line: %s', result)
+
+      if rows:
+        assets = pd.DataFrame(rows, columns=[
+            'headline',
+            'description',
+        ]).to_dict(orient='records')
+        logging.info(
+            'ASSETS - Generated text assets for variant %d: %r',
+            video_variant.variant_id,
+            assets,
+        )
+      else:
+          logging.warning(
+              'ASSETS - No valid text assets could be parsed for variant %d!',
+              video_variant.variant_id
+          )
     else:
       logging.warning(
           'ASSETS - Could not generate text assets for variant %d!',
           video_variant.variant_id
       )
-  # Execution should continue regardless of the underlying exception
-  # pylint: disable=broad-exception-caught
-  except Exception:
+  except Exception:  # pylint: disable=broad-exception-caught
     logging.exception(
         'Encountered error during generation of text assets for variant %d! '
         'Continuing...', video_variant.variant_id
@@ -1017,15 +983,7 @@ def _generate_video_script(
     optimised_av_segments: pd.DataFrame,
     video_variant: VideoVariant,
 ) -> str:
-  """Generates a video script for the given A/V segments.
-
-  Args:
-    optimised_av_segments: The optimised AV segments to use.
-    video_variant: The video variant to use.
-
-  Returns:
-    The generated video script.
-  """
+  """Generates a video script for the given A/V segments."""
   video_script = []
   index = 1
   for av_segment in optimised_av_segments:
@@ -1065,8 +1023,7 @@ def _generate_video_script(
     video_script.append('')
     index += 1
 
-  video_script = '\n'.join(video_script)
-  return video_script
+  return '\n'.join(video_script)
 
 
 def _generate_image_assets(
@@ -1078,20 +1035,7 @@ def _generate_image_assets(
     variant_id: int,
     format_type: str,
 ) -> Sequence[str]:
-  """Generates image ad assets for a video variant in a specific format.
-
-  Args:
-    vision_model: The generative vision model to use.
-    video_file_path: The path to the input video to use.
-    gcs_bucket_name: The name of the GCS bucket to upload the assets to.
-    gcs_folder_path: The path to the GCS folder to upload the assets to.
-    output_path: The path to output to.
-    variant_id: The id of the variant to render.
-    format_type: The type of the output format (horizontal, vertical, square).
-
-  Returns:
-    The paths to the generated image assets.
-  """
+  """Generates image ad assets for a video variant in a specific format."""
   variant_folder = f'combo_{variant_id}'
   image_assets_path = pathlib.Path(
       output_path,
@@ -1134,9 +1078,7 @@ def _generate_image_assets(
         variant_id,
         format_type,
     )
-  # Execution should continue regardless of the underlying exception
-  # pylint: disable=broad-exception-caught
-  except Exception:
+  except Exception:  # pylint: disable=broad-exception-caught
     logging.exception(
         'Encountered error during generation of image assets for variant %d '
         'in format %s! Continuing...', variant_id, format_type
@@ -1150,14 +1092,7 @@ def _extract_video_thumbnails(
     variant_id: int,
     format_type: str,
 ):
-  """Extracts video thumbnails as image assets for a video in a specific format.
-
-  Args:
-    video_file_path: The path to the input video to use.
-    image_assets_path: The path to store image assets in.
-    variant_id: The id of the variant to render.
-    format_type: The type of the output format (horizontal, vertical, square).
-  """
+  """Extracts video thumbnails as image assets."""
   Utils.execute_subprocess_commands(
       cmds=[
           'ffmpeg',
@@ -1186,18 +1121,7 @@ def _identify_and_extract_key_frames(
     variant_id: int,
     format_type: str,
 ):
-  """Identifies key frames via Gemini and extracts them from the given video.
-
-  Args:
-    vision_model: The generative vision model to use.
-    video_file_path: The path to the input video to use.
-    image_assets_path: The path to store image assets in.
-    gcs_bucket_name: The name of the GCS bucket to upload the assets to.
-    gcs_folder_path: The path to the GCS folder to upload the assets to.
-    output_path: The path to output to.
-    variant_id: The id of the variant to render.
-    format_type: The type of the output format (horizontal, vertical, square).
-  """
+  """Identifies key frames via Gemini and extracts them."""
   results = []
   try:
     gcs_video_file_path = video_file_path.replace(f'{output_path}/', '')
@@ -1221,9 +1145,7 @@ def _identify_and_extract_key_frames(
       results = re.findall(ConfigService.KEY_FRAMES_PATTERN, text, re.MULTILINE)
     else:
       logging.warning('ASSETS - Could not identify key frames!')
-  # Execution should continue regardless of the underlying exception
-  # pylint: disable=broad-exception-caught
-  except Exception:
+  except Exception:  # pylint: disable=broad-exception-caught
     logging.exception('Encountered error while identifying key frames!')
 
   if results:
@@ -1251,27 +1173,7 @@ def _identify_and_extract_key_frames(
 def _group_consecutive_segments(
     av_segment_ids: Sequence[str],
 ) -> Sequence[Tuple[str, str]]:
-  """Groups consecutive segments together.
-
-  Consecutive A/V segments, such as `1, 2, 3`, will be grouped as a tuple of the
-  start and end A/V segment ids, such as `(1, 3)`. This also applies to
-  consecutive split segments, for example `4.2, 4.3, 4.4` yields `(4.2, 4.4)`.
-  Since we cannot discern whether split segments have ended, we cannot group a
-  split segment with a subsequent non-split segment, however we are able to
-  group non-split segments with consecutive split-segments only if the
-  consecutive split-segments start at `n.1`. For example,
-  `1, 2, 3, 4.1, 4.2, 4.3, 5` yields `[(1, 4.3), (5, 5)]` while
-  `1, 2, 3, 4.2, 4.3, 4.4, 5` yields `[(1, 3), (4.2, 4.4), (5, 5)]`. Segments
-  that are unordered are also treated as individual non-sequential segments.
-  For example, `5, 1, 2, 3` yields `[(5, 5), (1, 3)]`.
-
-  Args:
-    av_segment_ids: The A/V segments ids to be grouped.
-
-  Returns:
-    A sequence of tuples, where each tuple contains the start and end A/V
-    segment ids of a group.
-  """
+  """Groups consecutive segments together."""
   result = []
   i = 0
   while i < len(av_segment_ids):
@@ -1288,25 +1190,7 @@ def _group_consecutive_segments(
 
 
 def _is_sequential_segments(current_segment_id: str, next_segment_id: str):
-  """Checks if two consecutive segments are sequential.
-
-  Rules:
-  1. Incrementing the last numerical part (e.g., '1' -> '2', '4.2' -> '4.3',
-     '4.2.1' -> '4.2.2').
-  2. Stepping down to a new sub-level by appending '.1' to the segment ID
-      that would be the result of incrementing the last part of the current ID
-      (e.g., '3' -> '4.1' because incrementing '3' gives '4', and '4.1' is
-      '4' + '.1';
-      '4.1' -> '4.2.1' because incrementing '4.1' gives '4.2', and '4.2.1' is
-      '4.2' + '.1').
-
-  Args:
-    current_segment_id: The current segment ID.
-    next_segment_id: The next segment ID.
-
-  Returns:
-    True if the next segment is sequential to the current, False otherwise.
-  """
+  """Checks if two consecutive segments are sequential."""
   current_parts = current_segment_id.split('.')
   next_parts = next_segment_id.split('.')
   try:
@@ -1329,19 +1213,7 @@ def _build_ffmpeg_filters(
     render_settings: VideoVariantRenderSettings,
     video_duration: float,
 ) -> Tuple[str, str, str]:
-  """Builds the ffmpeg filters.
-
-  Args:
-    shot_timestamps: A sequence of tuples, where each tuple contains the start
-      and end timestamps of a shot.
-    has_audio: Whether the video has audio.
-    render_settings: The render settings to use.
-    video_duration: The duration of the video.
-
-  Returns:
-    A tuple containing the full audio/video, music overlay and continuous audio
-    ffmpeg filters.
-  """
+  """Builds the ffmpeg filters."""
   video_select_filter = []
   audio_select_filter = []
   select_filter_concat = []
@@ -1373,15 +1245,17 @@ def _build_ffmpeg_filters(
       if render_settings.fade_out else ''
   )
 
-  match render_settings.overlay_type:
-    case Utils.RenderOverlayType.VIDEO_START.value:
-      overlay_start = 0
-    case Utils.RenderOverlayType.VIDEO_END.value:
-      overlay_start = video_duration - duration
-    case Utils.RenderOverlayType.VARIANT_END.value:
-      overlay_start = variant_last_segment_end - duration
-    case Utils.RenderOverlayType.VARIANT_START.value | _:
-      overlay_start = variant_first_segment_start
+  overlay_start = variant_first_segment_start
+  if render_settings.overlay_type:
+    match render_settings.overlay_type:
+      case Utils.RenderOverlayType.VIDEO_START.value:
+        overlay_start = 0
+      case Utils.RenderOverlayType.VIDEO_END.value:
+        overlay_start = video_duration - duration
+      case Utils.RenderOverlayType.VARIANT_END.value:
+        overlay_start = variant_last_segment_end - duration
+      case Utils.RenderOverlayType.VARIANT_START.value:
+        overlay_start = variant_first_segment_start
 
   full_av_select_filter = ''.join(
       video_select_filter + audio_select_filter + select_filter_concat
@@ -1415,3 +1289,62 @@ def _build_ffmpeg_filters(
       music_overlay_select_filter,
       continuous_audio_select_filter,
   )
+
+
+def _update_or_create_video_metadata(
+    video_file_path: str,
+    root_video_folder: str,
+    gcs_bucket_name: str,
+    tmp_dir: str,
+) -> None:
+  """Updates or creates the video metadata, ensuring dimensions are present."""
+  metadata_file_name = 'metadata.json'
+  metadata_file_path = StorageService.download_gcs_file(
+      file_path=Utils.TriggerFile(
+          str(pathlib.Path(root_video_folder, metadata_file_name))
+      ),
+      output_dir=tmp_dir,
+      bucket_name=gcs_bucket_name,
+  )
+  metadata = {}
+  if metadata_file_path and os.path.exists(metadata_file_path):
+    with open(metadata_file_path, 'r', encoding='utf-8') as f:
+      try:
+        metadata = json.load(f)
+      except json.JSONDecodeError:
+        logging.warning('Could not decode metadata.json')
+
+  width = metadata.get('width')
+  height = metadata.get('height')
+
+  if not width or not height:
+    logging.info('Dimensions not found in metadata, probing video...')
+    width, height = _get_video_dimensions(video_file_path)
+    if width and height:
+      metadata['width'] = width
+      metadata['height'] = height
+      local_metadata_path = os.path.join(tmp_dir, metadata_file_name)
+      with open(local_metadata_path, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f)
+      StorageService.upload_gcs_file(
+          file_path=local_metadata_path,
+          bucket_name=gcs_bucket_name,
+          destination_file_name=str(
+              pathlib.Path(root_video_folder, metadata_file_name)
+          ),
+      )
+  logging.info('Video dimensions: %sx%s', width, height)
+
+
+def _get_video_dimensions(video_file_path: str) -> Tuple[int, int]:
+  """Probes the video file to get its dimensions."""
+  try:
+    output = subprocess.check_output([
+        'ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries',
+        'stream=width,height', '-of', 'csv=s=x:p=0', video_file_path
+    ])
+    width, height = map(int, output.decode('utf-8').strip().split('x'))
+    return width, height
+  except Exception:  # pylint: disable=broad-exception-caught
+    logging.exception('Error probing video dimensions!')
+    return 0, 0
