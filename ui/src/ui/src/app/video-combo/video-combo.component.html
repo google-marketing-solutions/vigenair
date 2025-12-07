@@ -25,23 +25,19 @@ limitations under the License.
     #variantGroup="matButtonToggleGroup"
     [disabled]="loading"
     (change)="onChangeVideo($event)"
-    value="horizontal"
+    value="16:9"
     hideSingleSelectionIndicator="true"
     [style.margin-right]="showApprovalStatus ? 'auto' : ''"
     [style.margin-left]="showApprovalStatus ? '-132px' : ''"
   >
-    <mat-button-toggle
-      value="horizontal"
-      [disabled]="!combo.variants?.horizontal"
-    >
-      <mat-icon>computer</mat-icon>
-    </mat-button-toggle>
-    <mat-button-toggle value="vertical" [disabled]="!combo.variants?.vertical">
-      <mat-icon>smartphone</mat-icon>
-    </mat-button-toggle>
-    <mat-button-toggle value="square" [disabled]="!combo.variants?.square">
-      <mat-icon>slideshow</mat-icon>
-    </mat-button-toggle>
+    @for (ratio of aspectRatios; track ratio) {
+      <mat-button-toggle
+        [value]="ratio"
+        [disabled]="!combo.variants || !combo.variants[ratio]"
+      >
+        <span style="font-size: 12px; font-weight: 500">{{ ratio }}</span>
+      </mat-button-toggle>
+    }
   </mat-button-toggle-group>
 </div>
 <div *ngIf="displayMode === 'combo'" class="row" style="align-items: normal">

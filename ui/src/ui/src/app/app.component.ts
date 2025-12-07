@@ -83,6 +83,79 @@ export type FramingDialogData = {
   weightSteps: number[];
 };
 
+interface VideoFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  time: number;
+}
+
+interface VideoObject {
+  name: string;
+  start: number;
+  end: number;
+  frames: VideoFrame[];
+}
+
+interface NormalizedBoundingBox {
+  left?: number;
+  top?: number;
+  right?: number;
+  bottom?: number;
+}
+
+interface FrameAnnotation {
+  normalized_bounding_box: NormalizedBoundingBox;
+  time_offset: string;
+}
+
+interface SegmentAnnotation {
+  start_time_offset: string;
+  end_time_offset: string;
+}
+
+interface EntityAnnotation {
+  description: string;
+}
+
+interface ObjectAnnotation {
+  entity: EntityAnnotation;
+  segment: SegmentAnnotation;
+  frames: FrameAnnotation[];
+  confidence: number;
+}
+
+interface AnnotationResult {
+  object_annotations: ObjectAnnotation[];
+}
+
+interface VideoAnalysisJson {
+  annotation_results: AnnotationResult[];
+}
+
+interface RawVariant {
+  variant_id: number;
+  av_segments: Record<string, AvSegment>;
+  title: string;
+  description: string;
+  score: number;
+  score_reasoning: string;
+  render_settings: RenderSettings;
+  variants: Record<FormatType, string>;
+  images?: Record<FormatType, string[]>;
+  texts?: VariantTextAsset[];
+}
+
+const ASPECT_RATIOS = {
+  '1:1': 1,
+  '9:16': 9 / 16,
+  '16:9': 16 / 9,
+  '3:4': 3 / 4,
+  '4:3': 4 / 3,
+};
+const ASPECT_RATIO_TOLERANCE = 0.12;
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -127,16 +200,17 @@ export class AppComponent {
   generatingPreviews = false;
   selectedFile?: File;
   videoPath?: string;
-  analysisJson?: any;
-  activeVideoObjects?: any[];
-  videoObjects?: any[];
-  squareVideoObjects?: any[];
-  verticalVideoObjects?: any[];
-  combosJson?: any;
+  analysisJson?: VideoAnalysisJson;
+  activeVideoObjects?: VideoObject[];
+  videoObjects?: VideoObject[];
+  squareVideoObjects?: VideoObject[];
+  verticalVideoObjects?: VideoObject[];
+  previewAnalyses: Record<string, VideoObject[]> = {};
+  combosJson?: unknown;
   combos?: RenderedVariant[];
   originalCombos?: RenderedVariant[];
-  originalAvSegments?: any;
-  avSegments?: any;
+  originalAvSegments?: AvSegment[];
+  avSegments?: AvSegment[];
   variants?: GenerateVariantsResponse[];
   selectedVariant = 0;
   transcriptStatus: ProcessStatus = 'hourglass_top';
@@ -192,6 +266,8 @@ export class AppComponent {
   businessObjectives = Object.values(CONFIG.vertexAi.abcdBusinessObjectives);
   segmentMarkers: Record<string, SegmentMarker[]> = {};
   segmentSplitting = false;
+  matchedAspectRatio?: string;
+  aspectRatios = Object.keys(ASPECT_RATIOS);
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -336,9 +412,9 @@ export class AppComponent {
     this.selectedFile = file;
   }
 
-  getCurrentCropAreaFrame(entities: any[]):
+  getCurrentCropAreaFrame(entities: VideoObject[]):
     | {
-        currentFrame: { x: number; width: number; height: number };
+        currentFrame: VideoFrame;
         idx: number;
       }
     | undefined {
@@ -351,7 +427,7 @@ export class AppComponent {
     return;
   }
 
-  drawFrame(entities?: any[]) {
+  drawFrame(entities?: VideoObject[]) {
     const context = this.canvas;
     if (!context || !entities) {
       return;
@@ -390,11 +466,11 @@ export class AppComponent {
     );
     if (
       !currentSegment ||
-      currentSegment.av_segment_id === this.currentSegmentId
+      Number(currentSegment.av_segment_id) === this.currentSegmentId
     ) {
       return;
     }
-    this.currentSegmentId = currentSegment.av_segment_id;
+    this.currentSegmentId = Number(currentSegment.av_segment_id);
   }
 
   drawEntity(
@@ -419,17 +495,21 @@ export class AppComponent {
     }
   }
 
-  parseAnalysis(objectsJson: any, filterCondition: (e: any) => boolean) {
+  parseAnalysis(objectsJson: VideoAnalysisJson, filterCondition: (e: ObjectAnnotation) => boolean) {
     const vw = this.videoWidth;
     const vh = this.videoHeight;
+    const toSeconds = (t: string) =>
+      TimeUtil.timestampToSeconds(
+        t as unknown as Parameters<typeof TimeUtil.timestampToSeconds>[0]
+      );
     return objectsJson.annotation_results[0].object_annotations
       .filter(filterCondition)
-      .map((e: any) => {
+      .map((e: ObjectAnnotation) => {
         return {
           name: e.entity.description,
-          start: TimeUtil.timestampToSeconds(e.segment.start_time_offset),
-          end: TimeUtil.timestampToSeconds(e.segment.end_time_offset),
-          frames: e.frames.map((f: any) => {
+          start: toSeconds(e.segment.start_time_offset),
+          end: toSeconds(e.segment.end_time_offset),
+          frames: e.frames.map((f: FrameAnnotation) => {
             return {
               x: vw * (f.normalized_bounding_box.left || 0),
               y: vh * (f.normalized_bounding_box.top || 0),
@@ -441,7 +521,7 @@ export class AppComponent {
                 vh *
                 ((f.normalized_bounding_box.bottom || 0) -
                   (f.normalized_bounding_box.top || 0)),
-              time: TimeUtil.timestampToSeconds(f.time_offset),
+              time: toSeconds(f.time_offset),
             };
           }),
         };
@@ -522,11 +602,11 @@ export class AppComponent {
       )
       .subscribe({
         next: data => {
-          this.analysisJson = JSON.parse(data);
+          this.analysisJson = JSON.parse(data) as VideoAnalysisJson;
           this.analysisStatus = 'check_circle';
           this.videoObjects = this.parseAnalysis(
             this.analysisJson,
-            (e: { confidence: number }) =>
+            (e: ObjectAnnotation) =>
               e.confidence > CONFIG.videoIntelligenceConfidenceThreshold
           );
           this.activeVideoObjects = this.videoObjects;
@@ -594,6 +674,7 @@ export class AppComponent {
     this.squareVideoObjects = undefined;
     this.verticalVideoObjects = undefined;
     this.variants = undefined;
+    this.previewAnalyses = {};
     this.transcriptStatus = 'hourglass_top';
     this.analysisStatus = 'hourglass_top';
     this.combinationStatus = 'hourglass_top';
@@ -610,6 +691,7 @@ export class AppComponent {
     this.subtitlesTrack = '';
     this.cropAreaRect = undefined;
     this.nonLandscapeInputVideo = false;
+    this.matchedAspectRatio = undefined;
     this.audioSettings = 'segment';
     this.overlaySettings = 'variant_start';
     this.fadeOut = false;
@@ -696,6 +778,19 @@ export class AppComponent {
       this.calculateVideoDefaultDuration(
         this.previewVideoElem.nativeElement.duration
       );
+
+      // Identify aspect ratio
+      const vW = this.previewVideoElem.nativeElement.videoWidth;
+      const vH = this.previewVideoElem.nativeElement.videoHeight;
+      const ratio = vW / vH;
+      this.matchedAspectRatio = undefined;
+      for (const [key, val] of Object.entries(ASPECT_RATIOS)) {
+        if (Math.abs(ratio - val) / val <= ASPECT_RATIO_TOLERANCE) {
+          this.matchedAspectRatio = key;
+          break;
+        }
+      }
+
       // Increments by 1 for every additional video minute
       const minutesFactor =
         Math.floor((this.previewVideoElem.nativeElement.duration - 1) / 60) + 1;
@@ -774,6 +869,7 @@ export class AppComponent {
   generatePreviews(loading = false) {
     this.loading = loading;
     this.generatingPreviews = true;
+    this.previewAnalyses = {};
     this.squareVideoObjects = this.verticalVideoObjects = undefined;
     this.apiCallsService
       .generatePreviews(this.folder, this.analysisJson, this.avSegments, {
@@ -801,18 +897,26 @@ export class AppComponent {
           if (loading) {
             this.loading = false;
           }
-          const previewFilter = (e: { entity: { description: string } }) =>
+          const previewFilter = (e: ObjectAnnotation) =>
             e.entity.description === 'crop-area';
-          const squarePreviewAnalysis = JSON.parse(previews.square);
-          this.squareVideoObjects = this.parseAnalysis(
-            squarePreviewAnalysis,
-            previewFilter
-          );
-          const verticalPreviewAnalysis = JSON.parse(previews.vertical);
-          this.verticalVideoObjects = this.parseAnalysis(
-            verticalPreviewAnalysis,
-            previewFilter
-          );
+
+          const parse = (jsonStr: string) =>
+            this.parseAnalysis(JSON.parse(jsonStr) as VideoAnalysisJson, previewFilter);
+
+          // Handle legacy keys and map to new structure
+          if (previews.square) {
+            this.previewAnalyses['1:1'] = parse(previews.square);
+            this.squareVideoObjects = this.previewAnalyses['1:1'];
+          }
+          if (previews.vertical) {
+            this.previewAnalyses['9:16'] = parse(previews.vertical);
+            this.verticalVideoObjects = this.previewAnalyses['9:16'];
+          }
+
+          // Handle other formats if present in response
+          if (previews['16:9']) this.previewAnalyses['16:9'] = parse(previews['16:9']);
+          if (previews['3:4']) this.previewAnalyses['3:4'] = parse(previews['3:4']);
+          if (previews['4:3']) this.previewAnalyses['4:3'] = parse(previews['4:3']);
         },
         error: err => this.failHandler(err),
       });
@@ -910,23 +1014,39 @@ export class AppComponent {
   loadPreview() {
     this.activeVideoObjects = this.videoObjects;
     this.previewTrackElem.nativeElement.src = this.subtitlesTrack;
-    switch (this.previewToggleGroup.value) {
-      case 'square':
+    const value = this.previewToggleGroup.value;
+
+    if (value === 'toggle') {
+      this.displayObjectTracking = !this.displayObjectTracking;
+    } else if (value === 'settings') {
+      this.openSmartFramingDialog();
+    } else {
+      // Handle aspect ratio selection
+      let key = value;
+      // Map legacy values to new keys if necessary
+      if (value === 'square') key = '1:1';
+      if (value === 'vertical') key = '9:16';
+
+      if (this.previewAnalyses[key]) {
+        this.displayObjectTracking = true;
+        this.previewTrackElem.nativeElement.src = '';
+        this.activeVideoObjects = this.previewAnalyses[key];
+      } else if (value === 'square' && this.squareVideoObjects) {
         this.displayObjectTracking = true;
         this.previewTrackElem.nativeElement.src = '';
         this.activeVideoObjects = this.squareVideoObjects;
-        break;
-      case 'vertical':
+      } else if (value === 'vertical' && this.verticalVideoObjects) {
         this.displayObjectTracking = true;
         this.previewTrackElem.nativeElement.src = '';
         this.activeVideoObjects = this.verticalVideoObjects;
-        break;
-      case 'toggle':
-        this.displayObjectTracking = !this.displayObjectTracking;
-        break;
-      case 'settings':
-        this.openSmartFramingDialog();
-        break;
+      } else {
+        this.displayObjectTracking = false;
+        this.activeVideoObjects = undefined;
+        this.canvas?.clearRect(0, 0, this.videoWidth, this.videoHeight);
+        this.snackBar.open(`'${key}' format will use a blurred background.`, 'Dismiss', {
+          duration: 2500,
+        });
+      }
     }
   }
 
@@ -981,9 +1101,9 @@ export class AppComponent {
       .filter((segment: AvSegment) => segment.played)
       .map((segment: AvSegment) => segment.av_segment_id);
 
-    const lastSelectedSegmentToBePlayed = this.avSegments.findLast(
-      (segment: AvSegment) => segment.selected
-    );
+    const lastSelectedSegmentToBePlayed = [...this.avSegments]
+      .reverse()
+      .find((segment: AvSegment) => segment.selected);
     const nextPlayableSegment = this.avSegments.find(
       (segment: AvSegment) => segment.selected && !segment.played
     );
@@ -998,6 +1118,7 @@ export class AppComponent {
       nextPlayableSegment.av_segment_id !== currentSegment.av_segment_id;
     const allSegmentsPlayed =
       JSON.stringify(allPlayed) === JSON.stringify(allSelected) &&
+      lastSelectedSegmentToBePlayed !== undefined &&
       timestamp >= lastSelectedSegmentToBePlayed.end_s;
     const currentSegmentAlreadyPlayed =
       currentSegment.played &&
@@ -1025,13 +1146,18 @@ export class AppComponent {
   }
 
   seekToSegment(av_segment_id: string) {
-    const segment = this.avSegments.find(
+    const segment = this.avSegments?.find(
       (segment: AvSegment) => segment.av_segment_id === av_segment_id
     );
-    this.previewVideoElem.nativeElement.currentTime = segment.start_s;
+    if (segment) {
+      this.previewVideoElem.nativeElement.currentTime = segment.start_s;
+    }
   }
 
   setSelectedSegments(segments?: string[]) {
+    if (!this.avSegments) {
+      return;
+    }
     for (const segment of this.avSegments) {
       segment.selected = false;
     }
@@ -1198,8 +1324,7 @@ export class AppComponent {
       .renderVariants(this.folder, {
         queue: this.renderQueue,
         queueName: this.renderQueueName,
-        squareCropAnalysis: this.squareVideoObjects,
-        verticalCropAnalysis: this.verticalVideoObjects,
+        previewAnalyses: this.previewAnalyses,
         sourceDimensions: {
           w: this.previewVideoElem.nativeElement.videoWidth,
           h: this.previewVideoElem.nativeElement.videoHeight,
@@ -1218,7 +1343,7 @@ export class AppComponent {
   }
 
   setCombos() {
-    this.combos = Object.values(this.combosJson).map((combo: any) => {
+    this.combos = Object.values(this.combosJson as Record<string, RawVariant>).map((combo: RawVariant) => {
       const segments = Object.values(combo.av_segments) as AvSegment[];
       const duration = TimeUtil.secondsToTimeString(
         segments.reduce(
@@ -1242,18 +1367,22 @@ export class AppComponent {
       };
       renderedVariant.variants = {};
       for (const format in combo.variants) {
-        renderedVariant.variants[format as FormatType] = {
-          entity: combo.variants[format],
-          approved: true,
-        };
+        if (Object.prototype.hasOwnProperty.call(combo.variants, format)) {
+          renderedVariant.variants[format as FormatType] = {
+            entity: combo.variants[format as FormatType],
+            approved: true,
+          };
+        }
       }
       if (combo.images) {
         renderedVariant.images = {};
         for (const format in combo.images) {
-          const images = combo.images[format].map((image: string) => {
-            return { entity: image, approved: true };
-          });
-          renderedVariant.images[format as FormatType] = images;
+          if (Object.prototype.hasOwnProperty.call(combo.images, format)) {
+            const images = combo.images[format as FormatType].map((image: string) => {
+              return { entity: image, approved: true };
+            });
+            renderedVariant.images[format as FormatType] = images;
+          }
         }
       }
       if (combo.texts) {
@@ -1315,13 +1444,13 @@ export class AppComponent {
   }
 
   calculateSelectedSegmentsDuration() {
-    return this.avSegments
-      ?.reduce(
-        (sum: number, segment: any) =>
-          segment.selected ? sum + segment.duration_s : sum,
+    return (
+      this.avSegments?.reduce(
+        (sum: number, segment: AvSegment) =>
+          segment.selected ? sum + (segment.end_s - segment.start_s) : sum,
         0
-      )
-      .toFixed(2);
+      ) ?? 0
+    ).toFixed(2);
   }
 
   setEvalPrompt() {
@@ -1354,11 +1483,9 @@ export class AppComponent {
   }
 
   splitSegment(segmentMarkers: SegmentMarker[]) {
-    console.log(segmentMarkers);
     this.loading = true;
     this.apiCallsService.splitSegment(this.folder, segmentMarkers).subscribe({
       next: result => {
-        console.log(result);
         this.getAvSegments();
       },
       error: err => this.failHandler(err),

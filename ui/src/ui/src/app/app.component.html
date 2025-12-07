@@ -223,8 +223,8 @@ limitations under the License.
             </mat-button-toggle>
             <mat-button-toggle
               *ngIf="
-                (previewToggleGroup.value === 'square' ||
-                  previewToggleGroup.value === 'vertical') &&
+                previewToggleGroup.value !== 'toggle' &&
+                previewToggleGroup.value !== 'settings' &&
                 previewVideoElem.paused &&
                 previewVideoElem.currentTime > 0 &&
                 segmentModeToggle.value === 'preview'
@@ -233,7 +233,7 @@ limitations under the License.
               [matTooltip]="
                 moveCropArea ? 'Save adjusted crop-area' : 'Move crop-area'
               "
-              [disabled]="!verticalVideoObjects || !squareVideoObjects"
+              [disabled]="!activeVideoObjects"
               (click)="toggleMoveCropArea()"
             >
               <mat-icon>{{ moveCropArea ? 'save' : 'open_with' }}</mat-icon>
@@ -258,40 +258,19 @@ limitations under the License.
                 >{{ displayObjectTracking ? 'select_all' : 'deselect' }}
               </mat-icon>
             </mat-button-toggle>
-            <mat-button-toggle
-              value="vertical"
-              matTooltip="{{
-                nonLandscapeInputVideo
-                  ? 'Available for landscape videos only'
-                  : 'Vertical format'
-              }}"
-              [disabled]="!verticalVideoObjects || nonLandscapeInputVideo"
-            >
-              <mat-icon>smartphone</mat-icon>
-            </mat-button-toggle>
-            <mat-button-toggle
-              value="square"
-              matTooltip="{{
-                nonLandscapeInputVideo
-                  ? 'Available for landscape videos only'
-                  : 'Square format'
-              }}"
-              matTooltip="Square format"
-              [disabled]="!squareVideoObjects || nonLandscapeInputVideo"
-            >
-              <mat-icon>slideshow</mat-icon>
-            </mat-button-toggle>
+            @for (ratio of aspectRatios; track ratio) {
+              <mat-button-toggle
+                [value]="ratio"
+                [matTooltip]="ratio + ' format'"
+                [disabled]="generatingPreviews"
+              >
+                <span style="font-size: 12px; font-weight: 500">{{ ratio }}</span>
+              </mat-button-toggle>
+            }
             <mat-button-toggle
               value="settings"
-              matTooltip="{{
-                nonLandscapeInputVideo
-                  ? 'Available for landscape videos only'
-                  : 'Settings dialog'
-              }}"
-              [disabled]="
-                (!verticalVideoObjects && !squareVideoObjects) ||
-                nonLandscapeInputVideo
-              "
+              matTooltip="Settings dialog"
+              [disabled]="!previewAnalyses['1:1']"
             >
               <mat-icon>settings</mat-icon>
             </mat-button-toggle>
@@ -595,26 +574,13 @@ limitations under the License.
               style="margin-left: 16px"
               hideMultipleSelectionIndicator
               multiple
-              [disabled]="nonLandscapeInputVideo"
-              matTooltip="{{
-                nonLandscapeInputVideo
-                  ? 'Available for landscape videos only'
-                  : 'Click to select/unselect each format'
-              }}"
+              matTooltip="Click to select/unselect each format"
             >
-              <mat-button-toggle
-                [checked]="!nonLandscapeInputVideo"
-                disabled
-                value="horizontal"
-              >
-                <mat-icon>computer</mat-icon>
-              </mat-button-toggle>
-              <mat-button-toggle value="vertical">
-                <mat-icon>smartphone</mat-icon>
-              </mat-button-toggle>
-              <mat-button-toggle value="square">
-                <mat-icon>slideshow</mat-icon>
-              </mat-button-toggle>
+              @for (ratio of aspectRatios; track ratio) {
+                <mat-button-toggle [value]="ratio" [matTooltip]="ratio">
+                  <span style="font-size: 12px; font-weight: 500">{{ ratio }}</span>
+                </mat-button-toggle>
+              }
             </mat-button-toggle-group>
           </div>
           <div class="row">
@@ -719,20 +685,12 @@ limitations under the License.
                 class="render-queue-format-icons"
               >
                 <span
-                  *ngIf="variant.render_settings.formats.includes('horizontal')"
+                  *ngFor="let format of variant.render_settings.formats"
                   class="format-icon"
-                  ><mat-icon>computer</mat-icon></span
+                  style="font-size: 12px; display: flex; align-items: center; font-weight: 500; margin-right: 4px;"
                 >
-                <span
-                  *ngIf="variant.render_settings.formats.includes('vertical')"
-                  class="format-icon"
-                  ><mat-icon>smartphone</mat-icon></span
-                >
-                <span
-                  *ngIf="variant.render_settings.formats.includes('square')"
-                  class="format-icon"
-                  ><mat-icon>slideshow</mat-icon></span
-                >
+                  {{ format }}
+                </span>
               </span>
               <span
                 *ngIf="

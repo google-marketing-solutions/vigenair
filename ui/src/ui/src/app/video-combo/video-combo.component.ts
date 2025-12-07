@@ -82,8 +82,9 @@ export class VideoComboComponent implements AfterViewInit {
   comboLoading = false;
   marked = marked;
   images: EntityApproval[] = [];
-  selectedFormat: FormatType = 'horizontal';
+  selectedFormat: FormatType = '16:9';
   textAssetsLanguage = '';
+  aspectRatios: FormatType[] = ['16:9', '9:16', '1:1', '3:4', '4:3'];
 
   constructor(
     private snackBar: MatSnackBar,
