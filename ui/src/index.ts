@@ -39,6 +39,21 @@ import {
   VariantTextAsset,
 } from './ui/src/app/api-calls/api-calls.service.interface';
 
+interface VideoFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  time: number;
+}
+
+interface VideoObject {
+  name: string;
+  start: number;
+  end: number;
+  frames: VideoFrame[];
+}
+
 function getEncodedUserId() {
   const encodedUserId = Session.getActiveUser().getEmail()
     ? Utilities.base64Encode(Session.getActiveUser().getEmail())
@@ -88,26 +103,43 @@ function generatePreviews(
   settings: PreviewSettings
 ): GeneratePreviewsResponse {
   const sourceDimensions = settings.sourceDimensions;
+  const createPreview = (targetW: number, targetH: number) =>
+    JSON.stringify(
+      PreviewHelper.createPreview(
+        segments,
+        analysis,
+        sourceDimensions,
+        { w: targetW, h: targetH },
+        settings.weights
+      )
+    );
+
+  // Calculate dimensions based on source height to maintain resolution
+  const h = sourceDimensions.h;
+
   const squarePreview = PreviewHelper.createPreview(
     segments,
     analysis,
     sourceDimensions,
-    { w: sourceDimensions.h, h: sourceDimensions.h },
+    { w: h, h },
     settings.weights
   );
   const verticalPreview = PreviewHelper.createPreview(
     segments,
     analysis,
     sourceDimensions,
-    {
-      w: sourceDimensions.h * (sourceDimensions.h / sourceDimensions.w),
-      h: sourceDimensions.h,
-    },
+    { w: h * (9 / 16), h },
     settings.weights
   );
+
   return {
-    square: JSON.stringify(squarePreview),
-    vertical: JSON.stringify(verticalPreview),
+    square: JSON.stringify(squarePreview), // Legacy support
+    vertical: JSON.stringify(verticalPreview), // Legacy support
+    '1:1': createPreview(h, h),
+    '9:16': createPreview(h * (9 / 16), h),
+    '16:9': createPreview(h * (16 / 9), h),
+    '3:4': createPreview(h * (3 / 4), h),
+    '4:3': createPreview(h * (4 / 3), h),
   };
 }
 
@@ -118,47 +150,37 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
     : '';
   const folder = `${gcsFolder}/${queueNamePrefix}${Date.now()}-combos`;
 
-  if (renderQueue.squareCropAnalysis) {
-    const encodedSquareCropCommands = Utilities.base64Encode(
-      PreviewHelper.generateCropCommands(
-        renderQueue.squareCropAnalysis,
-        {
-          w: renderQueue.sourceDimensions.h,
-          h: renderQueue.sourceDimensions.h,
-        },
-        CONFIG.defaultVideoHeight
-      ),
-      Utilities.Charset.UTF_8
-    );
-    StorageManager.uploadFile(
-      encodedSquareCropCommands,
-      folder,
-      CONFIG.cloudStorage.files.formats.square,
-      'text/plain'
-    );
-  }
+  const formatMapping: Record<string, string> = {
+    '1:1': 'square',
+    '9:16': 'vertical',
+    '16:9': 'horizontal',
+    '3:4': '3_4',
+    '4:3': '4_3',
+  };
 
-  if (renderQueue.verticalCropAnalysis) {
-    const encodedVerticalCropCommands = Utilities.base64Encode(
-      PreviewHelper.generateCropCommands(
-        renderQueue.verticalCropAnalysis,
-        {
-          w:
-            renderQueue.sourceDimensions.h *
-            (renderQueue.sourceDimensions.h / renderQueue.sourceDimensions.w),
-          h: renderQueue.sourceDimensions.h,
-        },
-        CONFIG.defaultVideoHeight *
-          (CONFIG.defaultVideoHeight / CONFIG.defaultVideoWidth)
-      ),
-      Utilities.Charset.UTF_8
-    );
-    StorageManager.uploadFile(
-      encodedVerticalCropCommands,
-      folder,
-      CONFIG.cloudStorage.files.formats.vertical,
-      'text/plain'
-    );
+  if (renderQueue.previewAnalyses) {
+    for (const [format, analysis] of Object.entries(
+      renderQueue.previewAnalyses
+    )) {
+      const [wRatio, hRatio] = format.split(':').map(Number);
+      const targetH = renderQueue.sourceDimensions.h;
+      const targetW = targetH * (wRatio / hRatio);
+
+      const encodedCropCommands = Utilities.base64Encode(
+        PreviewHelper.generateCropCommands(
+          analysis as unknown as [VideoObject],
+          { w: targetW, h: targetH },
+          CONFIG.defaultVideoHeight // Assuming preview was scaled to default height
+        ),
+        Utilities.Charset.UTF_8
+      );
+      StorageManager.uploadFile(
+        encodedCropCommands,
+        folder,
+        `crop_${formatMapping[format] || format}.txt`,
+        'text/plain'
+      );
+    }
   }
 
   const encodedRenderQueueJson = Utilities.base64Encode(
