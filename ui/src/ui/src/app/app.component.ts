@@ -219,8 +219,10 @@ export class AppComponent {
   segmentsStatus: ProcessStatus = 'hourglass_top';
   canvas?: CanvasRenderingContext2D;
   frameInterval?: number;
+  transcript?: string;
   currentSegmentId?: number;
   prompt = '';
+  defaultPrompt = 'Generate a shorter version of the video, keeping the core message the same.';
   selectedAbcdType: AbcdType = 'awareness';
   evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
   duration = 0;
@@ -228,6 +230,7 @@ export class AppComponent {
   audioSettings = 'segment';
   overlaySettings: OverlayType = 'variant_start';
   fadeOut = false;
+  useBlankingFill = false;
   demandGenAssets = true;
   analyseAudio = true;
   previousRuns: string[] | undefined;
@@ -429,10 +432,27 @@ export class AppComponent {
 
   drawFrame(entities?: VideoObject[]) {
     const context = this.canvas;
-    if (!context || !entities) {
+    if (!context) {
       return;
     }
     context.clearRect(0, 0, this.videoWidth, this.videoHeight);
+
+    if (this.useBlankingFill) {
+      context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      context.fillRect(0, 0, this.videoWidth, this.videoHeight);
+
+      context.font = '30px Roboto';
+      context.fillStyle = '#ffffff';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText('Blanking Fill Active', this.videoWidth / 2, this.videoHeight / 2);
+      return;
+    }
+
+    if (!entities) {
+      return;
+    }
+
     if (this.displayObjectTracking) {
       const timestamp = this.previewVideoElem.nativeElement.currentTime;
       entities.forEach(e => {
@@ -627,6 +647,7 @@ export class AppComponent {
       .subscribe({
         next: data => {
           const dataUrl = `data:text/vtt;base64,${StringUtil.encode(data)}`;
+          this.transcript = data;
           this.previewTrackElem.nativeElement.src = dataUrl;
           this.subtitlesTrack = this.previewTrackElem.nativeElement.src;
           this.transcriptStatus = 'check_circle';
@@ -634,6 +655,21 @@ export class AppComponent {
         },
         error: err => this.failHandler(err, this.folder, true),
       });
+  }
+
+  downloadTranscript(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (this.transcript) {
+      const blob = new Blob([this.transcript], { type: 'text/vtt' });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'transcript.vtt';
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    }
   }
 
   loadPreviousRun(folder: string) {
@@ -675,6 +711,7 @@ export class AppComponent {
     this.verticalVideoObjects = undefined;
     this.variants = undefined;
     this.previewAnalyses = {};
+    this.transcript = undefined;
     this.transcriptStatus = 'hourglass_top';
     this.analysisStatus = 'hourglass_top';
     this.combinationStatus = 'hourglass_top';
@@ -695,6 +732,7 @@ export class AppComponent {
     this.audioSettings = 'segment';
     this.overlaySettings = 'variant_start';
     this.fadeOut = false;
+    this.useBlankingFill = false;
     this.allSegmentsToggle = false;
     this.demandGenAssets = true;
     this.analyseAudio = true;
@@ -843,12 +881,19 @@ export class AppComponent {
     this.duration = Math.min(30, halfDuration - (halfDuration % this.step));
   }
 
+  onPromptKeydown(event: KeyboardEvent) {
+    if (event.key === 'Tab' && !this.prompt) {
+      event.preventDefault();
+      this.prompt = this.defaultPrompt;
+    }
+  }
+
   generateVariants() {
     this.loading = true;
     this.generatingVariants = true;
     this.apiCallsService
       .generateVariants(this.folder, {
-        prompt: this.prompt,
+        prompt: this.prompt || this.defaultPrompt,
         evalPrompt: this.evalPrompt,
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,
@@ -1027,7 +1072,12 @@ export class AppComponent {
       if (value === 'square') key = '1:1';
       if (value === 'vertical') key = '9:16';
 
-      if (this.previewAnalyses[key]) {
+      if (this.useBlankingFill) {
+        this.displayObjectTracking = false;
+        this.activeVideoObjects = undefined;
+        this.canvas?.clearRect(0, 0, this.videoWidth, this.videoHeight);
+        this.drawFrame();
+      } else if (this.previewAnalyses[key]) {
         this.displayObjectTracking = true;
         this.previewTrackElem.nativeElement.src = '';
         this.activeVideoObjects = this.previewAnalyses[key];
@@ -1225,7 +1275,7 @@ export class AppComponent {
         segment_screenshot_uri: segment.segment_screenshot_uri,
       };
     });
-    const renderSettings: RenderSettings = {
+    const renderSettings = {
       generate_image_assets: this.demandGenAssets,
       generate_text_assets: this.demandGenAssets,
       formats: this.renderFormatsToggle.value as FormatType[],
@@ -1233,6 +1283,7 @@ export class AppComponent {
       use_continuous_audio: this.audioSettings === 'continuous',
       fade_out: this.fadeOut,
       overlay_type: this.overlaySettings,
+      use_blanking_fill: this.useBlankingFill,
     };
     const selectedScenes = selectedSegments.map(
       (segment: AvSegment) => segment.av_segment_id
@@ -1303,6 +1354,9 @@ export class AppComponent {
         ? 'continuous'
         : 'segment';
     this.fadeOut = variant.render_settings.fade_out;
+    this.useBlankingFill =
+      (variant.render_settings as RenderSettings & { use_blanking_fill?: boolean })
+        .use_blanking_fill ?? false;
     this.overlaySettings = variant.render_settings.overlay_type!;
     this.closeRenderQueueSidenav();
     setTimeout(() => {

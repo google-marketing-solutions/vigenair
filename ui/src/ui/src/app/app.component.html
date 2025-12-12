@@ -74,6 +74,7 @@ limitations under the License.
           display: flex;
           margin-top: 4px;
           margin-right: 15px;
+          margin-right: 16px;
         "
         color="primary"
         [(ngModel)]="analyseAudio"
@@ -240,7 +241,17 @@ limitations under the License.
             </mat-button-toggle>
           </mat-button-toggle-group>
         </div>
-        <div style="margin-left: auto">
+        <div style="margin-left: auto; display: flex; align-items: center">
+          <mat-checkbox
+            *ngIf="previewToggleGroup.value !== 'toggle' && previewToggleGroup.value !== 'settings'"
+            color="primary"
+            [(ngModel)]="useBlankingFill"
+            (change)="loadPreview()"
+            matTooltip="Resize video over a blurred background instead of cropping. You need to select an aspect ratio as well."
+            style="margin-right: 16px"
+          >
+            Blanking fill
+          </mat-checkbox>
           <mat-button-toggle-group
             #previewToggleGroup="matButtonToggleGroup"
             value="toggle"
@@ -334,9 +345,13 @@ limitations under the License.
           [style.margin-right]="
             variants && segmentModeToggle.value === 'preview' ? '200px' : ''
           "
+          style="display: flex; align-items: center"
         >
           <mat-chip-set>
-            <mat-chip disableRipple [ngClass]="transcriptStatus">
+            <mat-chip
+              disableRipple
+              [ngClass]="transcriptStatus"
+            >
               <mat-icon
                 matChipAvatar
                 fontIcon="{{ transcriptStatus }}"
@@ -369,6 +384,15 @@ limitations under the License.
               Rendering video variants
             </mat-chip>
           </mat-chip-set>
+          <button
+            mat-icon-button
+            *ngIf="transcript"
+            (click)="downloadTranscript()"
+            matTooltip="Download transcript"
+            style="margin-left: 8px"
+          >
+            <mat-icon>download</mat-icon>
+          </button>
         </div>
         <div
           style="margin-left: auto"
@@ -392,7 +416,8 @@ limitations under the License.
             <textarea
               matInput
               [(ngModel)]="prompt"
-              placeholder="e.g. 'Focus on discovering new experiences', 'Exclude food scenes', etc."
+              (keydown)="onPromptKeydown($event)"
+              [placeholder]="defaultPrompt + ' (Press Tab to use)'"
             ></textarea>
           </mat-form-field>
         </div>
@@ -553,6 +578,11 @@ limitations under the License.
             <span matTooltip="Fades out audio at the end of the video">
               <mat-checkbox color="primary" [(ngModel)]="fadeOut">
                 Fade out
+              </mat-checkbox>
+            </span>
+            <span matTooltip="Resize video over a blurred background instead of cropping. Applies to selected render formats." style="margin-left: 16px;">
+              <mat-checkbox color="primary" [(ngModel)]="useBlankingFill">
+                Blanking fill
               </mat-checkbox>
             </span>
           </div>
@@ -754,7 +784,8 @@ limitations under the License.
                       variant.render_settings.overlay_type!.replace('_', ' ') +
                       ')'
                     : 'Individual segments') +
-                  (variant.render_settings.fade_out ? ' + Fade out' : '')
+                  (variant.render_settings.fade_out ? ' + Fade out' : '') +
+                  ($any(variant.render_settings).use_blanking_fill ? ' + Blanking fill' : '')
               }}
             </div>
           </div>
