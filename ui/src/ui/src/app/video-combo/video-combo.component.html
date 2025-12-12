@@ -90,8 +90,7 @@ limitations under the License.
           (combo.render_settings.overlay_type
             ? ' (' + combo.render_settings.overlay_type.replace('_', ' ') + ')'
             : '')
-        : 'Individual segments') +
-      (combo.render_settings.fade_out ? ' + Fade out' : '')
+      ($any(combo.render_settings).use_blanking_fill ? ' + Blanking fill' : '')
   }}
 </div>
 <div class="row" style="justify-content: start">

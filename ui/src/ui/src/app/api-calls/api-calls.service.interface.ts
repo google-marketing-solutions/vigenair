@@ -91,6 +91,7 @@ export interface RenderSettings {
   use_continuous_audio: boolean;
   fade_out: boolean;
   overlay_type?: OverlayType;
+  use_blanking_fill?: boolean;
 }
 
 /** Represents the queue of variants to be rendered. */
