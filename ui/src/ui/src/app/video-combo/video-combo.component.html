@@ -80,7 +80,7 @@ limitations under the License.
 >
   Audio:
   {{
-    (combo.render_settings.use_continuous_audio
+    combo.render_settings.use_continuous_audio
       ? 'Overlay all' +
         (combo.render_settings.overlay_type
           ? ' (' + combo.render_settings.overlay_type.replace('_', ' ') + ')'
@@ -89,8 +89,9 @@ limitations under the License.
         ? 'Overlay music' +
           (combo.render_settings.overlay_type
             ? ' (' + combo.render_settings.overlay_type.replace('_', ' ') + ')'
-            : '')
-      ($any(combo.render_settings).use_blanking_fill ? ' + Blanking fill' : '')
+            : '') +
+          ($any(combo.render_settings).use_blanking_fill ? ' + Blanking fill' : '')
+      : ''
   }}
 </div>
 <div class="row" style="justify-content: start">
