@@ -221,8 +221,18 @@ export class AppComponent {
   frameInterval?: number;
   transcript?: string;
   currentSegmentId?: number;
-  prompt = '';
+  prompt = 'Generate a shorter version of the video, keeping the core message the same.';
   defaultPrompt = 'Generate a shorter version of the video, keeping the core message the same.';
+  selectedPromptOption = 'default';
+  predefinedPrompts = [
+    { value: 'default', label: 'Default', text: 'Generate a shorter version of the video, keeping the core message the same.' },
+    { value: 'highlight', label: 'Highlight Key Points', text: 'Create a video highlighting only the most important key points and messages.' },
+    { value: 'engaging', label: 'More Engaging', text: 'Make the video more engaging by focusing on the most dynamic and interesting segments.' },
+    { value: 'professional', label: 'Professional Summary', text: 'Create a professional summary that maintains formal tone and key information.' },
+    { value: 'social', label: 'Social Media', text: 'Optimize for social media by keeping the most attention-grabbing moments.' },
+    { value: 'custom', label: 'Custom Prompt', text: '' }
+  ];
+  isCustomPrompt = false;
   selectedAbcdType: AbcdType = 'awareness';
   evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
   duration = 0;
@@ -885,6 +895,18 @@ export class AppComponent {
     if (event.key === 'Tab' && !this.prompt) {
       event.preventDefault();
       this.prompt = this.defaultPrompt;
+    }
+  }
+
+  onPromptSelectionChange() {
+    const selected = this.predefinedPrompts.find(p => p.value === this.selectedPromptOption);
+    if (selected) {
+      this.isCustomPrompt = selected.value === 'custom';
+      if (this.isCustomPrompt) {
+        this.prompt = '';
+      } else {
+        this.prompt = selected.text;
+      }
     }
   }
 

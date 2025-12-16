@@ -407,17 +407,38 @@ limitations under the License.
             flex-direction: column;
             margin-right: auto;
             flex: auto;
+            gap: 8px;
           "
         >
-          <mat-form-field style="flex: 1" subscriptSizing="dynamic">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
             <mat-label
               >What should your video variants include or exclude?</mat-label
             >
+            <mat-select
+              [(ngModel)]="selectedPromptOption"
+              (selectionChange)="onPromptSelectionChange()"
+            >
+              @for (promptOption of predefinedPrompts; track promptOption.value) {
+                <mat-option [value]="promptOption.value">
+                  <div style="display: flex; flex-direction: column">
+                    <strong>{{ promptOption.label }}</strong>
+                    @if (promptOption.text) {
+                      <span style="font-size: 0.85em; color: #666; white-space: normal">
+                        {{ promptOption.text }}
+                      </span>
+                    }
+                  </div>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field style="flex: 1" subscriptSizing="dynamic">
+            <mat-label>Edit Prompt</mat-label>
             <textarea
               matInput
               [(ngModel)]="prompt"
               (keydown)="onPromptKeydown($event)"
-              [placeholder]="defaultPrompt + ' (Press Tab to use)'"
+              [placeholder]="isCustomPrompt ? (defaultPrompt + ' (Press Tab to use)') : 'Edit the prompt before generating'"
             ></textarea>
           </mat-form-field>
         </div>
