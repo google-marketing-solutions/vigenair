@@ -175,13 +175,44 @@ export class UiDeploymentHandler {
       shell: true,
       encoding: "utf8",
     });
-    const lastNonEmptyLine = res.output[1]
+
+    // Check if the command succeeded
+    if (res.status !== 0) {
+      console.error("\nError deploying UI Web App!");
+      if (res.output && res.output[2]) {
+        console.error("Error output:", res.output[2]);
+      }
+      if (res.error) {
+        console.error("Error details:", res.error);
+      }
+      console.log("\nPlease ensure you are authenticated with clasp:");
+      console.log("  1. Run: cd ui && clasp login");
+      console.log("  2. Re-run the deployment");
+      return;
+    }
+
+    const outputText = res.output[1];
+    if (!outputText) {
+      console.error("\nWarning: No output received from clasp deploy command.");
+      console.log("Please manually check the deployment status.");
+      return;
+    }
+
+    const lastNonEmptyLine = outputText
       .split("\n")
       .findLast((line: string) => line.trim().length > 0);
-    let webAppLink = lastNonEmptyLine.match(/- (.*) @.*/);
-    webAppLink = webAppLink?.length
-      ? `https://script.google.com/macros/s/${webAppLink[1]}/exec`
-      : "Could not extract UI Web App link from npm output! Please check the output manually.";
+
+    if (!lastNonEmptyLine) {
+      console.error("\nWarning: Could not parse deployment output.");
+      console.log("Please manually check the deployment status.");
+      return;
+    }
+
+    // Extract deployment ID from "Deployed <ID> @<VERSION>" format
+    const match = lastNonEmptyLine.match(/^Deployed ([^\s]+) @/);
+    const webAppLink = match?.length
+      ? `https://script.google.com/macros/s/${match[1]}/exec`
+      : "Could not extract UI Web App link from clasp output! Please check the output manually.";
     console.log();
     console.log(`IMPORTANT -> UI Web App Link: ${webAppLink}`);
   }
