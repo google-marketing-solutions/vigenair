@@ -265,4 +265,8 @@ export interface ApiCalls {
     gcsFolder: string,
     segmentMarkers: SegmentMarker[]
   ): Observable<string>;
+  updateTranscription(
+    gcsFolder: string,
+    transcriptionText: string
+  ): Observable<boolean>;
 }

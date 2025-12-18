@@ -317,6 +317,73 @@ limitations under the License.
           ></div>
         </div>
       </div>
+      <!-- Transcription Editor -->
+      <div class="row" style="margin-top: 16px; width: 100%;" *ngIf="analyseAudio && folder">
+        <mat-expansion-panel style="width: 100%;">
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <mat-icon class="panel-icon">subtitles</mat-icon>
+              <span>Edit or Download Transcription</span>
+            </mat-panel-title>
+            <mat-panel-description style="justify-content: flex-end;">
+              <button
+                mat-icon-button
+                *ngIf="transcriptionText && !transcriptionLoading"
+                (click)="downloadTranscript(); $event.stopPropagation()"
+                matTooltip="Download Transcription"
+                color="primary"
+              >
+                <mat-icon>download</mat-icon>
+              </button>
+            </mat-panel-description>
+          </mat-expansion-panel-header>
+          <mat-progress-bar
+            *ngIf="transcriptionLoading"
+            mode="indeterminate"
+          ></mat-progress-bar>
+          <div style="margin-top: 16px;" *ngIf="transcriptionLoaded && !transcriptionLoading && transcriptionText">
+            <span class="notice-text" style="display: block; margin-bottom: 8px;">
+              Edit the transcription text below in WebVTT format. Keep the timestamp format (HH:MM:SS.mmm --> HH:MM:SS.mmm) intact.
+            </span>
+            <mat-form-field style="width: 100%;" appearance="outline">
+              <mat-label>Transcription (WebVTT)</mat-label>
+              <textarea
+                matInput
+                [(ngModel)]="transcriptionText"
+                rows="15"
+                style="font-family: monospace; font-size: 12px;"
+              ></textarea>
+            </mat-form-field>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+              <button
+                mat-stroked-button
+                (click)="downloadTranscript()"
+                [disabled]="!transcriptionText || transcriptionLoading"
+              >
+                <mat-icon>download</mat-icon>
+                Download Transcription
+              </button>
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="applyTranscription()"
+                [disabled]="!transcriptionText || transcriptionLoading || loading"
+              >
+                <mat-icon>check</mat-icon>
+                Apply Changes
+              </button>
+            </div>
+          </div>
+          <div style="margin-top: 16px; padding: 16px; color: #666;" *ngIf="!transcriptionLoading && transcriptionLoaded && !transcriptionText">
+            <mat-icon style="vertical-align: middle;">info</mat-icon>
+            No transcription available. The transcription file may still be processing or was not generated.
+          </div>
+          <div style="margin-top: 16px; padding: 16px; color: #666;" *ngIf="!transcriptionLoading && !transcriptionLoaded">
+            <mat-icon style="vertical-align: middle;">hourglass_empty</mat-icon>
+            Waiting for transcription to complete...
+          </div>
+        </mat-expansion-panel>
+      </div>
       <div class="row">
         <div
           class="margin-left-auto-right-150"
@@ -369,15 +436,6 @@ limitations under the License.
               Rendering video variants
             </mat-chip>
           </mat-chip-set>
-          <button
-            mat-icon-button
-            *ngIf="transcript"
-            (click)="downloadTranscript()"
-            matTooltip="Download transcript"
-            class="margin-left-8"
-          >
-            <mat-icon>download</mat-icon>
-          </button>
         </div>
         <div
           class="margin-left-auto"

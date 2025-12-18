@@ -51,8 +51,6 @@ export class ApiCallsService implements ApiCalls {
 
   getUserAuthToken(): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((userAuthToken: string) => {
           this.ngZone.run(() => {
@@ -113,8 +111,6 @@ export class ApiCallsService implements ApiCalls {
   }
 
   deleteGcsFolder(folder: string): void {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     google.script.run.deleteGcsFolder(folder);
   }
 
@@ -148,8 +144,6 @@ export class ApiCallsService implements ApiCalls {
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]> {
     return new Observable<GenerateVariantsResponse[]>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((variants: GenerateVariantsResponse[]) => {
           this.ngZone.run(() => {
@@ -177,8 +171,6 @@ export class ApiCallsService implements ApiCalls {
     settings: PreviewSettings
   ): Observable<GeneratePreviewsResponse> {
     return new Observable<GeneratePreviewsResponse>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((previews: GeneratePreviewsResponse) => {
           this.ngZone.run(() => {
@@ -201,8 +193,6 @@ export class ApiCallsService implements ApiCalls {
 
   getRunsFromGcs(): Observable<PreviousRunsResponse> {
     return new Observable<PreviousRunsResponse>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: PreviousRunsResponse) => {
           this.ngZone.run(() => {
@@ -225,8 +215,6 @@ export class ApiCallsService implements ApiCalls {
 
   getRendersFromGcs(gcsFolder: string): Observable<string[]> {
     return new Observable<string[]>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: string[]) => {
           this.ngZone.run(() => {
@@ -252,8 +240,6 @@ export class ApiCallsService implements ApiCalls {
     renderQueue: RenderQueue
   ): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: string) => {
           this.ngZone.run(() => {
@@ -280,8 +266,6 @@ export class ApiCallsService implements ApiCalls {
 
   getWebAppUrl(): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: string) => {
           this.ngZone.run(() => {
@@ -305,8 +289,6 @@ export class ApiCallsService implements ApiCalls {
     textAssetLanguage: string
   ): Observable<VariantTextAsset> {
     return new Observable<VariantTextAsset>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((textAsset: VariantTextAsset) => {
           this.ngZone.run(() => {
@@ -331,8 +313,6 @@ export class ApiCallsService implements ApiCalls {
     combos: RenderedVariant[]
   ): Observable<boolean> {
     return new Observable<boolean>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: boolean) => {
           this.ngZone.run(() => {
@@ -350,8 +330,6 @@ export class ApiCallsService implements ApiCalls {
 
   getVideoLanguage(gcsFolder: string): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((videoLanguage: string) => {
           this.ngZone.run(() => {
@@ -377,8 +355,6 @@ export class ApiCallsService implements ApiCalls {
     textAssetsLanguage: string
   ): Observable<VariantTextAsset[]> {
     return new Observable<VariantTextAsset[]>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((textAssets: VariantTextAsset[]) => {
           this.ngZone.run(() => {
@@ -405,8 +381,6 @@ export class ApiCallsService implements ApiCalls {
     segmentMarkers: SegmentMarker[]
   ): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: string) => {
           this.ngZone.run(() => {
@@ -422,6 +396,29 @@ export class ApiCallsService implements ApiCalls {
           subscriber.error(error);
         })
         .splitSegment(gcsFolder, segmentMarkers);
+    });
+  }
+
+  updateTranscription(
+    gcsFolder: string,
+    transcriptionText: string
+  ): Observable<boolean> {
+    return new Observable<boolean>(subscriber => {
+      google.script.run
+        .withSuccessHandler((response: boolean) => {
+          this.ngZone.run(() => {
+            subscriber.next(response);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Encountered an unexpected error while updating transcription! Error: ',
+            error
+          );
+          subscriber.error(error);
+        })
+        .updateTranscription(gcsFolder, transcriptionText);
     });
   }
 }

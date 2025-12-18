@@ -139,3 +139,12 @@ mat-table {
   margin-top: -6px;
   width: 100%;
 }
+
+.panel-icon {
+  margin-right: 8px;
+}
+
+.notice-text {
+  color: #666;
+  font-size: 0.9em;
+}

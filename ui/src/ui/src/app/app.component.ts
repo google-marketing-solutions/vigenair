@@ -248,6 +248,9 @@ export class AppComponent {
   encodedUserId: string | undefined;
   folder = '';
   folderGcsPath = '';
+  transcriptionText = '';
+  transcriptionLoading = false;
+  transcriptionLoaded = false;
   combosFolder = '';
   math = Math;
   json = JSON;
@@ -590,6 +593,68 @@ export class AppComponent {
           }
         },
         error: err => this.failHandler(err, this.folder, true),
+      });
+
+    // Load transcription if available
+    this.loadTranscription();
+  }
+
+  loadTranscription() {
+    if (!this.analyseAudio || !this.folder) {
+      this.transcriptionLoaded = true;
+      return;
+    }
+
+    this.transcriptionLoading = true;
+    this.transcriptionLoaded = false;
+    const transcriptionUrl = `${this.folder}/${CONFIG.cloudStorage.files.subtitles}`;
+    console.log('Loading transcription from:', transcriptionUrl);
+    this.apiCallsService.getFromGcs(transcriptionUrl).subscribe({
+      next: (data: string) => {
+        console.log('VTT transcription loaded, length:', data.length);
+        this.transcriptionText = data;
+        this.transcriptionLoading = false;
+        this.transcriptionLoaded = true;
+      },
+      error: (err) => {
+        console.log('Error loading transcription:', err);
+        this.transcriptionText = '';
+        this.transcriptionLoading = false;
+        this.transcriptionLoaded = true;
+      }
+    });
+  }
+
+  applyTranscription() {
+    if (!this.transcriptionText) {
+      this.snackBar.open('Transcription is empty', 'Dismiss', {
+        duration: 2500,
+      });
+      return;
+    }
+
+    this.transcriptionLoading = true;
+    this.apiCallsService
+      .updateTranscription(this.folder, this.transcriptionText)
+      .subscribe({
+        next: (success: boolean) => {
+          this.transcriptionLoading = false;
+          if (success) {
+            this.snackBar.open('Transcription updated successfully! Reloading...', 'Dismiss', {
+              duration: 2500,
+            });
+            // Reload subtitles and segments to get updated transcription
+            this.getSubtitlesTrack();
+          } else {
+            this.snackBar.open('Failed to update transcription', 'Dismiss', {
+              duration: 2500,
+            });
+          }
+        },
+        error: (err: Error) => {
+          this.transcriptionLoading = false;
+          this.failHandler(err, this.folder, false);
+        }
       });
   }
 
