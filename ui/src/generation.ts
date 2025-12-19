@@ -203,11 +203,11 @@ export class GenerationHelper {
     );
     const allScenes = Object.keys(avSegmentsMap).join(', ');
     let iteration = 0;
-    const MAX_ITERATIONS = 5;
+    const maxIterations = 5;
 
-    while (!variants.length && iteration < MAX_ITERATIONS) {
+    while (!variants.length && iteration < maxIterations) {
       iteration++;
-      AppLogger.info(`GenerateVariants attempt #${iteration} of ${MAX_ITERATIONS}`);
+      AppLogger.info(`GenerateVariants attempt #${iteration} of ${maxIterations}`);
       const response = VertexHelper.generate(prompt);
       AppLogger.info(`GenerateVariants Response #${iteration}: ${response}`);
 
@@ -272,7 +272,7 @@ export class GenerationHelper {
     }
 
     if (!variants.length) {
-      const errorMsg = `Failed to generate valid variants after ${MAX_ITERATIONS} attempts. Please check the logs for details.`;
+      const errorMsg = `Failed to generate valid variants after ${maxIterations} attempts. Please check the logs for details.`;
       AppLogger.error(errorMsg);
       throw new Error(errorMsg);
     }
