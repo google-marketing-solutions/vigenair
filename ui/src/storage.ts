@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/// <reference types="google-apps-script" />
+
 import { CONFIG } from './config';
 import { AppLogger } from './logging';
 import { ScriptUtil } from './script-util';

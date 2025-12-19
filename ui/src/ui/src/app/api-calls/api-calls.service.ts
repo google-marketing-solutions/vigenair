@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/// <reference types="google-apps-script" />
+
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
 import { catchError, Observable, of, retry, switchMap, timer } from 'rxjs';

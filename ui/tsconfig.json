@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2020",
     "module": "es2020",
-    "lib": ["es2020", "dom"],
+    "lib": ["es2022", "dom"],
     "moduleResolution": "node",
     "outDir": "dist",
     "rootDir": ".",
@@ -13,10 +13,12 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowUnreachableCode": false,
-    "allowUnusedLabels": false
+    "allowUnusedLabels": false,
+    "types": ["google-apps-script"]
   },
   "angularCompilerOptions": {
     "strictTemplates": true
   },
-  "include": ["src/**/*", "test/**/*", "rollup.config.mjs"]
+  "include": ["src/**/*", "test/**/*", "rollup.config.mjs"],
+  "exclude": ["src/ui/**/*", "node_modules"]
 }

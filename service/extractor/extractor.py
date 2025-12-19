@@ -827,12 +827,37 @@ def _cut_and_annotate_av_segment(
         and response.candidates[0].content.parts[0].text
     ):
       text = response.candidates[0].content.parts[0].text
-      result = re.search(ConfigService.SEGMENT_ANNOTATIONS_PATTERN, text)
       logging.info(
           'ANNOTATION - Annotating segment %s: %s', av_segment_id, text
       )
-      description = result.group(2)
-      keywords = result.group(3)
+      # Try JSON parsing first (more reliable)
+      try:
+        # Extract JSON from potential markdown code blocks
+        json_match = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
+        if json_match:
+          json_text = json_match.group(1)
+        else:
+          json_text = text.strip()
+
+        data = json.loads(json_text)
+        description = data.get('description', '')
+        keywords = data.get('keywords', '')
+      except (json.JSONDecodeError, KeyError, IndexError) as e:
+        # Fallback to regex pattern matching
+        logging.warning(
+            'ANNOTATION - JSON parsing failed for segment %s (%s), trying regex'
+            ' fallback',
+            av_segment_id, str(e)
+        )
+        result = re.search(ConfigService.SEGMENT_ANNOTATIONS_PATTERN, text)
+        if result:
+          description = result.group(2)
+          keywords = result.group(3)
+        else:
+          logging.warning(
+              'ANNOTATION - Pattern did not match for segment %s!',
+              av_segment_id,
+          )
     else:
       logging.warning(
           'ANNOTATION - Could not annotate segment %s!', av_segment_id
