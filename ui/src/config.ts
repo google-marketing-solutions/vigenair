@@ -109,6 +109,38 @@ export const CONFIG = {
 
 
     `,
+    aspectRatioOnlyPrompt: `Generate video variants optimized for different aspect ratios. Include ALL scenes without shortening.
+
+**Task:** Create variants for different aspect ratios (16:9, 9:16, 1:1, 4:5) that include all scenes from the original video.
+
+**User Guidance:** {{{{userPrompt}}}}
+
+**Requirements:**
+- Include ALL scenes: {{{{videoScript}}}}
+- Total duration: {{{{desiredDuration}}}} seconds
+- Focus on framing/cropping strategy for each aspect ratio
+- Preserve key visual elements (faces, products, text, logos)
+
+{{{{generationEvalPromptPart}}}}
+
+**Output Format (STRICT):**
+For each variant, use this EXACT format:
+
+Title: [Aspect ratio variant name in {{{{videoLanguage}}}}]
+Scenes: [ALL scene numbers comma-separated]
+Reasoning: [Brief framing strategy - max 2 sentences]
+Score: [1-5]
+Duration: {{{{desiredDuration}}}}
+ABCD:
+[Brief evaluation on new line - max 2 sentences]
+
+## Combination
+
+**Input:**
+Script: {{{{videoScript}}}}
+Duration: {{{{desiredDuration}}}}
+Language: {{{{videoLanguage}}}}
+`,
     abcdBusinessObjectives: {
       awareness: {
         displayName: 'Awareness',
