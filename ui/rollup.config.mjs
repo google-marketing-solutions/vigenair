@@ -34,7 +34,10 @@ export default {
         },
       },
     }),
-    typescript(),
+    typescript({
+      tsconfig: 'tsconfig.json',
+      exclude: ['src/ui/**/*']
+    }),
   ],
   context: 'this',
 };

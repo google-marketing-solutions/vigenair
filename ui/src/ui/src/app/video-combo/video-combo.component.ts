@@ -120,7 +120,6 @@ export class VideoComboComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     this.getTextAssetsLanguage();
     this.loadVideo();
-    this.loadTranscription();
   }
 
   getTextAssetsLanguage() {

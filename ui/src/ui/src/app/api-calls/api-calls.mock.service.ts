@@ -227,4 +227,10 @@ export class ApiCallsService implements ApiCalls {
       }, 1000);
     });
   }
+  updateTranscription(
+    gcsFolder: string,
+    transcriptionText: string
+  ): Observable<boolean> {
+    return of(true);
+  }
 }

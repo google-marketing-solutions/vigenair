@@ -230,6 +230,7 @@ export class AppComponent {
     { value: 'engaging', label: 'More Engaging', text: 'Make the video more engaging by focusing on the most dynamic and interesting segments.' },
     { value: 'professional', label: 'Professional Summary', text: 'Create a professional summary that maintains formal tone and key information.' },
     { value: 'social', label: 'Social Media', text: 'Optimize for social media by keeping the most attention-grabbing moments.' },
+    { value: 'crop-only', label: 'Crop Only (No Shortening)', text: 'Change aspect ratio without shortening the video - keeps the full duration.' },
     { value: 'custom', label: 'Custom Prompt', text: '' }
   ];
   isCustomPrompt = false;
@@ -237,6 +238,7 @@ export class AppComponent {
   evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
   duration = 0;
   step = 0;
+  shortenVideo = true;
   audioSettings = 'segment';
   overlaySettings: OverlayType = 'variant_start';
   fadeOut = false;
@@ -967,6 +969,8 @@ export class AppComponent {
     const selected = this.predefinedPrompts.find(p => p.value === this.selectedPromptOption);
     if (selected) {
       this.isCustomPrompt = selected.value === 'custom';
+      // Set shortenVideo based on selection
+      this.shortenVideo = selected.value !== 'crop-only';
       if (this.isCustomPrompt) {
         this.prompt = '';
       } else {
@@ -975,27 +979,63 @@ export class AppComponent {
     }
   }
 
+  onShortenVideoChange(shorten: boolean) {
+    if (shorten) {
+      // When enabling shortening, switch to default prompt
+      this.selectedPromptOption = 'default';
+    } else {
+      // When disabling shortening, switch to crop-only prompt
+      this.selectedPromptOption = 'crop-only';
+    }
+    this.onPromptSelectionChange();
+  }
+
   generateVariants() {
+    console.log('Component: generateVariants() called');
     this.loading = true;
     this.generatingVariants = true;
+
+    // Set a timeout warning after 30 seconds
+    const timeoutWarning = setTimeout(() => {
+      console.warn('WARNING: Variant generation is taking longer than 30 seconds. This may indicate a timeout issue.');
+    }, 30000);
+
     this.apiCallsService
       .generateVariants(this.folder, {
         prompt: this.prompt || this.defaultPrompt,
         evalPrompt: this.evalPrompt,
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,
+        shortenVideo: this.shortenVideo,
       })
       .subscribe({
         next: variants => {
-          this.loading = false;
-          this.generatingVariants = false;
-          this.selectedVariant = 0;
-          this.variants = variants;
-          this.setSelectedSegments();
-          this.displayObjectTracking = false;
+          clearTimeout(timeoutWarning);
+          try {
+            console.log('Component: Received variants in subscribe handler');
+            console.log('Received variants:', variants);
+            console.log('Number of variants:', variants?.length);
+            this.loading = false;
+            this.generatingVariants = false;
+            this.selectedVariant = 0;
+            this.variants = variants;
+            console.log('Set this.variants to:', this.variants);
+            console.log('Component state - loading:', this.loading, 'generatingVariants:', this.generatingVariants);
+            this.setSelectedSegments();
+            this.displayObjectTracking = false;
+            console.log('Successfully processed variants');
+          } catch (error) {
+            console.error('Error processing variants:', error);
+            this.failHandler(error instanceof Error ? error : new Error(String(error)));
+          }
         },
-        error: err => this.failHandler(err),
+        error: err => {
+          clearTimeout(timeoutWarning);
+          console.error('Component: Error in subscribe handler:', err);
+          this.failHandler(err);
+        },
       });
+    console.log('Component: Subscribe call completed');
   }
 
   generatePreviews(loading = false) {

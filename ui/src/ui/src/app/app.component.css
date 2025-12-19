@@ -317,6 +317,12 @@ mat-divider {
 .height-minus-header { height: calc(100% - 68px); }
 .sidenav-width { width: 35rem; }
 
+/* Utility Classes - States */
+.disabled-overlay {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* Utility Classes - Visibility */
 .visibility-hidden { visibility: hidden; }
 

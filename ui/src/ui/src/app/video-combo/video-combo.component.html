@@ -71,53 +71,6 @@ limitations under the License.
   </video>
 </div>
 
-<!-- Transcription Editor - DEBUG: Always visible -->
-<div class="row" style="margin-top: 16px; width: 100%; background: #f0f0f0; padding: 8px;">
-  <mat-expansion-panel style="width: 100%">
-    <mat-expansion-panel-header>
-      <mat-panel-title>
-        <mat-icon class="panel-icon">subtitles</mat-icon>
-        <span>Edit Transcription (Debug: hasTranscription={{hasTranscription}}, loading={{transcriptionLoading}})</span>
-      </mat-panel-title>
-    </mat-expansion-panel-header>
-    <mat-progress-bar
-      *ngIf="transcriptionLoading"
-      mode="indeterminate"
-    ></mat-progress-bar>
-    <div style="margin-top: 16px;" *ngIf="!transcriptionLoading && hasTranscription">
-      <span class="notice-text" style="display: block; margin-bottom: 8px;">
-        Edit the transcription text below. Keep the timestamp format (HH:MM:SS.mmm --> HH:MM:SS.mmm) intact.
-      </span>
-      <mat-form-field style="width: 100%;" appearance="outline">
-        <mat-label>Transcription</mat-label>
-        <textarea
-          matInput
-          [(ngModel)]="transcriptionText"
-          rows="10"
-          [disabled]="transcriptionLoading"
-          style="font-family: monospace; font-size: 12px;"
-        ></textarea>
-      </mat-form-field>
-      <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="applyTranscription()"
-          [disabled]="!transcriptionText || transcriptionLoading || loading"
-        >
-          <mat-icon>check</mat-icon>
-          Apply Changes
-        </button>
-      </div>
-    </div>
-    <div style="margin-top: 16px; padding: 16px; color: #666;" *ngIf="!transcriptionLoading && !hasTranscription">
-      <mat-icon style="vertical-align: middle;">info</mat-icon>
-      No transcription available. Folder: {{gcsFolder}}<br>
-      This video may not have been analyzed for voice-over, or the transcription file could not be found.
-    </div>
-  </mat-expansion-panel>
-</div>
-
 <div class="row" style="justify-content: start">
   Segments: {{ combo.scenes }}
 </div>

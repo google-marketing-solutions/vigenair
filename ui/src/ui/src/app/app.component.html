@@ -478,7 +478,16 @@ limitations under the License.
           </mat-form-field>
         </div>
         <div class="flex-column margin-top-neg-16">
-          <div>
+          <mat-checkbox
+            color="primary"
+            [(ngModel)]="shortenVideo"
+            (ngModelChange)="onShortenVideoChange($event)"
+            [disabled]="loading"
+            class="margin-bottom-10"
+          >
+            Shorten video
+          </mat-checkbox>
+          <div [class.disabled-overlay]="!shortenVideo">
             <mat-label>Target duration:</mat-label>
             <mat-slider
               discrete
@@ -486,7 +495,7 @@ limitations under the License.
               [max]="math.round(previewVideoElem.duration)"
               [min]="step"
               [step]="step"
-              [disabled]="loading"
+              [disabled]="loading || !shortenVideo"
             >
               <input matSliderThumb [(ngModel)]="duration" #durationSlider />
             </mat-slider>

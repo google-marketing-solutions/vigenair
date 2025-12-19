@@ -41,6 +41,7 @@ export interface GenerationSettings {
   evalPrompt: string;
   duration: number;
   demandGenAssets: boolean;
+  shortenVideo: boolean;
 }
 
 /** Represents an audio/video segment. */

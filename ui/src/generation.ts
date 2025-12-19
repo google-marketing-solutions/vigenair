@@ -61,14 +61,26 @@ export class GenerationHelper {
     settings: GenerationSettings
   ): string {
     const videoLanguage = GenerationHelper.getVideoLanguage(gcsFolder);
-    const duration = settings.duration;
+    const avSegments = GenerationHelper.getAvSegments(gcsFolder);
+
+    // If not shortening, use full video duration
+    const duration = settings.shortenVideo
+      ? settings.duration
+      : avSegments.reduce((total, seg) => total + seg.duration_s, 0);
+
     const expectedDurationRange =
       GenerationHelper.calculateExpectedDurationRange(duration);
     const videoScript = GenerationHelper.createVideoScript(
       gcsFolder,
-      settings.duration
+      settings.shortenVideo ? settings.duration : Number.MAX_SAFE_INTEGER
     );
-    const generationPrompt = CONFIG.vertexAi.generationPrompt
+
+    // Use aspect-ratio-only prompt if not shortening, otherwise use regular prompt
+    const promptTemplate = settings.shortenVideo
+      ? CONFIG.vertexAi.generationPrompt
+      : CONFIG.vertexAi.aspectRatioOnlyPrompt;
+
+    const generationPrompt = promptTemplate
       .replace('{{{{userPrompt}}}}', settings.prompt)
       .replace('{{{{generationEvalPromptPart}}}}', settings.evalPrompt)
       .replace('{{{{desiredDuration}}}}', String(duration))
@@ -191,9 +203,11 @@ export class GenerationHelper {
     );
     const allScenes = Object.keys(avSegmentsMap).join(', ');
     let iteration = 0;
+    const MAX_ITERATIONS = 5;
 
-    while (!variants.length) {
+    while (!variants.length && iteration < MAX_ITERATIONS) {
       iteration++;
+      AppLogger.info(`GenerateVariants attempt #${iteration} of ${MAX_ITERATIONS}`);
       const response = VertexHelper.generate(prompt);
       AppLogger.info(`GenerateVariants Response #${iteration}: ${response}`);
 
@@ -221,7 +235,12 @@ export class GenerationHelper {
               scene.toLowerCase().replace('scene ', '').replace('.0', '')
             )
             .join(', ');
-          if (trimmedScenes !== allScenes) {
+          // For crop-only mode, accept all scenes. For shortening mode, reject if all scenes are included.
+          const shouldAcceptVariant = settings.shortenVideo
+            ? trimmedScenes !== allScenes
+            : true;
+
+          if (shouldAcceptVariant) {
             const outputScenes = trimmedScenes.split(', ').filter(Boolean);
             const variant: GenerateVariantsResponse = {
               combo_id: index + 1,
@@ -241,7 +260,7 @@ export class GenerationHelper {
             variants.push(variant);
           } else {
             AppLogger.warn(
-              `WARNING - Received a response with ALL scenes.\nResponse: ${result}`
+              `WARNING - Received a response with ALL scenes (shortening mode requires scene selection).\nResponse: ${result}`
             );
           }
         } else {
@@ -251,6 +270,13 @@ export class GenerationHelper {
         }
       });
     }
+
+    if (!variants.length) {
+      const errorMsg = `Failed to generate valid variants after ${MAX_ITERATIONS} attempts. Please check the logs for details.`;
+      AppLogger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+
     return variants.sort(
       (a, b) =>
         Math.abs(settings.duration - TimeUtil.timeStringToSeconds(a.duration)) -

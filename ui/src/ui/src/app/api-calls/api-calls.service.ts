@@ -143,15 +143,24 @@ export class ApiCallsService implements ApiCalls {
     gcsFolder: string,
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]> {
+    console.log('API Service: Starting generateVariants call');
+    console.log('Settings:', settings);
     return new Observable<GenerateVariantsResponse[]>(subscriber => {
+      const startTime = Date.now();
       google.script.run
         .withSuccessHandler((variants: GenerateVariantsResponse[]) => {
+          const elapsed = Date.now() - startTime;
+          console.log(`API Service: Received success response after ${elapsed}ms`);
+          console.log('Variants received:', variants);
+          console.log('Number of variants:', variants?.length);
           this.ngZone.run(() => {
             subscriber.next(variants);
             subscriber.complete();
           });
         })
         .withFailureHandler((error: Error) => {
+          const elapsed = Date.now() - startTime;
+          console.error(`API Service: Received error after ${elapsed}ms`);
           console.error(
             'Encountered an unexpected error while generating variants! Error: ',
             error
@@ -159,6 +168,7 @@ export class ApiCallsService implements ApiCalls {
           subscriber.error(error);
         })
         .generateVariants(gcsFolder, settings);
+      console.log('API Service: google.script.run call initiated');
     }).pipe(
       retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
     );
