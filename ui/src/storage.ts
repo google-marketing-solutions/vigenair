@@ -59,15 +59,12 @@ export class StorageManager {
     const result: GoogleCloud.Storage.ListResponse = JSON.parse(
       response.getContentText()
     );
-    if (delimiter && !result.prefixes) {
-      return [];
-    }
     if (delimiter) {
-      return result.prefixes.map(
+      return result.prefixes?.map(
         (e: string) => e.replace(prefix ?? '', '').split('/')[0]
-      );
+      ) ?? [];
     }
-    return result.items.map((e: GoogleCloud.Storage.Objects) => e.name);
+    return result.items?.map((e: GoogleCloud.Storage.Objects) => e.name) ?? [];
   }
 
   static uploadFile(

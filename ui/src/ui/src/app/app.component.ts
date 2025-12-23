@@ -16,7 +16,7 @@
 
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, inject, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -315,7 +315,8 @@ export class AppComponent {
   constructor(
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private cdRef: ChangeDetectorRef
   ) {
     this.getPreviousRuns();
     this.getWebAppUrl();
@@ -1024,6 +1025,8 @@ export class AppComponent {
             this.setSelectedSegments();
             this.displayObjectTracking = false;
             console.log('Successfully processed variants');
+            // Force Angular change detection
+            this.cdRef.detectChanges();
           } catch (error) {
             console.error('Error processing variants:', error);
             this.failHandler(error instanceof Error ? error : new Error(String(error)));

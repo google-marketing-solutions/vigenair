@@ -208,16 +208,22 @@ export class GenerationHelper {
     while (!variants.length && iteration < maxIterations) {
       iteration++;
       AppLogger.info(`GenerateVariants attempt #${iteration} of ${maxIterations}`);
+      AppLogger.info(`Mode: ${settings.shortenVideo ? 'SHORTENING' : 'ASPECT RATIO ONLY'}`);
       const response = VertexHelper.generate(prompt);
       AppLogger.info(`GenerateVariants Response #${iteration}: ${response}`);
 
       const results = response.split('## Combination').filter(Boolean);
+      AppLogger.info(`Split response into ${results.length} results`);
+
+      // More flexible regex that handles optional whitespace and asterisks
       const regex =
-        /.*Title\s?:\**(?<title>.*)\n+\**Scenes\s?:\**(?<scenes>.*)\n+\**Reasoning\s?:\**(?<description>.*)\n+\**Score\s?:\**(?<score>.*)\n+\**Duration\s?:\**(?<duration>.*)\n+\**ABCD\s?:\**\n+(?<reasoning>[\w\W\s\S\d\D]*)/ims;
+        /.*Title\s?:\**\s*(?<title>.*?)\n+\**Scenes\s?:\**\s*(?<scenes>.*?)\n+\**Reasoning\s?:\**\s*(?<description>.*?)\n+\**Score\s?:\**\s*(?<score>.*?)\n+\**Duration\s?:\**\s*(?<duration>.*?)\n+\**ABCD\s?:\**\s*\n+(?<reasoning>[\w\W\s\S\d\D]*)/ims;
 
       results.forEach((result, index) => {
+        AppLogger.info(`\n=== Processing result #${index + 1} ===`);
         const matches = result.match(regex);
         if (matches) {
+          AppLogger.info(`Result #${index + 1} matched regex`);
           const { title, scenes, description, score, reasoning } =
             matches.groups as {
               title: string;
@@ -235,10 +241,16 @@ export class GenerationHelper {
               scene.toLowerCase().replace('scene ', '').replace('.0', '')
             )
             .join(', ');
+
+          AppLogger.info(`Scenes found: "${trimmedScenes}"`);
+          AppLogger.info(`All scenes: "${allScenes}"`);
+
           // For crop-only mode, accept all scenes. For shortening mode, reject if all scenes are included.
           const shouldAcceptVariant = settings.shortenVideo
             ? trimmedScenes !== allScenes
             : true;
+
+          AppLogger.info(`Should accept variant: ${shouldAcceptVariant} (mode: ${settings.shortenVideo ? 'shortening' : 'aspect-ratio-only'})`);
 
           if (shouldAcceptVariant) {
             const outputScenes = trimmedScenes.split(', ').filter(Boolean);
@@ -258,18 +270,66 @@ export class GenerationHelper {
               ),
             };
             variants.push(variant);
+            AppLogger.info(`✓ Variant #${variants.length} added: "${variant.title}"`);
           } else {
             AppLogger.warn(
-              `WARNING - Received a response with ALL scenes (shortening mode requires scene selection).\nResponse: ${result}`
+              `✗ Rejected: Response with ALL scenes in shortening mode.\nScenes: ${trimmedScenes}\nResponse snippet: ${result.substring(0, 200)}...`
             );
           }
         } else {
-          AppLogger.warn(
-            `WARNING - Received an incomplete response for iteration #${iteration} from the API!\nResponse: ${result}`
-          );
+          // Regex match failed - provide detailed diagnostics
+          const errorTitle = `✗ REGEX MATCH FAILED for result #${index + 1}`;
+          AppLogger.error(errorTitle);
+          console.error(errorTitle);
+
+          const expectedFormat = [
+            'Expected format:',
+            '  Title: [text]',
+            '  Scenes: [numbers]',
+            '  Reasoning: [text]',
+            '  Score: [number]',
+            '  Duration: [number]',
+            '  ABCD:',
+            '  [ABCD text]'
+          ];
+          expectedFormat.forEach(line => {
+            AppLogger.error(line);
+            console.error(line);
+          });
+
+          AppLogger.error('\nActual response received:');
+          console.error('\nActual response received:');
+          AppLogger.error(result);
+          console.error(result);
+
+          // Try to identify what's missing
+          const hasTitle = /Title\s*:/i.test(result);
+          const hasScenes = /Scenes\s*:/i.test(result);
+          const hasReasoning = /Reasoning\s*:/i.test(result);
+          const hasScore = /Score\s*:/i.test(result);
+          const hasDuration = /Duration\s*:/i.test(result);
+          const hasABCD = /ABCD\s*:/i.test(result);
+
+          const fieldCheck = [
+            '\nField presence check:',
+            `  Title: ${hasTitle ? '✓' : '✗ MISSING'}`,
+            `  Scenes: ${hasScenes ? '✓' : '✗ MISSING'}`,
+            `  Reasoning: ${hasReasoning ? '✓' : '✗ MISSING'}`,
+            `  Score: ${hasScore ? '✓' : '✗ MISSING'}`,
+            `  Duration: ${hasDuration ? '✓' : '✗ MISSING'}`,
+            `  ABCD: ${hasABCD ? '✓' : '✗ MISSING'}`
+          ];
+          fieldCheck.forEach(line => {
+            AppLogger.error(line);
+            console.error(line);
+          });
         }
       });
     }
+
+    AppLogger.info(`\n=== Generation Summary ===`);
+    AppLogger.info(`Total variants generated: ${variants.length}`);
+    AppLogger.info(`Iterations used: ${iteration}/${maxIterations}`);
 
     if (!variants.length) {
       const errorMsg = `Failed to generate valid variants after ${maxIterations} attempts. Please check the logs for details.`;
