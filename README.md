@@ -32,6 +32,14 @@ limitations under the License.
 
 Update to the latest version by running `npm run update-app` after pulling the latest changes from the repository via `git pull --rebase --autostash`; you would need to redploy the *UI* for features marked as `frontend`, and *GCP components* for features marked as `backend`.
 
+* [December 2025]
+  * `frontend` + `backend`: Added support for 3:4 and 4:3 aspect ratios for video previews and rendering.
+  * `frontend`: Added an option to only change the aspect ratio of the video without shortening it.
+  * `frontend`: Added a **Prompt library** to easily select pre-defined prompts for variant generation.
+  * `frontend` + `backend`: Added functionality to edit video transcriptions (VTT) and synchronize data.
+  * `backend`: Added functionality to store approval status of rendered variants.
+  * `backend`: Updated generation prompts to support full-length format conversion.
+  * `frontend` + `backend`: Added **Blanking Fill** effect for cases where cropping is not viable.
 * [July 2025]
   * `frontend` + `backend`: Added support for Gemini 2.5 models along with a few fixes and enhancements to the variants generation prompts.
 * [May 2025]
@@ -94,6 +102,7 @@ Once the cloud shell terminal is ready and the GitHub repository has been cloned
 * Next, enter your GCP Project ID when prompted, then select whether you would like to deploy GCP components (defaults to `Yes`) and the UI (also defaults to `Yes`).
   * When deploying GCP components, you will be prompted to enter an optional [Cloud Function region](https://cloud.google.com/functions/docs/locations) (defaults to `us-central1`) and an optional [GCS location](https://cloud.google.com/storage/docs/locations) (defaults to `us`).
   * When deploying the UI, you will be asked if you are a Google Workspace user and if you want others in your Workspace domain to access your deployed web app (defaults to `No`). By default, the web app is only accessible by you, and that is controlled by the [web app access settings](https://developers.google.com/apps-script/manifest/web-app-api-executable#webapp) in the project's [manifest file](./ui/appsscript.json), which defaults to `MYSELF`. If you answer `Yes` here, this value will be changed to `DOMAIN` to allow other individuals within your organisation to access the web app without having to deploy it themselves.
+  * You will also be asked to specify a GCP region for Vertex AI access (defaults to `us-central1`).
 
 The `npm start` script will then proceed to perform the deployments you requested (GCP, UI, or both), where GCP is deployed first, followed by the UI. For GCP, the script will first create a bucket named <code>*<gcp_project_id>*-vigenair</code> (if it doesn't already exist), then enable all necessary Cloud APIs and set up the right access roles, before finally deploying the `vigenair` Cloud Function to your Cloud project. The script would then deploy the Angular UI web app to a new Apps Script project, outputting the URL of the web app at the end of the deployment process, which you can use to run the app.
 
@@ -203,7 +212,17 @@ New uploads into GCS trigger the Extractor service Cloud Function, which extract
 
     <center><img src='./img/segments.png' width="800px" alt="Vigenair UI: Segments list" /></center>
 
-#### 2.2. Segment Splitting
+#### 2.2. Transcription Editing
+
+Users can edit the generated transcription to fix typos or remove unwanted text (e.g. background chatter) directly within the UI. This ensures that the subtitles and any derived assets are accurate.
+
+*   The transcription is presented in the **VTT format**. It is crucial to maintain this format, especially the timestamps, for the system to correctly synchronize the text with the video segments.
+*   Users can also download the transcription file for offline editing or backup.
+*   Upon saving, the system automatically updates the internal data to reflect the changes across all segments.
+
+<center><img src='./img/transcription-edit.gif' width="600px" alt="Vigenair UI: Editing transcription" /></center>
+
+#### 2.3. Segment Splitting
 
 For some videos, the Video Intelligence API is not able to extract the individual shots that make up the video, or the spoken audio overlaps individual visual segments - which is very common in product explainer videos - and so users end up with long segments that make shortening largely infeasible.
 
@@ -221,9 +240,9 @@ The UI continuously queries GCS for updates while showing a preview of the uploa
 
 * Once the `input.vtt` is available, a transcription track is embedded onto the video preview.
 * Once the `analysis.json` is available, [object tracking](https://cloud.google.com/video-intelligence/docs/object-tracking) results are displayed as bounding boxes directly on the video preview. These can be toggled on/off via the first button in the top-left toggle group - which is set to *on* by default.
-* Vertical and square format previews are also generated, and can be displayed via the second and third buttons of the toggle group, respectively. The previews are generated by dynamically moving the vertical/square crop area to capture the most prominent element in each frame.
+* Vertical, Square, 3:4 and 4:3 format previews are also generated, and can be displayed via the toggle group buttons. The previews are generated by dynamically moving the crop area to capture the most prominent element in each frame.
 
-  <center><img src='./img/preview-format.png' width="600px" alt="Vigenair UI: Video square format preview" /></center>
+  <center><img src='./img/aspect-ratio-change.gif' width="600px" alt="Vigenair UI: Aspect ratio selection" /></center>
 
 * Smart framing is controlled via weights that can be modified via the fourth button of the toggle group to increase or decrease the prominence score of each element, and therefore skew the crop area towards it. You can regenerate the crop area previews via the button in the settings dialog as shown below.
 
@@ -240,6 +259,10 @@ The UI continuously queries GCS for updates while showing a preview of the uploa
 
 The crop area will be adjusted automatically for all preceding and subsequent video frames that had the same undesired position.
 
+* **Blanking Fill**: Sometimes, cropping a landscape video into a vertical or square format isn't viable because the subject moves too much or occupies the entire frame. In these cases, users can choose the **Blanking Fill** effect. This preserves the full field of view of the original video and fills the remaining space in the target aspect ratio with a blurred, zoomed-in version of the background.
+
+  <center><img src='./img/blanking-fill.png' width="600px" alt="Vigenair UI: Blanking Fill effect" /></center>
+
 * Once the `data.json` is available, the extracted A/V Segments are displayed along with a set of user controls.
 * Clicking on the link icon in the top-right corner of the "Video editing" panel will open the Cloud Storage browser UI and navigate to the associated video folder.
 
@@ -253,8 +276,15 @@ Users are now ready for combination. They can view the A/V segments and generate
 
     <center><img src='./img/prompts.png' width="800px" alt="Vigenair UI: Segments list" /></center>
 
-  * Users are presented with an optional prompt which they can use to steer the output towards focusing on - or excluding - certain aspects, like certain entities or topics in the input video, or target audience of the resulting video variant.
+  * Users can steer the output by selecting a pre-defined prompt from the **Prompt library** dropdown or by providing a **Custom prompt**. This allows for focusing on - or excluding - certain aspects, like specific entities or topics, or targeting a specific audience.
+
+    <center><img src='./img/prompt-selection.gif' width="600px" alt="Vigenair UI: Prompt selection" /></center>
+
   * Users may also use the *Target duration* slider to set their desired target duration.
+  * Users can also choose to **only change the aspect ratio** of the video without shortening it, effectively creating a full-length variant in a new format (e.g. Vertical, Square, 3:4 or 4:3). This is ideal for adapting existing high-performing assets to new inventory placements without altering the narrative.
+
+    <center><img src='./img/format-conversion.gif' width="600px" alt="Vigenair UI: Format conversion" /></center>
+
   * The expandable *Advanced settings* section (collapsed by default) contains a dropdown to choose the [YouTube ABCDs](https://www.youtube.com/ads/abcds-of-effective-video-ads/) evaluation objective (Awareness, Consideration, Action, or Shorts), along with an additional **Evaluation prompt** prompt that users can optionally modify. This prompt contains the criteria upon which the generated variant should be evaluated, which defaults to the *Awareness* ABCDs. Users can input details about their own brand and creative guidelines here, either alongside or instead of the ABCDs, and may click the *reset* button next to the prompt to reset the input back to the default ABCDs value. We recommend using Markdown syntax to emphasize information and provide a more concise structure for Gemini.
   * Users can then click `Generate` to generate variants accordingly, which will query Gemini with a detailed script of the video to generate potential variants that fulfill the optional user-provided prompts and target duration.
 * Generated variants are displayed in tabs - one per tab - and both the *video preview* and *segments list* views are updated to preselect the A/V segments of the variant currently being viewed. Clicking on the video's play button in the *video preview* mode will preview only those preselected segments.
@@ -345,6 +375,26 @@ For more information, refer to this detailed [Cloud pricing calculator](https://
 * Vertex AI generative models:
   * Text: The language model is queried with the entire [generation prompt](ui/src/config.ts), which includes a script of the video covering all its segments and potentially a user-defined section. The output is a list containing one or more variants with all their information. This process is repeated in case of errors, and users can generate variants as often as they want. Assuming an average of **15 requests per video** - continuing with the assumption that the video is 1 min long - you would be charged around **$0.5**.
   * Multimodal: The multimodal model is used to annotate every segment extracted from the video, and so the pricing varies significantly depending on the number and length of the extracted segments, which in turn vary heavily according to the content of the video; a 1 min video may produce 10 segments while another may produce 20. Assuming a threshold of **max 25 segments, avg. 2.5s each, per 1 min of video**, you would be charged around **$0.2**.
+
+## Backend API Reference
+
+The `ui/src/index.ts` file contains the backend logic for the Apps Script project and exposes the following functions to the frontend:
+
+*   `doGet(e)`: Serves the web application.
+*   `getRunsFromGcs()`: Retrieves a list of available project runs from Google Cloud Storage.
+*   `getRendersFromGcs(gcsFolder)`: Retrieves a list of rendered video folders for a specific project.
+*   `generateVariants(gcsFolder, settings)`: Generates video variants based on the provided settings.
+*   `generatePreviews(analysis, segments, settings)`: Generates preview data (crop coordinates) for different aspect ratios (1:1, 9:16, 16:9, 3:4, 4:3).
+*   `renderVariants(gcsFolder, renderQueue)`: Submits a queue of variants to be rendered.
+*   `updateTranscription(gcsFolder, transcriptionText)`: Updates the VTT transcription file and synchronizes `data.json`.
+*   `splitSegment(gcsFolder, segmentMarkers)`: Initiates a segment split operation based on user-defined markers.
+*   `storeApprovalStatus(gcsFolder, combos)`: Stores the approval status of rendered variants.
+*   `regenerateTextAsset(variantVideoPath, textAsset, textAssetLanguage)`: Regenerates a specific text asset.
+*   `generateTextAssets(variantVideoPath, textAssetsLanguage)`: Generates text assets for a variant.
+*   `getVideoLanguage(gcsFolder)`: Retrieves the detected language of the video.
+*   `deleteGcsFolder(folder)`: Deletes a folder from GCS.
+*   `getUserAuthToken()`: Retrieves the OAuth token for the current user.
+*   `getWebAppUrl()`: Retrieves the URL of the deployed web application.
 
 ## How to Contribute
 
