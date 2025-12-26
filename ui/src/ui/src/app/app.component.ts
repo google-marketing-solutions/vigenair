@@ -931,6 +931,8 @@ export class AppComponent {
         clearInterval(this.frameInterval);
         this.frameInterval = undefined;
       }
+      // Draw the current frame when paused to keep overlay visible
+      this.drawFrame(this.activeVideoObjects);
     };
     this.previewVideoElem.nativeElement.onended = () => {
       this.resetVariantPreview();
@@ -1078,17 +1080,23 @@ export class AppComponent {
           const parse = (jsonStr: string) =>
             this.parseAnalysis(JSON.parse(jsonStr) as VideoAnalysisJson, previewFilter);
 
-          // Handle legacy keys and map to new structure
-          if (previews.square) {
+          // Handle all format keys
+          if (previews['1:1']) {
+            this.previewAnalyses['1:1'] = parse(previews['1:1']);
+            this.squareVideoObjects = this.previewAnalyses['1:1'];
+          } else if (previews.square) {
             this.previewAnalyses['1:1'] = parse(previews.square);
             this.squareVideoObjects = this.previewAnalyses['1:1'];
           }
-          if (previews.vertical) {
+
+          if (previews['9:16']) {
+            this.previewAnalyses['9:16'] = parse(previews['9:16']);
+            this.verticalVideoObjects = this.previewAnalyses['9:16'];
+          } else if (previews.vertical) {
             this.previewAnalyses['9:16'] = parse(previews.vertical);
             this.verticalVideoObjects = this.previewAnalyses['9:16'];
           }
 
-          // Handle other formats if present in response
           if (previews['16:9']) this.previewAnalyses['16:9'] = parse(previews['16:9']);
           if (previews['3:4']) this.previewAnalyses['3:4'] = parse(previews['3:4']);
           if (previews['4:3']) this.previewAnalyses['4:3'] = parse(previews['4:3']);
@@ -1127,10 +1135,14 @@ export class AppComponent {
       this.canvasDragElement?.nativeElement.appendChild(img);
       this.canvasDragElement?.nativeElement.setAttribute(
         'style',
-        `position: absolute; display: block; left: ${outputX}px; width: ${outputWidth}px; height: ${outputHeight}px`
+        `position: absolute; display: block; visibility: visible; left: ${outputX}px; width: ${outputWidth}px; height: ${outputHeight}px;`
       );
-      this.magicCanvas.nativeElement.style.visibility = 'hidden';
-      this.canvas!.clearRect(0, 0, this.videoWidth, this.videoHeight);
+      const videoContainer = this.magicCanvas.nativeElement.parentElement;
+      if (videoContainer) {
+        videoContainer.style.overflow = 'hidden';
+      }
+      this.displayObjectTracking = false;
+      this.canvas?.clearRect(0, 0, this.videoWidth, this.videoHeight);
       this.previewVideoElem.nativeElement.controls = false;
       this.cropAreaRect = img.getBoundingClientRect();
     } else {
@@ -1148,8 +1160,15 @@ export class AppComponent {
         'style',
         'display: none'
       );
+      // Restore overflow to video container
+      const videoContainer = this.magicCanvas.nativeElement.parentElement;
+      if (videoContainer) {
+        videoContainer.style.overflow = '';
+      }
       this.magicCanvas.nativeElement.style.visibility = 'visible';
       this.previewVideoElem.nativeElement.controls = true;
+      this.displayObjectTracking = true;
+      this.drawFrame(this.activeVideoObjects);
     }
   }
 
@@ -1187,12 +1206,13 @@ export class AppComponent {
   }
 
   loadPreview() {
-    this.activeVideoObjects = this.videoObjects;
     this.previewTrackElem.nativeElement.src = this.subtitlesTrack;
     const value = this.previewToggleGroup.value;
 
     if (value === 'toggle') {
       this.displayObjectTracking = !this.displayObjectTracking;
+      // Redraw frame to show/hide overlay immediately
+      this.drawFrame(this.activeVideoObjects);
     } else if (value === 'settings') {
       this.openSmartFramingDialog();
     } else {
@@ -1211,21 +1231,29 @@ export class AppComponent {
         this.displayObjectTracking = true;
         this.previewTrackElem.nativeElement.src = '';
         this.activeVideoObjects = this.previewAnalyses[key];
+        this.drawFrame(this.activeVideoObjects);
       } else if (value === 'square' && this.squareVideoObjects) {
         this.displayObjectTracking = true;
         this.previewTrackElem.nativeElement.src = '';
         this.activeVideoObjects = this.squareVideoObjects;
+        // Draw frame immediately to show overlay without needing to play video
+        this.drawFrame(this.activeVideoObjects);
       } else if (value === 'vertical' && this.verticalVideoObjects) {
         this.displayObjectTracking = true;
         this.previewTrackElem.nativeElement.src = '';
         this.activeVideoObjects = this.verticalVideoObjects;
-      } else {
+        // Draw frame immediately to show overlay without needing to play video
+        this.drawFrame(this.activeVideoObjects);
+      } else if (key === this.matchedAspectRatio) {
+        // Original video aspect ratio - no cropping needed, just hide overlay
         this.displayObjectTracking = false;
         this.activeVideoObjects = undefined;
         this.canvas?.clearRect(0, 0, this.videoWidth, this.videoHeight);
-        this.snackBar.open(`'${key}' format will use a blurred background.`, 'Dismiss', {
-          duration: 2500,
-        });
+      } else {
+        // Format not supported with crop preview - hide overlay
+        this.displayObjectTracking = false;
+        this.activeVideoObjects = undefined;
+        this.canvas?.clearRect(0, 0, this.videoWidth, this.videoHeight);
       }
     }
   }

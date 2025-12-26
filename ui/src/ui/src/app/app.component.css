@@ -331,6 +331,17 @@ mat-divider {
 .gap-16 { gap: 16px; }
 .gap-32 { gap: 32px; }
 
+/* Utility Classes - Flex Wrapping */
+.flex-wrap-with-gap {
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
 /* Component-Specific Classes */
 .logo-text-container {
   font-size: 1.5em;

@@ -167,7 +167,7 @@ limitations under the License.
           </div>
         }
       </div>
-      <div class="row">
+      <div class="row flex-wrap-with-gap">
         <div
           class="row column-layout-flex-start"
         >
@@ -192,11 +192,7 @@ limitations under the License.
             </mat-checkbox>
           }
         </div>
-        <div
-          [ngStyle]="{
-            'margin-left': variants?.length ? (allSegmentsToggle ? '293px' : '312px') : '485px'
-          }"
-        >
+        <div>
           <mat-button-toggle-group
             #segmentModeToggle="matButtonToggleGroup"
             value="preview"
@@ -229,7 +225,7 @@ limitations under the License.
             </mat-button-toggle>
           </mat-button-toggle-group>
         </div>
-        <div class="margin-left-auto flex-center-items">
+        <div class="flex-center-items flex-wrap-with-gap">
           <mat-checkbox
             *ngIf="previewToggleGroup.value !== 'toggle' && previewToggleGroup.value !== 'settings'"
             color="primary"
@@ -246,6 +242,7 @@ limitations under the License.
             [disabled]="!videoObjects || segmentModeToggle.value !== 'preview'"
             hideSingleSelectionIndicator
             (click)="loadPreview()"
+            class="flex-wrap"
           >
             <mat-button-toggle
               value="toggle"
