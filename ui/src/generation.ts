@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,7 +201,9 @@ export class GenerationHelper {
       }),
       {}
     );
-    const allScenes = Object.keys(avSegmentsMap).join(', ');
+    // Sort the scene IDs to ensure consistent comparison
+    const allScenesArray = Object.keys(avSegmentsMap).sort((a, b) => Number(a) - Number(b));
+    const allScenes = allScenesArray.join(', ');
     let iteration = 0;
     const maxIterations = 5;
 
@@ -216,8 +218,9 @@ export class GenerationHelper {
       AppLogger.info(`Split response into ${results.length} results`);
 
       // More flexible regex that handles optional whitespace and asterisks
+      // Allows ABCD field to have text on same line or new line
       const regex =
-        /.*Title\s?:\**\s*(?<title>.*?)\n+\**Scenes\s?:\**\s*(?<scenes>.*?)\n+\**Reasoning\s?:\**\s*(?<description>.*?)\n+\**Score\s?:\**\s*(?<score>.*?)\n+\**Duration\s?:\**\s*(?<duration>.*?)\n+\**ABCD\s?:\**\s*\n+(?<reasoning>[\w\W\s\S\d\D]*)/ims;
+        /.*Title\s?:\**\s*(?<title>.*?)\n+\**Scenes\s?:\**\s*(?<scenes>.*?)\n+\**Reasoning\s?:\**\s*(?<description>.*?)\n+\**Score\s?:\**\s*(?<score>.*?)\n+\**Duration\s?:\**\s*(?<duration>.*?)\n+\**ABCD\s?:\**\s*\n*(?<reasoning>[\w\W\s\S\d\D]*)/ims;
 
       results.forEach((result, index) => {
         AppLogger.info(`\n=== Processing result #${index + 1} ===`);
@@ -239,21 +242,24 @@ export class GenerationHelper {
             .filter(Boolean)
             .map(scene =>
               scene.toLowerCase().replace('scene ', '').replace('.0', '')
-            )
-            .join(', ');
+            );
 
-          AppLogger.info(`Scenes found: "${trimmedScenes}"`);
+          // Sort for consistent comparison
+          const sortedTrimmedScenes = trimmedScenes.sort((a, b) => Number(a) - Number(b));
+          const trimmedScenesStr = sortedTrimmedScenes.join(', ');
+
+          AppLogger.info(`Scenes found: "${trimmedScenesStr}"`);
           AppLogger.info(`All scenes: "${allScenes}"`);
 
           // For crop-only mode, accept all scenes. For shortening mode, reject if all scenes are included.
           const shouldAcceptVariant = settings.shortenVideo
-            ? trimmedScenes !== allScenes
+            ? trimmedScenesStr !== allScenes
             : true;
 
           AppLogger.info(`Should accept variant: ${shouldAcceptVariant} (mode: ${settings.shortenVideo ? 'shortening' : 'aspect-ratio-only'})`);
 
           if (shouldAcceptVariant) {
-            const outputScenes = trimmedScenes.split(', ').filter(Boolean);
+            const outputScenes = sortedTrimmedScenes;
             const variant: GenerateVariantsResponse = {
               combo_id: index + 1,
               title: String(title).trim(),
@@ -273,7 +279,7 @@ export class GenerationHelper {
             AppLogger.info(`✓ Variant #${variants.length} added: "${variant.title}"`);
           } else {
             AppLogger.warn(
-              `✗ Rejected: Response with ALL scenes in shortening mode.\nScenes: ${trimmedScenes}\nResponse snippet: ${result.substring(0, 200)}...`
+              `✗ Rejected: Response with ALL scenes in shortening mode.\nScenes: ${trimmedScenesStr}\nResponse snippet: ${result.substring(0, 200)}...`
             );
           }
         } else {
