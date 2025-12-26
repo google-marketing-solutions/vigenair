@@ -77,15 +77,20 @@ export class ApiCallsService implements ApiCalls {
     file: File,
     analyseAudio: boolean,
     encodedUserId: string,
-    filename = 'input.mp4',
-    contentType = 'video/mp4'
+    filename?: string,
+    contentType?: string
   ): Observable<string[]> {
+    // Detect file extension and set appropriate filename and content type
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'mp4';
+    const actualFilename = filename || `input.${fileExtension}`;
+    const actualContentType = contentType || file.type || 'video/mp4';
+
     const videoFolderTranscriptionSuffix =
       CONFIG.defaultTranscriptionService.charAt(0);
     // eslint-disable-next-line no-useless-escape
     const sanitisedFileName = StringUtil.gcsSanitise(file.name);
     const folder = `${sanitisedFileName}${CONFIG.videoFolderNameSeparator}${analyseAudio ? videoFolderTranscriptionSuffix : CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
-    const fullName = encodeURIComponent(`${folder}/${filename}`);
+    const fullName = encodeURIComponent(`${folder}/${actualFilename}`);
     const url = `${CONFIG.cloudStorage.uploadEndpointBase}/b/${CONFIG.cloudStorage.bucket}/o?uploadType=media&name=${fullName}`;
 
     return this.getUserAuthToken().pipe(
@@ -94,13 +99,13 @@ export class ApiCallsService implements ApiCalls {
           .post(url, file, {
             headers: new HttpHeaders({
               'Authorization': `Bearer ${userAuthToken}`,
-              'Content-Type': contentType,
+              'Content-Type': actualContentType,
             }),
           })
           .pipe(
             switchMap(response => {
               console.log('Upload complete!', response);
-              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/input.mp4`;
+              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/${actualFilename}`;
               return of([folder, videoFilePath]);
             }),
             catchError(error => {

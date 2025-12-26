@@ -32,6 +32,8 @@ export class StringUtil {
   }
 
   static gcsSanitise(input: string) {
-    return input.replace(/[#\/\[\]*?:"<>|]/g, ''); // See https://cloud.google.com/storage/docs/objects#naming
+    return input
+      .replace(/[#\/\[\]*?:"<>|]/g, '') // See https://cloud.google.com/storage/docs/objects#naming
+      .replace(/--+/g, '-'); // Replace consecutive hyphens with single hyphen to avoid metadata parsing issues
   }
 }

@@ -95,7 +95,8 @@ class VideoMetadata:
       ValueError: If metadata string has invalid number of components or
         invalid timestamp format.
     """
-    components = metadata.split('--')
+    # Split from the right to handle video filenames that contain '--'
+    components = metadata.rsplit('--', 3)
     if len(components) == 4:
       (
           video_file_name,
