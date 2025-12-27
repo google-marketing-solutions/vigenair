@@ -148,3 +148,12 @@ mat-table {
   color: #666;
   font-size: 0.9em;
 }
+
+.original-format {
+  background-color: #e8f5e9 !important;
+  font-weight: 600 !important;
+}
+
+.original-format:not(.mat-button-toggle-checked) {
+  opacity: 0.7;
+}

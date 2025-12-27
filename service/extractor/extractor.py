@@ -96,6 +96,54 @@ class Extractor:
         output_dir=tmp_dir,
         bucket_name=self.gcs_bucket_name,
     )
+
+    # Convert .mov files to .mp4 for compatibility
+    if self.media_file.file_ext.lower() == 'mov':
+      logging.info('EXTRACTOR - Converting .mov to .mp4...')
+      mp4_file_path = (
+          input_video_file_path.replace('.mov', '.mp4').replace('.MOV', '.mp4')
+      )
+      Utils.execute_subprocess_commands(
+          cmds=[
+              'ffmpeg',
+              '-i',
+              input_video_file_path,
+              '-c:v',
+              'libx264',
+              '-c:a',
+              'aac',
+              '-strict',
+              'experimental',
+              '-y',
+              mp4_file_path,
+          ],
+          description=f'convert {input_video_file_path} to MP4',
+      )
+
+      # Replace the .mov file with .mp4 in GCS
+      mp4_gcs_path = (
+          self.media_file.full_gcs_path.replace('.mov', '.mp4')
+          .replace('.MOV', '.mp4')
+      )
+
+      # Upload the converted MP4 file
+      StorageService.upload_gcs_file(
+          file_path=mp4_file_path,
+          destination_file_name=mp4_gcs_path,
+          bucket_name=self.gcs_bucket_name,
+          overwrite=True,
+      )
+
+      # Delete the original .mov file from GCS
+      StorageService.delete_gcs_file(
+          file_path=self.media_file,
+          bucket_name=self.gcs_bucket_name,
+      )
+
+      # Use the MP4 file for all subsequent processing
+      input_video_file_path = mp4_file_path
+      logging.info('EXTRACTOR - Conversion complete, replaced .mov with .mp4')
+
     input_audio_file_path = AudioService.extract_audio(input_video_file_path)
     if input_audio_file_path:
       StorageService.upload_gcs_dir(

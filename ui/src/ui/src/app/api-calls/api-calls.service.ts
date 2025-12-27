@@ -18,7 +18,7 @@
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { catchError, Observable, of, retry, switchMap, timer } from 'rxjs';
+import { catchError, map, Observable, of, retry, switchMap, timer } from 'rxjs';
 import { CONFIG } from '../../../../config';
 
 import { StringUtil } from '../../../../string-util';
@@ -105,7 +105,17 @@ export class ApiCallsService implements ApiCalls {
           .pipe(
             switchMap(response => {
               console.log('Upload complete!', response);
-              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/${actualFilename}`;
+              // Backend converts .mov files to .mp4, so use .mp4 in the video path
+              const finalFilename = fileExtension === 'mov' ? 'input.mp4' : actualFilename;
+              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/${finalFilename}`;
+
+              // For .mov files, emit initial response but also start polling for converted file
+              if (fileExtension === 'mov') {
+                // Emit the folder and a temporary path first
+                const result: string[] = [folder, videoFilePath, 'converting'];
+                return of(result);
+              }
+
               return of([folder, videoFilePath]);
             }),
             catchError(error => {
@@ -114,6 +124,42 @@ export class ApiCallsService implements ApiCalls {
             })
           )
       )
+    );
+  }
+
+  waitForConvertedVideo(folder: string): Observable<string> {
+    const mp4Path = `${folder}/input.mp4`;
+    const videoUrl = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/input.mp4`;
+
+    console.log('Waiting for converted MP4 file...');
+
+    // Poll for the MP4 file with HEAD request to check existence
+    return this.getUserAuthToken().pipe(
+      switchMap(userAuthToken =>
+        this.httpClient.head(
+          `${CONFIG.cloudStorage.endpointBase}/b/${CONFIG.cloudStorage.bucket}/o/${encodeURIComponent(mp4Path)}?alt=media`,
+          {
+            headers: new HttpHeaders({
+              Authorization: `Bearer ${userAuthToken}`,
+            }),
+          }
+        ).pipe(
+          map(() => {
+            console.log('Converted MP4 file is ready!');
+            return videoUrl;
+          })
+        )
+      ),
+      retry({
+        count: 30, // Try for up to 30 times (about 60 seconds with 2s delay)
+        delay: (error, retryCount) => {
+          if (error.status && error.status === 404 && retryCount < 30) {
+            console.log(`Conversion in progress, retrying (${retryCount}/30)...`);
+            return timer(2000); // Wait 2 seconds between retries
+          }
+          throw error;
+        },
+      })
     );
   }
 

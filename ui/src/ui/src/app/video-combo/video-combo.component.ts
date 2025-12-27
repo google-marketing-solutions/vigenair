@@ -104,11 +104,18 @@ export class VideoComboComponent implements AfterViewInit {
 
   loadVideo() {
     if (this.displayMode === 'combo') {
-      this.videoElem.nativeElement.src =
-        this.combo.variants![this.selectedFormat]!.entity;
-      this.images = this.combo.images
-        ? this.combo.images[this.selectedFormat]!
-        : [];
+      // Check if the selected format exists in variants
+      if (this.combo.variants && this.combo.variants[this.selectedFormat]) {
+        this.videoElem.nativeElement.src =
+          this.combo.variants[this.selectedFormat]!.entity;
+        this.images = this.combo.images
+          ? this.combo.images[this.selectedFormat] || []
+          : [];
+      } else {
+        console.warn(`Selected format ${this.selectedFormat} not available in variants`);
+        this.videoElem.nativeElement.src = '';
+        this.images = [];
+      }
     }
   }
 
@@ -119,7 +126,27 @@ export class VideoComboComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.getTextAssetsLanguage();
+    this.initializeDefaultFormat();
     this.loadVideo();
+  }
+
+  initializeDefaultFormat() {
+    if (!this.combo.variants) {
+      return;
+    }
+
+    // Find the first available format in the combo variants
+    const firstAvailableFormat = this.aspectRatios.find(
+      (ratio) => this.combo.variants && this.combo.variants[ratio]
+    );
+
+    if (firstAvailableFormat) {
+      this.selectedFormat = firstAvailableFormat;
+      // Update the button toggle group to match
+      if (this.variantGroup) {
+        this.variantGroup.value = firstAvailableFormat;
+      }
+    }
   }
 
   getTextAssetsLanguage() {

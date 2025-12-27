@@ -69,6 +69,7 @@ export interface GenerateVariantsResponse {
   render_settings?: RenderSettings;
   images?: VariantImageAssets;
   texts?: VariantTextAsset[];
+  original_format?: FormatType;
 }
 
 /** Response structure for fetching previous runs. */
@@ -165,6 +166,7 @@ export interface RenderedVariant {
   render_settings: RenderSettings;
   images?: VariantImageAssets;
   texts?: VariantTextAsset[];
+  original_format?: FormatType;
 }
 
 /** Response structure for preview generation. */

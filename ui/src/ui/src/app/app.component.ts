@@ -566,11 +566,13 @@ export class AppComponent {
 
   getAvSegments() {
     this.segmentsStatus = 'pending';
+    // Cap retries at 30 (60 seconds max wait)
+    const maxSegmentRetries = Math.min(this.maxRetries, 30);
     this.apiCallsService
       .getFromGcs(
         `${this.folder}/${CONFIG.cloudStorage.files.data}`,
         CONFIG.retryDelay,
-        this.maxRetries
+        maxSegmentRetries
       )
       .subscribe({
         next: data => {
@@ -595,7 +597,17 @@ export class AppComponent {
             this.generatePreviews();
           }
         },
-        error: err => this.failHandler(err, this.folder, true),
+        error: err => {
+          this.loading = false;
+          this.segmentsStatus = 'hourglass_top';
+          console.error('Failed to load segments data:', err);
+          alert(
+            'Failed to load video segments. The video may still be processing. ' +
+            'Please try again in a few moments.'
+          );
+          this.videoMagicPanel.close();
+          this.videoUploadPanel.open();
+        },
       });
 
     // Load transcription if available
@@ -669,11 +681,14 @@ export class AppComponent {
     this.videoMagicPanel.close();
     this.videoCombosPanel.open();
     this.combos = undefined;
+    // Rendering can take a long time (especially for blur effects), allow up to 5 minutes
+    // 50 retries * 6s = 300s = 5 minutes
+    const maxCombosRetries = Math.min(this.maxRetries, 50);
     this.apiCallsService
       .getFromGcs(
         `${folder}/${CONFIG.cloudStorage.files.combos}`,
         CONFIG.retryDelay,
-        this.maxRetries
+        maxCombosRetries
       )
       .subscribe({
         next: data => {
@@ -686,17 +701,31 @@ export class AppComponent {
           this.videoCombosPanel.open();
           this.storeCombosApproval(false);
         },
-        error: err => this.failHandler(err, folder, true),
+        error: err => {
+          this.loading = false;
+          this.combinationStatus = 'hourglass_top';
+          console.error('Failed to load rendered videos:', err);
+          alert(
+            'Rendering is taking longer than expected (>5 minutes).\n\n' +
+            'This can happen for complex videos with blur effects or format conversions. ' +
+            'The rendering may still be in progress.\n\n' +
+            'Please wait a minute and try clicking "Load saved video" again to check if rendering has completed.'
+          );
+          this.videoCombosPanel.close();
+          this.videoMagicPanel.open();
+        },
       });
   }
 
   getVideoAnalysis() {
     this.analysisStatus = 'pending';
+    // Cap retries at 30 (60 seconds max wait)
+    const maxAnalysisRetries = Math.min(this.maxRetries, 30);
     this.apiCallsService
       .getFromGcs(
         `${this.folder}/${CONFIG.cloudStorage.files.analysis}`,
         CONFIG.retryDelay,
-        this.maxRetries
+        maxAnalysisRetries
       )
       .subscribe({
         next: data => {
@@ -710,17 +739,29 @@ export class AppComponent {
           this.activeVideoObjects = this.videoObjects;
           this.getAvSegments();
         },
-        error: err => this.failHandler(err, this.folder, true),
+        error: err => {
+          this.loading = false;
+          this.analysisStatus = 'hourglass_top';
+          console.error('Failed to load video analysis:', err);
+          alert(
+            'Failed to load video analysis. The video may still be processing. ' +
+            'Please try again in a few moments.'
+          );
+          this.videoMagicPanel.close();
+          this.videoUploadPanel.open();
+        },
       });
   }
 
   getSubtitlesTrack() {
     this.transcriptStatus = 'pending';
+    // Cap retries at 30 (60 seconds max wait)
+    const maxSubtitleRetries = Math.min(this.maxRetries, 30);
     this.apiCallsService
       .getFromGcs(
         `${this.folder}/${CONFIG.cloudStorage.files.subtitles}`,
         CONFIG.retryDelay,
-        this.maxRetries
+        maxSubtitleRetries
       )
       .subscribe({
         next: data => {
@@ -731,7 +772,22 @@ export class AppComponent {
           this.transcriptStatus = 'check_circle';
           this.getVideoAnalysis();
         },
-        error: err => this.failHandler(err, this.folder, true),
+        error: err => {
+          this.loading = false;
+          this.transcriptStatus = 'hourglass_top';
+          console.error('Failed to load subtitles:', err);
+          alert(
+            'Failed to load video subtitles. This may happen if:\n' +
+            '- The video is still being processed\n' +
+            '- You selected a previously rendered video that was re-uploaded\n' +
+            '- The subtitle file does not exist\n\n' +
+            'Please try selecting the original uploaded video instead, ' +
+            'or re-upload and process the video.'
+          );
+          this.videoMagicPanel.close();
+          this.videoCombosPanel.close();
+          this.videoUploadPanel.open();
+        },
       });
   }
 
@@ -767,8 +823,62 @@ export class AppComponent {
       .uploadVideo(this.selectedFile!, this.analyseAudio, this.encodedUserId!)
       .subscribe({
         next: response => {
+          const folder = response[0];
+          const videoPath = response[1];
+          const isConverting = response[2] === 'converting';
+
           this.fileChooserComponent.stopVideo();
-          this.processVideo(response[0], response[1], false);
+          this.processVideo(folder, videoPath, false);
+
+          if (isConverting) {
+            // For .mov files, wait for conversion and update both previews
+            console.log('Waiting for video conversion...');
+            this.fileChooserComponent.convertingVideo = true;
+            // Keep the message showing in file chooser
+            this.fileChooserComponent.isMovFile = true;
+
+            this.apiCallsService.waitForConvertedVideo(folder).subscribe({
+              next: convertedVideoUrl => {
+                console.log('Video converted, updating previews...');
+                // Update the file chooser preview with the converted MP4
+                this.fileChooserComponent.selectedFileUrl = convertedVideoUrl;
+                this.fileChooserComponent.isMovFile = false;
+                this.fileChooserComponent.convertingVideo = false;
+                this.fileChooserComponent.videoElem.nativeElement.load();
+
+                // Also update the main video editing preview if it's loaded
+                if (this.previewVideoElem && this.videoPath) {
+                  console.log('Updating main video preview with converted file...');
+                  this.videoPath = convertedVideoUrl;
+                  this.previewVideoElem.nativeElement.src = convertedVideoUrl;
+                  this.previewVideoElem.nativeElement.load();
+                }
+              },
+              error: conversionError => {
+                console.error('Failed to convert video:', conversionError);
+                this.fileChooserComponent.convertingVideo = false;
+
+                // Re-check the file extension to properly display the state
+                if (this.fileChooserComponent.selectedFile) {
+                  const fileExtension = this.fileChooserComponent.selectedFile.name.split('.').pop()?.toLowerCase();
+                  this.fileChooserComponent.isMovFile = fileExtension === 'mov';
+                }
+
+                this.loading = false;
+
+                // Show error to user
+                alert(
+                  'Video conversion failed. The .mov file could not be converted to MP4 format. ' +
+                  'Please try uploading the video again or use a different video format (e.g., MP4).'
+                );
+
+                // Reset to upload panel to allow user to try again
+                this.videoMagicPanel.close();
+                this.videoCombosPanel.close();
+                this.videoUploadPanel.open();
+              }
+            });
+          }
         },
         error: err => this.failHandler(err),
       });

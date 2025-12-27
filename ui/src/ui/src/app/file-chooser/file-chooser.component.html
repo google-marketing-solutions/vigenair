@@ -24,6 +24,9 @@ limitations under the License.
     Select file
   </button>
   <span>{{ selectedFile?.name }}</span>
+  <span *ngIf="convertingVideo" style="margin-left: 10px; color: #1976d2;">
+    (Converting to MP4 for preview...)
+  </span>
   <input
     hidden
     (change)="onFileChange($event)"
@@ -33,13 +36,27 @@ limitations under the License.
   />
 </div>
 <div class="row">
+  <div
+    *ngIf="selectedFile && isMovFile"
+    class="mat-elevation-z8"
+    style="padding: 40px; background-color: #f5f5f5; text-align: center; border-radius: 4px; max-width: 600px;"
+  >
+    <p style="font-size: 16px; color: #666; margin: 0;">
+      .MOV file selected: <strong>{{ selectedFile.name }}</strong>
+    </p>
+    <p style="font-size: 14px; color: #999; margin-top: 10px;">
+      Your browser cannot preview QuickTime files.<br>
+      The video will be converted to MP4 after upload and will be viewable then.
+    </p>
+  </div>
   <video
     class="mat-elevation-z8"
     #videoElem
     controls
     crossorigin="anonymous"
-    [hidden]="!selectedFile"
+    [hidden]="!selectedFile || isMovFile"
+    [src]="selectedFileUrl"
   >
-    <source src="{{ selectedFileUrl }}" />
+    Your browser does not support this video format.
   </video>
 </div>

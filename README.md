@@ -40,6 +40,7 @@ Update to the latest version by running `npm run update-app` after pulling the l
   * `backend`: Added functionality to store approval status of rendered variants.
   * `backend`: Updated generation prompts to support full-length format conversion.
   * `frontend` + `backend`: Added **Blanking Fill** effect for cases where cropping is not viable.
+  * `frontend` + `backend`: Added automatic conversion of .mov (QuickTime) files to .mp4 format for full browser compatibility and proper video processing. The original .mov file is replaced with the converted .mp4 version. Improved error handling to prevent infinite loading states and provide clear user feedback when conversion fails.
 * [July 2025]
   * `frontend` + `backend`: Added support for Gemini 2.5 models along with a few fixes and enhancements to the variants generation prompts.
 * [May 2025]

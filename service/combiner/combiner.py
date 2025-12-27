@@ -64,6 +64,12 @@ class VideoFormat(enum.Enum):
     def is_horizontal(self) -> bool:
         return self == VideoFormat.HORIZONTAL
 
+    @property
+    def target_aspect_ratio(self) -> float:
+        """Returns the numeric aspect ratio (width/height)."""
+        w, h = map(int, self.aspect_ratio_str.split(':'))
+        return w / h
+
 
 @dataclasses.dataclass(init=False)
 class VideoVariantRenderSettings:
@@ -78,6 +84,8 @@ class VideoVariantRenderSettings:
       audio.
     fade_out: Whether to fade out the end of the video variant.
     overlay_type: How to overlay music / audio for the variant.
+    use_blanking_fill: Whether to use blanking fill (blurred bars) instead of
+      cropping when converting aspect ratios.
   """
 
   generate_image_assets: bool = False
@@ -87,6 +95,7 @@ class VideoVariantRenderSettings:
   use_continuous_audio: bool = False
   fade_out: bool = False
   overlay_type: Utils.RenderOverlayType = None
+  use_blanking_fill: bool = False
 
   def __init__(self, **kwargs):
     field_names = set([f.name for f in dataclasses.fields(self)])
@@ -119,7 +128,8 @@ class VideoVariantRenderSettings:
         f'use_music_overlay={self.use_music_overlay}, '
         f'use_continuous_audio={self.use_continuous_audio}, '
         f'fade_out={self.fade_out}, '
-        f'overlay_type={self.overlay_type})'
+        f'overlay_type={self.overlay_type}, '
+        f'use_blanking_fill={self.use_blanking_fill})'
     )
 
 
@@ -629,6 +639,66 @@ def _create_cropped_video(
     return None
 
 
+def _get_blanking_fill_filter(
+    input_aspect_ratio: float,
+    target_format: VideoFormat,
+) -> str:
+  """Generates ffmpeg filter for aspect ratio conversion with blanking fill.
+
+  Args:
+    input_aspect_ratio: The aspect ratio of the input video (width/height).
+    target_format: The target VideoFormat to convert to.
+
+  Returns:
+    An ffmpeg filter string that scales and overlays the video with blur.
+  """
+  target_ratio = target_format.target_aspect_ratio
+
+  if abs(input_aspect_ratio - target_ratio) < 0.01:
+    # Already the correct aspect ratio, no filter needed
+    return None
+
+  # Parse target aspect ratio
+  target_w, target_h = map(int, target_format.aspect_ratio_str.split(':'))
+
+  if input_aspect_ratio < target_ratio:
+    # Input is narrower (more portrait) than target - add width (sidebars)
+    # Strategy: Scale blurred copy to target aspect, overlay original centered
+    # Example: 9:16 -> 3:4, 9:16 -> 1:1, 9:16 -> 16:9
+    # Keep input height, expand width to target ratio
+    # Force even dimensions for H.264 compatibility
+    filter_str = (
+        'split[original][copy];'
+        f'[copy]scale=trunc(ih*{target_w}/{target_h}/2)*2:ih:'
+        f'flags=lanczos,gblur=sigma=20[blurred];'
+        f'[blurred][original]overlay=(main_w-overlay_w)/2:'
+        f'(main_h-overlay_h)/2,setsar=1'
+    )
+    logging.info(
+        'BLANKING_FILL - Generated filter for %.3f -> %s: %s',
+        input_aspect_ratio, target_format.aspect_ratio_str, filter_str
+    )
+    return filter_str
+  else:
+    # Input is wider (more landscape) than target - add height (top/bottom)
+    # Strategy: Scale blurred copy to target aspect, overlay original centered
+    # Example: 16:9 -> 9:16, 16:9 -> 1:1, 16:9 -> 3:4
+    # Keep input width, expand height to target ratio
+    # Force even dimensions for H.264 compatibility
+    filter_str = (
+        'split[original][copy];'
+        f'[copy]scale=iw:trunc(iw*{target_h}/{target_w}/2)*2:'
+        f'flags=lanczos,gblur=sigma=20[blurred];'
+        f'[blurred][original]overlay=(main_w-overlay_w)/2:'
+        f'(main_h-overlay_h)/2,setsar=1'
+    )
+    logging.info(
+        'BLANKING_FILL - Generated filter for %.3f -> %s: %s',
+        input_aspect_ratio, target_format.aspect_ratio_str, filter_str
+    )
+    return filter_str
+
+
 def _render_video_variant(
     output_dir: str,
     gcs_folder_path: str,
@@ -644,6 +714,10 @@ def _render_video_variant(
 ) -> Dict[str, Any]:
   """Renders a video variant in all formats."""
   logging.info('RENDERING - Rendering video variant: %s', video_variant)
+  logging.info(
+      'RENDERING - use_blanking_fill setting: %s',
+      video_variant.render_settings.use_blanking_fill
+  )
   _, video_ext = os.path.splitext(video_file_path)
   # ... (rest of the function is the same as before)
   shot_groups = _group_consecutive_segments(
@@ -682,55 +756,133 @@ def _render_video_variant(
       continuous_audio_select_filter=continuous_audio_select_filter,
   )
 
-  horizontal_combo_name = f'combo_{video_variant.variant_id}_h{video_ext}'
-  horizontal_combo_path = str(pathlib.Path(output_dir, horizontal_combo_name))
-  ffmpeg_cmds.append(horizontal_combo_path)
+  # Get input video dimensions to determine original format BEFORE rendering
+  input_width, input_height = _get_video_dimensions(video_file_path)
+  input_aspect_ratio = input_width / input_height
+  logging.info(
+      'RENDERING - Input video dimensions: %dx%d (aspect ratio: %.3f)',
+      input_width, input_height, input_aspect_ratio
+  )
 
+  # Determine which format matches the original video
+  original_format = None
+  for vf in VideoFormat:
+    if abs(input_aspect_ratio - vf.target_aspect_ratio) < 0.01:
+      original_format = vf
+      logging.info(
+          'RENDERING - Original format detected: %s',
+          vf.aspect_ratio_str
+      )
+      break
+
+  # Determine the base combo filename based on original format
+  # Use appropriate suffix: h=horizontal(16:9), v=vertical(9:16),
+  # s=square(1:1), etc.
+  if original_format:
+    if original_format == VideoFormat.HORIZONTAL:
+      combo_suffix = 'h'
+    elif original_format == VideoFormat.VERTICAL:
+      combo_suffix = 'v'
+    elif original_format == VideoFormat.SQUARE:
+      combo_suffix = 's'
+    elif original_format.aspect_ratio_str == '3:4':
+      combo_suffix = '3_4'
+    elif original_format.aspect_ratio_str == '4:3':
+      combo_suffix = '4_3'
+    else:
+      combo_suffix = 'h'  # fallback
+  else:
+    combo_suffix = 'h'  # fallback to horizontal if unknown
+
+  base_combo_name = (
+      f'combo_{video_variant.variant_id}_{combo_suffix}{video_ext}'
+  )
+  base_combo_path = str(pathlib.Path(output_dir, base_combo_name))
+  ffmpeg_cmds.append(base_combo_path)
+
+  format_desc = (
+      original_format.aspect_ratio_str if original_format else 'base'
+  )
   Utils.execute_subprocess_commands(
       cmds=ffmpeg_cmds,
       description=(
-          'render horizontal variant with id '
+          f'render {format_desc} variant with id '
           f'{video_variant.variant_id} using ffmpeg'
       ),
   )
 
-  rendered_paths = {
-      VideoFormat.HORIZONTAL: {'path': horizontal_combo_name}
-  }
-  if video_variant.render_settings.generate_image_assets:
-    StorageService.upload_gcs_dir(
-        source_directory=output_dir,
-        bucket_name=gcs_bucket_name,
-        target_dir=gcs_folder_path,
-    )
-    assets = _generate_image_assets(
-        vision_model=vision_model,
-        video_file_path=horizontal_combo_path,
-        gcs_bucket_name=gcs_bucket_name,
-        gcs_folder_path=gcs_folder_path,
-        output_path=output_dir,
-        variant_id=video_variant.variant_id,
-        format_type=VideoFormat.HORIZONTAL.type_name,
-    )
-    if assets:
-      rendered_paths[VideoFormat.HORIZONTAL]['images'] = assets
+  rendered_paths = {}
 
+  # Process ALL formats (including horizontal)
   formats_to_render = {}
+
+  # Add horizontal format if requested
+  if VideoFormat.HORIZONTAL in video_variant.render_settings.formats:
+    # Check if aspect ratios match (within tolerance)
+    horizontal_ratio = VideoFormat.HORIZONTAL.target_aspect_ratio
+    if abs(input_aspect_ratio - horizontal_ratio) < 0.01:
+      # Already 16:9, just use the base combo as-is
+      logging.info('RENDERING - 16:9: Already 16:9, using base_combo as-is')
+      rendered_paths[VideoFormat.HORIZONTAL] = {'path': base_combo_name}
+    else:
+      # Need to crop/convert to 16:9
+      logging.info(
+          'RENDERING - 16:9: Converting from %.3f to 16:9 (1.778)',
+          input_aspect_ratio
+      )
+      horizontal_filter = None
+      if video_variant.render_settings.use_blanking_fill:
+        logging.info('RENDERING - 16:9: Applying BLANKING_FILL')
+        horizontal_filter = _get_blanking_fill_filter(
+            input_aspect_ratio, VideoFormat.HORIZONTAL
+        )
+      else:
+        logging.info('RENDERING - 16:9: Will use CROP (blur_filter=None)')
+      formats_to_render[VideoFormat.HORIZONTAL] = {
+          'blur_filter': horizontal_filter,
+          'crop_file_path': None
+      }
+
+  # Add non-horizontal formats
   for vf_member in video_variant.render_settings.formats:
     if vf_member.is_horizontal:
       continue
 
-    blur_filter = ConfigService.FFMPEG_SQUARE_BLUR_FILTER
-    if vf_member == VideoFormat.VERTICAL:
-      blur_filter = ConfigService.FFMPEG_VERTICAL_BLUR_FILTER
+    # Check if this format matches the original aspect ratio
+    if abs(input_aspect_ratio - vf_member.target_aspect_ratio) < 0.01:
+      # Already the correct aspect ratio, just use the base combo as-is
+      logging.info('RENDERING - %s: Already %s, using base_combo as-is',
+                   vf_member.type_name, vf_member.aspect_ratio_str)
+      rendered_paths[vf_member] = {'path': base_combo_name}
+      continue
+
+    crop_file_path = crop_video_file_paths.get(vf_member)
+
+    if crop_file_path:
+      blur_filter = None
+      logging.info('RENDERING - %s: CROP only', vf_member.type_name)
+    else:
+      blur_filter = None
+      if video_variant.render_settings.use_blanking_fill:
+        blur_filter = _get_blanking_fill_filter(input_aspect_ratio, vf_member)
+      logging.info(
+          'RENDERING - %s: BLANKING_FILL=%s',
+          vf_member.type_name,
+          bool(blur_filter)
+      )
 
     formats_to_render[vf_member] = {
         'blur_filter': blur_filter,
-        'crop_file_path': crop_video_file_paths.get(vf_member)
+        'crop_file_path': crop_file_path
     }
 
   for vf_member, format_instructions in formats_to_render.items():
     format_ffmpeg_cmds = None
+    # Determine which video to use as input
+    # Use crop file if available, otherwise use base_combo_path
+    # (which has segments/audio and may have blanking fill applied)
+    input_for_format = format_instructions['crop_file_path'] or base_combo_path
+
     if format_instructions['crop_file_path']:
       format_ffmpeg_cmds = _get_variant_ffmpeg_commands(
           video_file_path=format_instructions['crop_file_path'],
@@ -745,7 +897,7 @@ def _render_video_variant(
       )
     rendered_paths[vf_member] = _render_format(
         vision_model=vision_model,
-        input_video_path=horizontal_combo_path,
+        input_video_path=input_for_format,
         output_path=output_dir,
         gcs_bucket_name=gcs_bucket_name,
         gcs_folder_path=gcs_folder_path,
@@ -758,18 +910,35 @@ def _render_video_variant(
         ffmpeg_cmds=format_ffmpeg_cmds,
     )
 
+  # Always ensure the original format is included in the final rendering
+  if original_format and original_format not in rendered_paths:
+    logging.info(
+        'RENDERING - Adding original format %s to rendered paths',
+        original_format.aspect_ratio_str
+    )
+    rendered_paths[original_format] = {'path': base_combo_name}
+
   StorageService.upload_gcs_dir(
       source_directory=output_dir,
       bucket_name=gcs_bucket_name,
       target_dir=gcs_folder_path,
   )
   result = {'variants': {}}
+
+  # Add original format information to the result
+  if original_format:
+    result['original_format'] = original_format.aspect_ratio_str
+    logging.info(
+        'RENDERING - Setting original_format in result: %s',
+        original_format.aspect_ratio_str
+    )
+
   if video_variant.render_settings.generate_text_assets:
     text_assets = _generate_text_assets(
         vision_model=vision_model,
         gcs_video_path=(
             f'gs://{gcs_bucket_name}/{gcs_folder_path}/'
-            f'{horizontal_combo_name}'
+            f'{base_combo_name}'
         ),
         video_language=video_language,
         video_variant=video_variant,
@@ -857,8 +1026,25 @@ def _render_format(
   format_name = f'combo_{variant_id}_{format_type_str[0]}{video_ext}'
   output_video_path = str(pathlib.Path(output_path, format_name))
 
+  # Check if input and output are the same file - use temp file if so
+  if os.path.abspath(input_video_path) == os.path.abspath(output_video_path):
+    temp_output = str(pathlib.Path(output_path, f'temp_{format_name}'))
+    logging.info(
+        'RENDER_FORMAT - %s: Input equals output, using temp file: %s',
+        format_type_str, temp_output
+    )
+    actual_output = temp_output
+    needs_rename = True
+  else:
+    actual_output = output_video_path
+    needs_rename = False
+
   if ffmpeg_cmds:
-    ffmpeg_cmds.append(output_video_path)
+    logging.info(
+        'RENDER_FORMAT - %s: Using ffmpeg_cmds (has crop_file_path)',
+        format_type_str
+    )
+    ffmpeg_cmds.append(actual_output)
     Utils.execute_subprocess_commands(
         cmds=ffmpeg_cmds,
         description=(
@@ -866,7 +1052,12 @@ def _render_format(
             'using ffmpeg'
         ),
     )
-  else:
+  elif video_filter:
+    logging.info(
+        'RENDER_FORMAT - %s: Using video_filter (blanking fill): %s',
+        format_type_str,
+        video_filter
+    )
     Utils.execute_subprocess_commands(
         cmds=[
             'ffmpeg',
@@ -875,13 +1066,67 @@ def _render_format(
             input_video_path,
             '-vf',
             video_filter,
-            output_video_path,
+            actual_output,
         ],
         description=(
             f'render {format_type_str} variant with id {variant_id} and '
             'blur filter using ffmpeg'
         ),
     )
+  else:
+    # No crop file and no blanking fill - crop to target aspect ratio
+    logging.info(
+        'RENDER_FORMAT - %s: Using CROP (no ffmpeg_cmds, no video_filter)',
+        format_type_str
+    )
+    target_w, target_h = map(int, video_format.aspect_ratio_str.split(':'))
+    input_width, input_height = _get_video_dimensions(input_video_path)
+    crop_width = int(input_height * target_w / target_h)
+    crop_height = input_height
+
+    # Ensure crop dimensions don't exceed input dimensions
+    if crop_width > input_width:
+        crop_width = input_width
+        crop_height = int(input_width * target_h / target_w)
+
+    crop_filter = (
+        f'crop={crop_width}:{crop_height}:'
+        f'(in_w-{crop_width})/2:(in_h-{crop_height})/2'
+    )
+    logging.info(
+        'RENDER_FORMAT - %s: Crop filter: %s (input: %dx%d, output: %dx%d)',
+        format_type_str,
+        crop_filter,
+        input_width,
+        input_height,
+        crop_width,
+        crop_height
+    )
+
+    Utils.execute_subprocess_commands(
+        cmds=[
+            'ffmpeg',
+            '-y',
+            '-i',
+            input_video_path,
+            '-vf',
+            crop_filter,
+            actual_output,
+        ],
+        description=(
+            f'crop {format_type_str} variant with id {variant_id} '
+            f'to {video_format.aspect_ratio_str}'
+        ),
+    )
+
+  # If we used a temp file, rename it to the final output
+  if needs_rename:
+    logging.info(
+        'RENDER_FORMAT - %s: Renaming temp file to final output',
+        format_type_str
+    )
+    os.rename(actual_output, output_video_path)
+
   output = {
       'path': format_name,
   }

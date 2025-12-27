@@ -34,6 +34,8 @@ import { MatButtonModule } from '@angular/material/button';
 export class FileChooserComponent {
   selectedFile?: File;
   selectedFileUrl?: string;
+  convertingVideo = false;
+  isMovFile = false;
 
   @ViewChild('videoElem') videoElem!: ElementRef<HTMLVideoElement>;
   @Output() file = new EventEmitter<File>();
@@ -42,15 +44,24 @@ export class FileChooserComponent {
     const files = (event.target as HTMLInputElement).files;
     if (!files || !files.length) {
       this.selectedFile = this.selectedFileUrl = undefined;
+      this.isMovFile = false;
       this.file.emit(undefined);
       return;
     }
     this.selectedFile = files[0];
     this.selectedFileUrl = URL.createObjectURL(this.selectedFile);
+
+    // Check if it's a .mov file
+    const fileExtension = files[0].name.split('.').pop()?.toLowerCase();
+    this.isMovFile = fileExtension === 'mov';
+
     this.file.emit(files[0]);
-    setTimeout(() => {
-      this.videoElem.nativeElement.load();
-    }, 50);
+
+    if (!this.isMovFile) {
+      setTimeout(() => {
+        this.videoElem.nativeElement.load();
+      }, 50);
+    }
   }
 
   stopVideo() {
