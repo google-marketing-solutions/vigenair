@@ -356,7 +356,7 @@ export const PROMPTS = {
     Title: [Concise and descriptive title in {{videoLanguage}}]
     Scenes: [Comma-separated list of scene numbers included (no "Scene" prefix)]
     Reasoning: [Short but detailed explanation IN ENGLISH of the combination's coherence, engagement, and effectiveness - write as continuous paragraph text]
-    Score: [Numerical score (1-5) derived from the total score of all criteria]
+    Score: [Total points earned - sum all points from all ABCD criteria and subcategories. Do NOT convert to 1-5 scale, just output the raw total.]
     Duration: [Calculated duration of the combination in seconds]
     ABCD: [Short but detailed evaluation IN ENGLISH per criterion. Write as continuous flowing text, vertically stacked. Use **bold** for main section headers like "**A - Attention (X/Y points):**" and include subsection point breakdowns like "Impactful Opening (X/Y points):" with line breaks between sections for readability.]
 
@@ -415,7 +415,7 @@ export const PROMPTS = {
     Title: [Aspect ratio variant name in {{videoLanguage}} (e.g., "Vertical 9:16", "Square 1:1")]
     Scenes: [Comma-separated list of ALL scene numbers (no "Scene" prefix) - must include every scene]
     Reasoning: [Short but detailed explanation IN ENGLISH of the framing/cropping strategy, how it preserves key elements, and why it's effective for this aspect ratio - write as continuous paragraph text]
-    Score: [Numerical score (1-5) derived from the total score of all criteria]
+    Score: [Total points earned - sum all points from all ABCD criteria and subcategories. Do NOT convert to 1-5 scale, just output the raw total.]
     Duration: [Duration in seconds - should be {{desiredDuration}}]
     ABCD: [Short but detailed evaluation IN ENGLISH per criterion. Write as continuous flowing text, vertically stacked. Use **bold** for main section headers like "**A - Attention (X/Y points):**" and include subsection point breakdowns like "Impactful Opening (X/Y points):" with line breaks between sections for readability.]
 
