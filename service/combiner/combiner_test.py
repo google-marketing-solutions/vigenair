@@ -72,7 +72,9 @@ class CombinerTest(unittest.TestCase):
     """Returns a byte string representing a list containing one valid VideoVariant."""
     return json.dumps([{
         'variant_id': 1,
-        'av_segments': [],
+        'av_segments': [
+            {'av_segment_id': 1, 'start_s': 0.0, 'end_s': 5.0}
+        ],
         'render_settings': {},
         'title': 't',
         'description': 'd',
