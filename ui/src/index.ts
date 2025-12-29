@@ -158,7 +158,10 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
     '4:3': '4_3',
   };
 
-  if (renderQueue.previewAnalyses) {
+  // Only upload crop files if NOT using blanking fill
+  // When blanking fill is enabled, the backend will use blur filter instead of cropping
+  const useBlankingFill = renderQueue.queue[0]?.render_settings?.use_blanking_fill;
+  if (renderQueue.previewAnalyses && !useBlankingFill) {
     for (const [format, analysis] of Object.entries(
       renderQueue.previewAnalyses
     )) {
