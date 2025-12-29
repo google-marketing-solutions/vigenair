@@ -301,11 +301,32 @@ class Combiner:
         ), None
     )
     logging.info('RENDERING - Video file name: %s', video_file_name)
+
+    # Try to download the file
     video_file_path = StorageService.download_gcs_file(
         file_path=Utils.TriggerFile(video_file_name),
         output_dir=tmp_dir,
         bucket_name=self.gcs_bucket_name,
     )
+
+    # If download failed and file was input.mov, try input.mp4
+    # (for backwards compatibility with old .mov files)
+    if video_file_path is None and video_file_name.endswith('input.mov'):
+      folder = video_file_name.rsplit('/', 1)[0]
+      mp4_file_name = f'{folder}/input.mp4'
+      logging.info(
+          'RENDERING - input.mov not found, trying input.mp4: %s',
+          mp4_file_name
+      )
+      video_file_path = StorageService.download_gcs_file(
+          file_path=Utils.TriggerFile(mp4_file_name),
+          output_dir=tmp_dir,
+          bucket_name=self.gcs_bucket_name,
+      )
+
+    if video_file_path is None:
+      raise FileNotFoundError(f'Could not find video file: {video_file_name}')
+
     logging.info('RENDERING - Video file path: %s', video_file_path)
     _update_or_create_video_metadata(
         video_file_path=video_file_path,
@@ -459,11 +480,32 @@ class Combiner:
         ), None
     )
     logging.info('RENDERING - Video file name: %s', video_file_name)
+
+    # Try to download the file
     video_file_path = StorageService.download_gcs_file(
         file_path=Utils.TriggerFile(video_file_name),
         output_dir=tmp_dir,
         bucket_name=self.gcs_bucket_name,
     )
+
+    # If download failed and file was input.mov, try input.mp4
+    # (for backwards compatibility with old .mov files)
+    if video_file_path is None and video_file_name.endswith('input.mov'):
+      folder = video_file_name.rsplit('/', 1)[0]
+      mp4_file_name = f'{folder}/input.mp4'
+      logging.info(
+          'RENDERING - input.mov not found, trying input.mp4: %s',
+          mp4_file_name
+      )
+      video_file_path = StorageService.download_gcs_file(
+          file_path=Utils.TriggerFile(mp4_file_name),
+          output_dir=tmp_dir,
+          bucket_name=self.gcs_bucket_name,
+      )
+
+    if video_file_path is None:
+      raise FileNotFoundError(f'Could not find video file: {video_file_name}')
+
     logging.info('RENDERING - Video file path: %s', video_file_path)
     _update_or_create_video_metadata(
         video_file_path=video_file_path,
@@ -550,10 +592,30 @@ class Combiner:
     logging.info('COMBINER - Initial render (cropping) completed successfully!')
 
 
-def _video_variant_mapper(index_variant_dict_tuple: Tuple[int, Dict[str, Any]]):
+def _video_variant_mapper(
+    index_variant_dict_tuple: Tuple[int, Dict[str, Any]]
+) -> VideoVariant:
+  """Maps variant dictionary to VideoVariant object.
+
+  Args:
+    index_variant_dict_tuple: Tuple of (index, variant_dict).
+
+  Returns:
+    VideoVariant object with segments and render settings.
+
+  Raises:
+    ValueError: If variant has no av_segments.
+  """
   index, variant_dict = index_variant_dict_tuple
   segment_dicts = variant_dict.pop('av_segments', None)
   render_settings_dict = variant_dict.pop('render_settings', None)
+
+  if not segment_dicts:
+    raise ValueError(
+        f'Variant {variant_dict.get("variant_id", index)} has no av_segments. '
+        'At least one segment must be selected.'
+    )
+
   segments = {
       str(segment_dict['av_segment_id']): VideoVariantSegment(**segment_dict)
       for segment_dict in segment_dicts
@@ -856,20 +918,30 @@ def _render_video_variant(
       rendered_paths[vf_member] = {'path': base_combo_name}
       continue
 
-    crop_file_path = crop_video_file_paths.get(vf_member)
+    # When blanking fill is enabled, use blur filter instead of crop files
+    # The blur filter will output the correct target aspect ratio with
+    # blurred bars (not cropped)
+    crop_file_path = None
+    blur_filter = None
 
-    if crop_file_path:
-      blur_filter = None
-      logging.info('RENDERING - %s: CROP only', vf_member.type_name)
-    else:
-      blur_filter = None
-      if video_variant.render_settings.use_blanking_fill:
-        blur_filter = _get_blanking_fill_filter(input_aspect_ratio, vf_member)
+    if video_variant.render_settings.use_blanking_fill:
+      # Use blanking fill - generate blur filter and ignore crop files
+      # This will create the target aspect ratio with blurred bars
+      blur_filter = _get_blanking_fill_filter(input_aspect_ratio, vf_member)
       logging.info(
-          'RENDERING - %s: BLANKING_FILL=%s',
+          'RENDERING - %s: Using BLANKING_FILL (outputs %s aspect ratio)',
           vf_member.type_name,
-          bool(blur_filter)
+          vf_member.aspect_ratio_str
       )
+    else:
+      # Blanking fill disabled - check for manual crop file
+      crop_file_path = crop_video_file_paths.get(vf_member)
+      if crop_file_path:
+        logging.info('RENDERING - %s: Using CROP file', vf_member.type_name)
+      else:
+        logging.info(
+            'RENDERING - %s: Will use automatic CROP', vf_member.type_name
+        )
 
     formats_to_render[vf_member] = {
         'blur_filter': blur_filter,

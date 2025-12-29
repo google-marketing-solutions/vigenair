@@ -135,16 +135,20 @@ export class VideoComboComponent implements AfterViewInit {
       return;
     }
 
-    // Find the first available format in the combo variants
-    const firstAvailableFormat = this.aspectRatios.find(
-      (ratio) => this.combo.variants && this.combo.variants[ratio]
-    );
+    let formatToSelect: FormatType | undefined;
 
-    if (firstAvailableFormat) {
-      this.selectedFormat = firstAvailableFormat;
-      // Update the button toggle group to match
+    if (this.combo.original_format && this.combo.variants[this.combo.original_format]) {
+      formatToSelect = this.combo.original_format;
+    } else {
+      formatToSelect = this.aspectRatios.find(
+        (ratio) => this.combo.variants && this.combo.variants[ratio]
+      );
+    }
+
+    if (formatToSelect) {
+      this.selectedFormat = formatToSelect;
       if (this.variantGroup) {
-        this.variantGroup.value = firstAvailableFormat;
+        this.variantGroup.value = formatToSelect;
       }
     }
   }

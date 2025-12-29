@@ -566,8 +566,8 @@ export class AppComponent {
 
   getAvSegments() {
     this.segmentsStatus = 'pending';
-    // Cap retries at 30 (60 seconds max wait)
-    const maxSegmentRetries = Math.min(this.maxRetries, 30);
+    // Cap retries at 80 (480 seconds max wait = 8 minutes)
+    const maxSegmentRetries = Math.min(this.maxRetries, 80);
     this.apiCallsService
       .getFromGcs(
         `${this.folder}/${CONFIG.cloudStorage.files.data}`,
@@ -591,6 +591,14 @@ export class AppComponent {
             }) as AvSegment[]
           ).sort((a: AvSegment, b: AvSegment) => a.start_s - b.start_s);
           this.originalAvSegments = structuredClone(this.avSegments);
+
+          if (this.avSegments.length === 1) {
+            this.shortenVideo = false;
+            this.selectedPromptOption = 'crop-only';
+            this.onPromptSelectionChange();
+            console.warn('Only 1 segment - shortening disabled.');
+          }
+
           this.segmentsStatus = 'check_circle';
           this.loading = false;
           if (!this.nonLandscapeInputVideo) {
@@ -681,9 +689,9 @@ export class AppComponent {
     this.videoMagicPanel.close();
     this.videoCombosPanel.open();
     this.combos = undefined;
-    // Rendering can take a long time (especially for blur effects), allow up to 5 minutes
-    // 50 retries * 6s = 300s = 5 minutes
-    const maxCombosRetries = Math.min(this.maxRetries, 50);
+    // Rendering can take a long time (especially for blur effects)
+    // 80 retries * 6s = 480s = 8 minutes
+    const maxCombosRetries = Math.min(this.maxRetries, 80);
     this.apiCallsService
       .getFromGcs(
         `${folder}/${CONFIG.cloudStorage.files.combos}`,
@@ -719,8 +727,8 @@ export class AppComponent {
 
   getVideoAnalysis() {
     this.analysisStatus = 'pending';
-    // Cap retries at 30 (60 seconds max wait)
-    const maxAnalysisRetries = Math.min(this.maxRetries, 30);
+    // Cap retries at 80 (480 seconds max wait = 8 minutes)
+    const maxAnalysisRetries = Math.min(this.maxRetries, 80);
     this.apiCallsService
       .getFromGcs(
         `${this.folder}/${CONFIG.cloudStorage.files.analysis}`,
@@ -755,8 +763,8 @@ export class AppComponent {
 
   getSubtitlesTrack() {
     this.transcriptStatus = 'pending';
-    // Cap retries at 30 (60 seconds max wait)
-    const maxSubtitleRetries = Math.min(this.maxRetries, 30);
+    // Cap retries at 80 (480 seconds max wait = 8 minutes)
+    const maxSubtitleRetries = Math.min(this.maxRetries, 80);
     this.apiCallsService
       .getFromGcs(
         `${this.folder}/${CONFIG.cloudStorage.files.subtitles}`,
@@ -1093,6 +1101,17 @@ export class AppComponent {
   }
 
   onShortenVideoChange(shorten: boolean) {
+    if (shorten && this.avSegments && this.avSegments.length === 1) {
+      this.shortenVideo = false;
+      this.snackBar.open(
+        'Cannot enable shortening with only 1 segment. ' +
+        'Use crop-only mode or split the segment first.',
+        'Dismiss',
+        { duration: 5000 }
+      );
+      return;
+    }
+
     if (shorten) {
       // When enabling shortening, switch to default prompt
       this.selectedPromptOption = 'default';
@@ -1191,19 +1210,15 @@ export class AppComponent {
             this.parseAnalysis(JSON.parse(jsonStr) as VideoAnalysisJson, previewFilter);
 
           // Handle all format keys
-          if (previews['1:1']) {
-            this.previewAnalyses['1:1'] = parse(previews['1:1']);
-            this.squareVideoObjects = this.previewAnalyses['1:1'];
-          } else if (previews.square) {
-            this.previewAnalyses['1:1'] = parse(previews.square);
+          const squareData = previews['1:1'] || previews.square;
+          if (squareData) {
+            this.previewAnalyses['1:1'] = parse(squareData);
             this.squareVideoObjects = this.previewAnalyses['1:1'];
           }
 
-          if (previews['9:16']) {
-            this.previewAnalyses['9:16'] = parse(previews['9:16']);
-            this.verticalVideoObjects = this.previewAnalyses['9:16'];
-          } else if (previews.vertical) {
-            this.previewAnalyses['9:16'] = parse(previews.vertical);
+          const verticalData = previews['9:16'] || previews.vertical;
+          if (verticalData) {
+            this.previewAnalyses['9:16'] = parse(verticalData);
             this.verticalVideoObjects = this.previewAnalyses['9:16'];
           }
 
@@ -1543,6 +1558,15 @@ export class AppComponent {
         segment_screenshot_uri: segment.segment_screenshot_uri,
       };
     });
+
+    // Validate that at least one segment is selected
+    if (selectedSegments.length === 0) {
+      this.snackBar.open('Please select at least one segment', 'Dismiss', {
+        duration: 3000,
+      });
+      return;
+    }
+
     const renderSettings = {
       generate_image_assets: this.demandGenAssets,
       generate_text_assets: this.demandGenAssets,

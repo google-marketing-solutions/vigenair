@@ -226,6 +226,12 @@ mat-divider {
   color: #aaaaaa;
 }
 
+.single-segment-warning {
+  margin-top: -8px;
+  margin-bottom: 8px;
+  color: #f57c00;
+}
+
 .panel-title {
   font-weight: 500;
 }

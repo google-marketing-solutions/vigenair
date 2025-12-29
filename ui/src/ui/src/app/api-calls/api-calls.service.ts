@@ -183,7 +183,7 @@ export class ApiCallsService implements ApiCalls {
         count: maxRetries,
         delay: (error, retryCount) => {
           if (error.status && error.status === 404 && retryCount < maxRetries) {
-            console.log('Expected output not available yet, retrying...');
+            console.log(`Expected output not available yet, retrying (${retryCount}/${maxRetries})...`);
             return timer(retryDelay);
           }
           throw error;

@@ -18,6 +18,7 @@ This module contains functions to interact with the Video AI API.
 """
 
 import json
+import logging
 import os
 import pathlib
 import re
@@ -323,6 +324,10 @@ def get_visual_shots_data(
   Returns:
     A DataFrame of visual shots extracted from the Video AI API.
   """
+  logging.info(
+      'SHOT_DETECTION: Video Intelligence API detected %d shots',
+      len(annotation_results.shot_annotations)
+  )
   shots_data = []
   for i, shot in enumerate(annotation_results.shot_annotations):
     start_time = (
@@ -335,14 +340,15 @@ def get_visual_shots_data(
     duration = end_time - start_time
 
     if duration > 0:
+      audio_segment_ids = _identify_segments(
+          start_time,
+          end_time,
+          transcription_dataframe,
+          audio_segment_id_key,
+      )
       shots_data.append((
           i + 1,
-          _identify_segments(
-              start_time,
-              end_time,
-              transcription_dataframe,
-              audio_segment_id_key,
-          ),
+          audio_segment_ids,
           start_time,
           end_time,
           duration,

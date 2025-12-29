@@ -120,11 +120,9 @@ class Extractor:
           description=f'convert {input_video_file_path} to MP4',
       )
 
-      # Replace the .mov file with .mp4 in GCS
-      mp4_gcs_path = (
-          self.media_file.full_gcs_path.replace('.mov', '.mp4')
-          .replace('.MOV', '.mp4')
-      )
+      # Replace only the filename extension, not the folder name
+      folder = self.media_file.gcs_folder
+      mp4_gcs_path = f'{folder}/input.mp4'
 
       # Upload the converted MP4 file
       StorageService.upload_gcs_file(
@@ -140,17 +138,40 @@ class Extractor:
           bucket_name=self.gcs_bucket_name,
       )
 
+      # Delete the local .mov file to prevent it from being re-uploaded
+      os.remove(input_video_file_path)
+      logging.info('EXTRACTOR - Deleted local .mov file')
+
       # Use the MP4 file for all subsequent processing
       input_video_file_path = mp4_file_path
+      converted_from_mov = True
       logging.info('EXTRACTOR - Conversion complete, replaced .mov with .mp4')
+    else:
+      converted_from_mov = False
 
     input_audio_file_path = AudioService.extract_audio(input_video_file_path)
     if input_audio_file_path:
+      # If we converted from .mov, temporarily move mp4 out to prevent
+      # duplicate upload
+      temp_mp4_path = None
+      if converted_from_mov:
+        temp_mp4_path = input_video_file_path + '.temp'
+        os.rename(input_video_file_path, temp_mp4_path)
+        logging.info(
+            'EXTRACTOR - Temporarily moved converted mp4 to prevent duplicate '
+            'upload'
+        )
+
       StorageService.upload_gcs_dir(
           source_directory=tmp_dir,
           bucket_name=self.gcs_bucket_name,
           target_dir=self.media_file.gcs_folder,
       )
+
+      # Move mp4 back for subsequent processing
+      if temp_mp4_path:
+        os.rename(temp_mp4_path, input_video_file_path)
+        logging.info('EXTRACTOR - Restored converted mp4 for processing')
 
     with concurrent.futures.ProcessPoolExecutor() as process_executor:
       concurrent.futures.wait([
@@ -1004,8 +1025,12 @@ def _create_optimised_av_segments(
     silent_short_shot = (
         not audio_segment_ids and visual_segment['duration_s'] <= 1
     )
-    continued_shot = set(audio_segment_ids
-                        ).intersection(current_audio_segment_ids)
+    # Only merge if the shot's audio is a subset of current audio
+    audio_set = set(audio_segment_ids)
+    continued_shot = (
+        audio_set.issubset(current_audio_segment_ids)
+        if current_audio_segment_ids else False
+    )
 
     if (
         continued_shot or not current_visual_segments or (

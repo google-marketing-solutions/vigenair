@@ -244,6 +244,12 @@ export class GenerationHelper {
               scene.toLowerCase().replace('scene ', '').replace('.0', '')
             );
 
+          // Validate that scenes array is not empty
+          if (trimmedScenes.length === 0) {
+            AppLogger.warn(`✗ Rejected: Variant has no scenes.\nResponse snippet: ${result.substring(0, 200)}...`);
+            return;
+          }
+
           // Sort for consistent comparison
           const sortedTrimmedScenes = trimmedScenes.sort((a, b) => Number(a) - Number(b));
           const trimmedScenesStr = sortedTrimmedScenes.join(', ');
@@ -260,13 +266,24 @@ export class GenerationHelper {
 
           if (shouldAcceptVariant) {
             const outputScenes = sortedTrimmedScenes;
+
+            const filteredSegments = avSegments.filter((segment: AvSegment) =>
+              outputScenes.includes(segment.av_segment_id)
+            );
+
+            if (filteredSegments.length === 0) {
+              AppLogger.warn(
+                `✗ Rejected: Variant has no matching segments. ` +
+                `Scenes: ${JSON.stringify(outputScenes)}`
+              );
+              return;
+            }
+
             const variant: GenerateVariantsResponse = {
               combo_id: index + 1,
               title: String(title).trim(),
               scenes: outputScenes,
-              av_segments: avSegments.filter((segment: AvSegment) =>
-                outputScenes.includes(segment.av_segment_id)
-              ),
+              av_segments: filteredSegments,
               description: String(description).trim(),
               score: Number(String(score).trim()),
               reasoning: String(reasoning).trim(),

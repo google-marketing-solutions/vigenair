@@ -479,11 +479,15 @@ limitations under the License.
             color="primary"
             [(ngModel)]="shortenVideo"
             (ngModelChange)="onShortenVideoChange($event)"
-            [disabled]="loading"
+            [disabled]="loading || (avSegments?.length === 1)"
             class="margin-bottom-10"
           >
             Shorten video
           </mat-checkbox>
+          <span class="notice-text single-segment-warning"
+                *ngIf="avSegments && avSegments.length === 1">
+            Shortening disabled: Only 1 segment detected
+          </span>
           <div [class.disabled-overlay]="!shortenVideo">
             <mat-label>Target duration:</mat-label>
             <mat-slider
