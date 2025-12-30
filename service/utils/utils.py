@@ -91,8 +91,12 @@ class VideoMetadata:
 
     Args:
       metadata: Formatted metadata string.
+    Raises:
+      ValueError: If metadata string has invalid number of components or
+        invalid timestamp format.
     """
-    components = metadata.split('--')
+    # Split from the right to handle video filenames that contain '--'
+    components = metadata.rsplit('--', 3)
     if len(components) == 4:
       (
           video_file_name,
@@ -103,16 +107,27 @@ class VideoMetadata:
       self.transcription_service = TranscriptionService.from_value(
           transcription_service
       )
-    else:
+    elif len(components) == 3:
       (
           video_file_name,
           video_timestamp,
           encoded_user_id,
       ) = components
       self.transcription_service = TranscriptionService.WHISPER
+    else:
+      raise ValueError(
+          f'Invalid metadata format: expected 3 or 4 components, '
+          f'got {len(components)}'
+      )
 
     self.video_file_name = video_file_name
-    self.video_timestamp = int(video_timestamp)
+    try:
+      self.video_timestamp = int(video_timestamp)
+    except ValueError as exc:
+      raise ValueError(
+          f'Invalid timestamp format: "{video_timestamp}" is not a valid '
+          'integer'
+      ) from exc
     self.encoded_user_id = encoded_user_id
 
   def __str__(self):
@@ -163,7 +178,7 @@ class TriggerFile:
 
   def is_extractor_audio_trigger(self) -> bool:
     return (
-        'wav' == self.file_ext and self.file_name.endswith(
+        'wav' == self.file_ext and self.file_name_ext.endswith(
             ConfigService.INPUT_EXTRACTION_AUDIO_FILENAME_SUFFIX
         )
     )
@@ -171,7 +186,7 @@ class TriggerFile:
   def is_extractor_video_trigger(self) -> bool:
     return (
         self.file_ext and VideoExtension.has_value(self.file_ext)
-        and self.file_name.endswith(
+        and self.file_name_ext.endswith(
             ConfigService.INPUT_EXTRACTION_VIDEO_FILENAME_SUFFIX
         )
     )

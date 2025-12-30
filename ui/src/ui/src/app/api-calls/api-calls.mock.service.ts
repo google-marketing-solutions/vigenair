@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
 import { lastValueFrom, Observable, of } from 'rxjs';
+import { PreviewHelper } from '../../../../preview';
 import {
   ApiCalls,
   GeneratePreviewsResponse,
@@ -100,11 +101,34 @@ export class ApiCallsService implements ApiCalls {
     return new Observable(subscriber => {
       setTimeout(() => {
         this.ngZone.run(async () => {
+          const sourceDimensions = settings.sourceDimensions;
+          const createPreview = (targetW: number, targetH: number) =>
+            JSON.stringify(
+              PreviewHelper.createPreview(
+                segments,
+                analysis,
+                sourceDimensions,
+                { w: targetW, h: targetH },
+                settings.weights
+              )
+            );
+
+          const h = sourceDimensions.h;
+
           const square = await this.loadLocalFile(`${gcsFolder}/square.json`);
           const vertical = await this.loadLocalFile(
             `${gcsFolder}/vertical.json`
           );
-          subscriber.next({ square, vertical });
+
+          subscriber.next({
+            square,
+            vertical,
+            '1:1': createPreview(h, h),
+            '9:16': createPreview(h * (9 / 16), h),
+            '16:9': createPreview(h * (16 / 9), h),
+            '3:4': createPreview(h * (3 / 4), h),
+            '4:3': createPreview(h * (4 / 3), h),
+          });
           subscriber.complete();
         });
       }, 1000);
@@ -226,5 +250,11 @@ export class ApiCallsService implements ApiCalls {
         });
       }, 1000);
     });
+  }
+  updateTranscription(
+    gcsFolder: string,
+    transcriptionText: string
+  ): Observable<boolean> {
+    return of(true);
   }
 }

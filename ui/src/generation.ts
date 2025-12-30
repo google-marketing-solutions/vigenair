@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,14 +61,26 @@ export class GenerationHelper {
     settings: GenerationSettings
   ): string {
     const videoLanguage = GenerationHelper.getVideoLanguage(gcsFolder);
-    const duration = settings.duration;
+    const avSegments = GenerationHelper.getAvSegments(gcsFolder);
+
+    // If not shortening, use full video duration
+    const duration = settings.shortenVideo
+      ? settings.duration
+      : avSegments.reduce((total, seg) => total + seg.duration_s, 0);
+
     const expectedDurationRange =
       GenerationHelper.calculateExpectedDurationRange(duration);
     const videoScript = GenerationHelper.createVideoScript(
       gcsFolder,
-      settings.duration
+      settings.shortenVideo ? settings.duration : Number.MAX_SAFE_INTEGER
     );
-    const generationPrompt = CONFIG.vertexAi.generationPrompt
+
+    // Use aspect-ratio-only prompt if not shortening, otherwise use regular prompt
+    const promptTemplate = settings.shortenVideo
+      ? CONFIG.vertexAi.generationPrompt
+      : CONFIG.vertexAi.aspectRatioOnlyPrompt;
+
+    const generationPrompt = promptTemplate
       .replace('{{{{userPrompt}}}}', settings.prompt)
       .replace('{{{{generationEvalPromptPart}}}}', settings.evalPrompt)
       .replace('{{{{desiredDuration}}}}', String(duration))
@@ -189,21 +201,32 @@ export class GenerationHelper {
       }),
       {}
     );
-    const allScenes = Object.keys(avSegmentsMap).join(', ');
+    // Sort the scene IDs to ensure consistent comparison
+    const allScenesArray = Object.keys(avSegmentsMap).sort((a, b) => Number(a) - Number(b));
+    const allScenes = allScenesArray.join(', ');
     let iteration = 0;
+    const maxIterations = 5;
 
-    while (!variants.length) {
+    while (!variants.length && iteration < maxIterations) {
       iteration++;
+      AppLogger.info(`GenerateVariants attempt #${iteration} of ${maxIterations}`);
+      AppLogger.info(`Mode: ${settings.shortenVideo ? 'SHORTENING' : 'ASPECT RATIO ONLY'}`);
       const response = VertexHelper.generate(prompt);
       AppLogger.info(`GenerateVariants Response #${iteration}: ${response}`);
 
       const results = response.split('## Combination').filter(Boolean);
+      AppLogger.info(`Split response into ${results.length} results`);
+
+      // More flexible regex that handles optional whitespace and asterisks
+      // Allows ABCD field to have text on same line or new line
       const regex =
-        /.*Title\s?:\**(?<title>.*)\n+\**Scenes\s?:\**(?<scenes>.*)\n+\**Reasoning\s?:\**(?<description>.*)\n+\**Score\s?:\**(?<score>.*)\n+\**Duration\s?:\**(?<duration>.*)\n+\**ABCD\s?:\**\n+(?<reasoning>[\w\W\s\S\d\D]*)/ims;
+        /.*Title\s?:\**\s*(?<title>.*?)\n+\**Scenes\s?:\**\s*(?<scenes>.*?)\n+\**Reasoning\s?:\**\s*(?<description>.*?)\n+\**Score\s?:\**\s*(?<score>.*?)\n+\**Duration\s?:\**\s*(?<duration>.*?)\n+\**ABCD\s?:\**\s*\n*(?<reasoning>[\w\W\s\S\d\D]*)/ims;
 
       results.forEach((result, index) => {
+        AppLogger.info(`\n=== Processing result #${index + 1} ===`);
         const matches = result.match(regex);
         if (matches) {
+          AppLogger.info(`Result #${index + 1} matched regex`);
           const { title, scenes, description, score, reasoning } =
             matches.groups as {
               title: string;
@@ -219,17 +242,48 @@ export class GenerationHelper {
             .filter(Boolean)
             .map(scene =>
               scene.toLowerCase().replace('scene ', '').replace('.0', '')
-            )
-            .join(', ');
-          if (trimmedScenes !== allScenes) {
-            const outputScenes = trimmedScenes.split(', ').filter(Boolean);
+            );
+
+          // Validate that scenes array is not empty
+          if (trimmedScenes.length === 0) {
+            AppLogger.warn(`✗ Rejected: Variant has no scenes.\nResponse snippet: ${result.substring(0, 200)}...`);
+            return;
+          }
+
+          // Sort for consistent comparison
+          const sortedTrimmedScenes = trimmedScenes.sort((a, b) => Number(a) - Number(b));
+          const trimmedScenesStr = sortedTrimmedScenes.join(', ');
+
+          AppLogger.info(`Scenes found: "${trimmedScenesStr}"`);
+          AppLogger.info(`All scenes: "${allScenes}"`);
+
+          // For crop-only mode, accept all scenes. For shortening mode, reject if all scenes are included.
+          const shouldAcceptVariant = settings.shortenVideo
+            ? trimmedScenesStr !== allScenes
+            : true;
+
+          AppLogger.info(`Should accept variant: ${shouldAcceptVariant} (mode: ${settings.shortenVideo ? 'shortening' : 'aspect-ratio-only'})`);
+
+          if (shouldAcceptVariant) {
+            const outputScenes = sortedTrimmedScenes;
+
+            const filteredSegments = avSegments.filter((segment: AvSegment) =>
+              outputScenes.includes(segment.av_segment_id)
+            );
+
+            if (filteredSegments.length === 0) {
+              AppLogger.warn(
+                `✗ Rejected: Variant has no matching segments. ` +
+                `Scenes: ${JSON.stringify(outputScenes)}`
+              );
+              return;
+            }
+
             const variant: GenerateVariantsResponse = {
               combo_id: index + 1,
               title: String(title).trim(),
               scenes: outputScenes,
-              av_segments: avSegments.filter((segment: AvSegment) =>
-                outputScenes.includes(segment.av_segment_id)
-              ),
+              av_segments: filteredSegments,
               description: String(description).trim(),
               score: Number(String(score).trim()),
               reasoning: String(reasoning).trim(),
@@ -239,18 +293,73 @@ export class GenerationHelper {
               ),
             };
             variants.push(variant);
+            AppLogger.info(`✓ Variant #${variants.length} added: "${variant.title}"`);
           } else {
             AppLogger.warn(
-              `WARNING - Received a response with ALL scenes.\nResponse: ${result}`
+              `✗ Rejected: Response with ALL scenes in shortening mode.\nScenes: ${trimmedScenesStr}\nResponse snippet: ${result.substring(0, 200)}...`
             );
           }
         } else {
-          AppLogger.warn(
-            `WARNING - Received an incomplete response for iteration #${iteration} from the API!\nResponse: ${result}`
-          );
+          // Regex match failed - provide detailed diagnostics
+          const errorTitle = `✗ REGEX MATCH FAILED for result #${index + 1}`;
+          AppLogger.error(errorTitle);
+          console.error(errorTitle);
+
+          const expectedFormat = [
+            'Expected format:',
+            '  Title: [text]',
+            '  Scenes: [numbers]',
+            '  Reasoning: [text]',
+            '  Score: [number]',
+            '  Duration: [number]',
+            '  ABCD:',
+            '  [ABCD text]'
+          ];
+          expectedFormat.forEach(line => {
+            AppLogger.error(line);
+            console.error(line);
+          });
+
+          AppLogger.error('\nActual response received:');
+          console.error('\nActual response received:');
+          AppLogger.error(result);
+          console.error(result);
+
+          // Try to identify what's missing
+          const hasTitle = /Title\s*:/i.test(result);
+          const hasScenes = /Scenes\s*:/i.test(result);
+          const hasReasoning = /Reasoning\s*:/i.test(result);
+          const hasScore = /Score\s*:/i.test(result);
+          const hasDuration = /Duration\s*:/i.test(result);
+          const hasABCD = /ABCD\s*:/i.test(result);
+
+          const fieldCheck = [
+            '\nField presence check:',
+            `  Title: ${hasTitle ? '✓' : '✗ MISSING'}`,
+            `  Scenes: ${hasScenes ? '✓' : '✗ MISSING'}`,
+            `  Reasoning: ${hasReasoning ? '✓' : '✗ MISSING'}`,
+            `  Score: ${hasScore ? '✓' : '✗ MISSING'}`,
+            `  Duration: ${hasDuration ? '✓' : '✗ MISSING'}`,
+            `  ABCD: ${hasABCD ? '✓' : '✗ MISSING'}`
+          ];
+          fieldCheck.forEach(line => {
+            AppLogger.error(line);
+            console.error(line);
+          });
         }
       });
     }
+
+    AppLogger.info(`\n=== Generation Summary ===`);
+    AppLogger.info(`Total variants generated: ${variants.length}`);
+    AppLogger.info(`Iterations used: ${iteration}/${maxIterations}`);
+
+    if (!variants.length) {
+      const errorMsg = `Failed to generate valid variants after ${maxIterations} attempts. Please check the logs for details.`;
+      AppLogger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+
     return variants.sort(
       (a, b) =>
         Math.abs(settings.duration - TimeUtil.timeStringToSeconds(a.duration)) -

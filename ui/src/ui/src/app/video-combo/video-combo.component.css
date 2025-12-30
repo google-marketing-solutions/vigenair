@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Google LLC
+Copyright 2025 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -138,4 +138,22 @@ mat-table {
   margin-bottom: -10px;
   margin-top: -6px;
   width: 100%;
+}
+
+.panel-icon {
+  margin-right: 8px;
+}
+
+.notice-text {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.original-format {
+  background-color: #e8f5e9 !important;
+  font-weight: 600 !important;
+}
+
+.original-format:not(.mat-button-toggle-checked) {
+  opacity: 0.7;
 }

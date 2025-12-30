@@ -1,5 +1,5 @@
 <!--
-Copyright 2024 Google LLC
+Copyright 2025 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,23 +25,20 @@ limitations under the License.
     #variantGroup="matButtonToggleGroup"
     [disabled]="loading"
     (change)="onChangeVideo($event)"
-    value="horizontal"
+    [value]="selectedFormat"
     hideSingleSelectionIndicator="true"
     [style.margin-right]="showApprovalStatus ? 'auto' : ''"
     [style.margin-left]="showApprovalStatus ? '-132px' : ''"
   >
-    <mat-button-toggle
-      value="horizontal"
-      [disabled]="!combo.variants?.horizontal"
-    >
-      <mat-icon>computer</mat-icon>
-    </mat-button-toggle>
-    <mat-button-toggle value="vertical" [disabled]="!combo.variants?.vertical">
-      <mat-icon>smartphone</mat-icon>
-    </mat-button-toggle>
-    <mat-button-toggle value="square" [disabled]="!combo.variants?.square">
-      <mat-icon>slideshow</mat-icon>
-    </mat-button-toggle>
+    @for (ratio of aspectRatios; track ratio) {
+      <mat-button-toggle
+        [value]="ratio"
+        [disabled]="!combo.variants || !combo.variants[ratio]"
+        [class.original-format]="combo.original_format === ratio"
+      >
+        <span style="font-size: 12px; font-weight: 500">{{ ratio }}{{ combo.original_format === ratio ? ' (Original)' : '' }}</span>
+      </mat-button-toggle>
+    }
   </mat-button-toggle-group>
 </div>
 <div *ngIf="displayMode === 'combo'" class="row" style="align-items: normal">
@@ -74,6 +71,7 @@ limitations under the License.
     <source src="" />
   </video>
 </div>
+
 <div class="row" style="justify-content: start">
   Segments: {{ combo.scenes }}
 </div>
@@ -84,7 +82,7 @@ limitations under the License.
 >
   Audio:
   {{
-    (combo.render_settings.use_continuous_audio
+    combo.render_settings.use_continuous_audio
       ? 'Overlay all' +
         (combo.render_settings.overlay_type
           ? ' (' + combo.render_settings.overlay_type.replace('_', ' ') + ')'
@@ -93,9 +91,9 @@ limitations under the License.
         ? 'Overlay music' +
           (combo.render_settings.overlay_type
             ? ' (' + combo.render_settings.overlay_type.replace('_', ' ') + ')'
-            : '')
-        : 'Individual segments') +
-      (combo.render_settings.fade_out ? ' + Fade out' : '')
+            : '') +
+          ($any(combo.render_settings).use_blanking_fill ? ' + Blanking fill' : '')
+      : ''
   }}
 </div>
 <div class="row" style="justify-content: start">

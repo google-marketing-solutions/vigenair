@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
+/// <reference types="google-apps-script" />
+
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { catchError, Observable, of, retry, switchMap, timer } from 'rxjs';
+import { catchError, map, Observable, of, retry, switchMap, timer } from 'rxjs';
 import { CONFIG } from '../../../../config';
 
 import { StringUtil } from '../../../../string-util';
@@ -51,8 +53,6 @@ export class ApiCallsService implements ApiCalls {
 
   getUserAuthToken(): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((userAuthToken: string) => {
           this.ngZone.run(() => {
@@ -77,15 +77,20 @@ export class ApiCallsService implements ApiCalls {
     file: File,
     analyseAudio: boolean,
     encodedUserId: string,
-    filename = 'input.mp4',
-    contentType = 'video/mp4'
+    filename?: string,
+    contentType?: string
   ): Observable<string[]> {
+    // Detect file extension and set appropriate filename and content type
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'mp4';
+    const actualFilename = filename || `input.${fileExtension}`;
+    const actualContentType = contentType || file.type || 'video/mp4';
+
     const videoFolderTranscriptionSuffix =
       CONFIG.defaultTranscriptionService.charAt(0);
     // eslint-disable-next-line no-useless-escape
     const sanitisedFileName = StringUtil.gcsSanitise(file.name);
     const folder = `${sanitisedFileName}${CONFIG.videoFolderNameSeparator}${analyseAudio ? videoFolderTranscriptionSuffix : CONFIG.videoFolderNoAudioSuffix}${CONFIG.videoFolderNameSeparator}${Date.now()}${CONFIG.videoFolderNameSeparator}${encodedUserId}`;
-    const fullName = encodeURIComponent(`${folder}/${filename}`);
+    const fullName = encodeURIComponent(`${folder}/${actualFilename}`);
     const url = `${CONFIG.cloudStorage.uploadEndpointBase}/b/${CONFIG.cloudStorage.bucket}/o?uploadType=media&name=${fullName}`;
 
     return this.getUserAuthToken().pipe(
@@ -94,13 +99,23 @@ export class ApiCallsService implements ApiCalls {
           .post(url, file, {
             headers: new HttpHeaders({
               'Authorization': `Bearer ${userAuthToken}`,
-              'Content-Type': contentType,
+              'Content-Type': actualContentType,
             }),
           })
           .pipe(
             switchMap(response => {
               console.log('Upload complete!', response);
-              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/input.mp4`;
+              // Backend converts .mov files to .mp4, so use .mp4 in the video path
+              const finalFilename = fileExtension === 'mov' ? 'input.mp4' : actualFilename;
+              const videoFilePath = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/${finalFilename}`;
+
+              // For .mov files, emit initial response but also start polling for converted file
+              if (fileExtension === 'mov') {
+                // Emit the folder and a temporary path first
+                const result: string[] = [folder, videoFilePath, 'converting'];
+                return of(result);
+              }
+
               return of([folder, videoFilePath]);
             }),
             catchError(error => {
@@ -112,9 +127,43 @@ export class ApiCallsService implements ApiCalls {
     );
   }
 
+  waitForConvertedVideo(folder: string): Observable<string> {
+    const mp4Path = `${folder}/input.mp4`;
+    const videoUrl = `${CONFIG.cloudStorage.authenticatedEndpointBase}/${CONFIG.cloudStorage.bucket}/${encodeURIComponent(folder)}/input.mp4`;
+
+    console.log('Waiting for converted MP4 file...');
+
+    // Poll for the MP4 file with HEAD request to check existence
+    return this.getUserAuthToken().pipe(
+      switchMap(userAuthToken =>
+        this.httpClient.head(
+          `${CONFIG.cloudStorage.endpointBase}/b/${CONFIG.cloudStorage.bucket}/o/${encodeURIComponent(mp4Path)}?alt=media`,
+          {
+            headers: new HttpHeaders({
+              Authorization: `Bearer ${userAuthToken}`,
+            }),
+          }
+        ).pipe(
+          map(() => {
+            console.log('Converted MP4 file is ready!');
+            return videoUrl;
+          })
+        )
+      ),
+      retry({
+        count: 30, // Try for up to 30 times (about 60 seconds with 2s delay)
+        delay: (error, retryCount) => {
+          if (error.status && error.status === 404 && retryCount < 30) {
+            console.log(`Conversion in progress, retrying (${retryCount}/30)...`);
+            return timer(2000); // Wait 2 seconds between retries
+          }
+          throw error;
+        },
+      })
+    );
+  }
+
   deleteGcsFolder(folder: string): void {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     google.script.run.deleteGcsFolder(folder);
   }
 
@@ -134,7 +183,7 @@ export class ApiCallsService implements ApiCalls {
         count: maxRetries,
         delay: (error, retryCount) => {
           if (error.status && error.status === 404 && retryCount < maxRetries) {
-            console.log('Expected output not available yet, retrying...');
+            console.log(`Expected output not available yet, retrying (${retryCount}/${maxRetries})...`);
             return timer(retryDelay);
           }
           throw error;
@@ -147,17 +196,24 @@ export class ApiCallsService implements ApiCalls {
     gcsFolder: string,
     settings: GenerationSettings
   ): Observable<GenerateVariantsResponse[]> {
+    console.log('API Service: Starting generateVariants call');
+    console.log('Settings:', settings);
     return new Observable<GenerateVariantsResponse[]>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
+      const startTime = Date.now();
       google.script.run
         .withSuccessHandler((variants: GenerateVariantsResponse[]) => {
+          const elapsed = Date.now() - startTime;
+          console.log(`API Service: Received success response after ${elapsed}ms`);
+          console.log('Variants received:', variants);
+          console.log('Number of variants:', variants?.length);
           this.ngZone.run(() => {
             subscriber.next(variants);
             subscriber.complete();
           });
         })
         .withFailureHandler((error: Error) => {
+          const elapsed = Date.now() - startTime;
+          console.error(`API Service: Received error after ${elapsed}ms`);
           console.error(
             'Encountered an unexpected error while generating variants! Error: ',
             error
@@ -165,6 +221,7 @@ export class ApiCallsService implements ApiCalls {
           subscriber.error(error);
         })
         .generateVariants(gcsFolder, settings);
+      console.log('API Service: google.script.run call initiated');
     }).pipe(
       retry({ count: CONFIG.maxRetriesAppsScript, delay: CONFIG.retryDelay })
     );
@@ -177,8 +234,6 @@ export class ApiCallsService implements ApiCalls {
     settings: PreviewSettings
   ): Observable<GeneratePreviewsResponse> {
     return new Observable<GeneratePreviewsResponse>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((previews: GeneratePreviewsResponse) => {
           this.ngZone.run(() => {
@@ -201,8 +256,6 @@ export class ApiCallsService implements ApiCalls {
 
   getRunsFromGcs(): Observable<PreviousRunsResponse> {
     return new Observable<PreviousRunsResponse>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: PreviousRunsResponse) => {
           this.ngZone.run(() => {
@@ -225,8 +278,6 @@ export class ApiCallsService implements ApiCalls {
 
   getRendersFromGcs(gcsFolder: string): Observable<string[]> {
     return new Observable<string[]>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: string[]) => {
           this.ngZone.run(() => {
@@ -252,8 +303,6 @@ export class ApiCallsService implements ApiCalls {
     renderQueue: RenderQueue
   ): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: string) => {
           this.ngZone.run(() => {
@@ -280,8 +329,6 @@ export class ApiCallsService implements ApiCalls {
 
   getWebAppUrl(): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: string) => {
           this.ngZone.run(() => {
@@ -305,8 +352,6 @@ export class ApiCallsService implements ApiCalls {
     textAssetLanguage: string
   ): Observable<VariantTextAsset> {
     return new Observable<VariantTextAsset>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((textAsset: VariantTextAsset) => {
           this.ngZone.run(() => {
@@ -331,8 +376,6 @@ export class ApiCallsService implements ApiCalls {
     combos: RenderedVariant[]
   ): Observable<boolean> {
     return new Observable<boolean>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: boolean) => {
           this.ngZone.run(() => {
@@ -350,8 +393,6 @@ export class ApiCallsService implements ApiCalls {
 
   getVideoLanguage(gcsFolder: string): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((videoLanguage: string) => {
           this.ngZone.run(() => {
@@ -377,8 +418,6 @@ export class ApiCallsService implements ApiCalls {
     textAssetsLanguage: string
   ): Observable<VariantTextAsset[]> {
     return new Observable<VariantTextAsset[]>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((textAssets: VariantTextAsset[]) => {
           this.ngZone.run(() => {
@@ -405,8 +444,6 @@ export class ApiCallsService implements ApiCalls {
     segmentMarkers: SegmentMarker[]
   ): Observable<string> {
     return new Observable<string>(subscriber => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
       google.script.run
         .withSuccessHandler((response: string) => {
           this.ngZone.run(() => {
@@ -422,6 +459,29 @@ export class ApiCallsService implements ApiCalls {
           subscriber.error(error);
         })
         .splitSegment(gcsFolder, segmentMarkers);
+    });
+  }
+
+  updateTranscription(
+    gcsFolder: string,
+    transcriptionText: string
+  ): Observable<boolean> {
+    return new Observable<boolean>(subscriber => {
+      google.script.run
+        .withSuccessHandler((response: boolean) => {
+          this.ngZone.run(() => {
+            subscriber.next(response);
+            subscriber.complete();
+          });
+        })
+        .withFailureHandler((error: Error) => {
+          console.error(
+            'Encountered an unexpected error while updating transcription! Error: ',
+            error
+          );
+          subscriber.error(error);
+        })
+        .updateTranscription(gcsFolder, transcriptionText);
     });
   }
 }

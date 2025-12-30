@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ export class StringUtil {
   }
 
   static gcsSanitise(input: string) {
-    return input.replace(/[#\/\[\]*?:"<>|]/g, ''); // See https://cloud.google.com/storage/docs/objects#naming
+    return input
+      .replace(/[#\/\[\]*?:"<>|]/g, '') // See https://cloud.google.com/storage/docs/objects#naming
+      .replace(/--+/g, '-'); // Replace consecutive hyphens with single hyphen to avoid metadata parsing issues
   }
 }

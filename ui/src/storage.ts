@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/// <reference types="google-apps-script" />
 
 import { CONFIG } from './config';
 import { AppLogger } from './logging';
@@ -57,15 +59,12 @@ export class StorageManager {
     const result: GoogleCloud.Storage.ListResponse = JSON.parse(
       response.getContentText()
     );
-    if (delimiter && !result.prefixes) {
-      return [];
-    }
     if (delimiter) {
-      return result.prefixes.map(
+      return result.prefixes?.map(
         (e: string) => e.replace(prefix ?? '', '').split('/')[0]
-      );
+      ) ?? [];
     }
-    return result.items.map((e: GoogleCloud.Storage.Objects) => e.name);
+    return result.items?.map((e: GoogleCloud.Storage.Objects) => e.name) ?? [];
   }
 
   static uploadFile(

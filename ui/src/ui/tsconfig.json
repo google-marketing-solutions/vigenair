@@ -23,7 +23,8 @@
     "lib": [
       "ES2022",
       "dom"
-    ]
+    ],
+    "types": ["google-apps-script"]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

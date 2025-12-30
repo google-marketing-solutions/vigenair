@@ -96,13 +96,82 @@ class Extractor:
         output_dir=tmp_dir,
         bucket_name=self.gcs_bucket_name,
     )
+
+    # Convert .mov files to .mp4 for compatibility
+    if self.media_file.file_ext.lower() == 'mov':
+      logging.info('EXTRACTOR - Converting .mov to .mp4...')
+      mp4_file_path = (
+          input_video_file_path.replace('.mov', '.mp4').replace('.MOV', '.mp4')
+      )
+      Utils.execute_subprocess_commands(
+          cmds=[
+              'ffmpeg',
+              '-i',
+              input_video_file_path,
+              '-c:v',
+              'libx264',
+              '-c:a',
+              'aac',
+              '-strict',
+              'experimental',
+              '-y',
+              mp4_file_path,
+          ],
+          description=f'convert {input_video_file_path} to MP4',
+      )
+
+      # Replace only the filename extension, not the folder name
+      folder = self.media_file.gcs_folder
+      mp4_gcs_path = f'{folder}/input.mp4'
+
+      # Upload the converted MP4 file
+      StorageService.upload_gcs_file(
+          file_path=mp4_file_path,
+          destination_file_name=mp4_gcs_path,
+          bucket_name=self.gcs_bucket_name,
+          overwrite=True,
+      )
+
+      # Delete the original .mov file from GCS
+      StorageService.delete_gcs_file(
+          file_path=self.media_file,
+          bucket_name=self.gcs_bucket_name,
+      )
+
+      # Delete the local .mov file to prevent it from being re-uploaded
+      os.remove(input_video_file_path)
+      logging.info('EXTRACTOR - Deleted local .mov file')
+
+      # Use the MP4 file for all subsequent processing
+      input_video_file_path = mp4_file_path
+      converted_from_mov = True
+      logging.info('EXTRACTOR - Conversion complete, replaced .mov with .mp4')
+    else:
+      converted_from_mov = False
+
     input_audio_file_path = AudioService.extract_audio(input_video_file_path)
     if input_audio_file_path:
+      # If we converted from .mov, temporarily move mp4 out to prevent
+      # duplicate upload
+      temp_mp4_path = None
+      if converted_from_mov:
+        temp_mp4_path = input_video_file_path + '.temp'
+        os.rename(input_video_file_path, temp_mp4_path)
+        logging.info(
+            'EXTRACTOR - Temporarily moved converted mp4 to prevent duplicate '
+            'upload'
+        )
+
       StorageService.upload_gcs_dir(
           source_directory=tmp_dir,
           bucket_name=self.gcs_bucket_name,
           target_dir=self.media_file.gcs_folder,
       )
+
+      # Move mp4 back for subsequent processing
+      if temp_mp4_path:
+        os.rename(temp_mp4_path, input_video_file_path)
+        logging.info('EXTRACTOR - Restored converted mp4 for processing')
 
     with concurrent.futures.ProcessPoolExecutor() as process_executor:
       concurrent.futures.wait([
@@ -827,12 +896,37 @@ def _cut_and_annotate_av_segment(
         and response.candidates[0].content.parts[0].text
     ):
       text = response.candidates[0].content.parts[0].text
-      result = re.search(ConfigService.SEGMENT_ANNOTATIONS_PATTERN, text)
       logging.info(
           'ANNOTATION - Annotating segment %s: %s', av_segment_id, text
       )
-      description = result.group(2)
-      keywords = result.group(3)
+      # Try JSON parsing first (more reliable)
+      try:
+        # Extract JSON from potential markdown code blocks
+        json_match = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
+        if json_match:
+          json_text = json_match.group(1)
+        else:
+          json_text = text.strip()
+
+        data = json.loads(json_text)
+        description = data.get('description', '')
+        keywords = data.get('keywords', '')
+      except (json.JSONDecodeError, KeyError, IndexError) as e:
+        # Fallback to regex pattern matching
+        logging.warning(
+            'ANNOTATION - JSON parsing failed for segment %s (%s), trying regex'
+            ' fallback',
+            av_segment_id, str(e)
+        )
+        result = re.search(ConfigService.SEGMENT_ANNOTATIONS_PATTERN, text)
+        if result:
+          description = result.group(2)
+          keywords = result.group(3)
+        else:
+          logging.warning(
+              'ANNOTATION - Pattern did not match for segment %s!',
+              av_segment_id,
+          )
     else:
       logging.warning(
           'ANNOTATION - Could not annotate segment %s!', av_segment_id
@@ -931,8 +1025,12 @@ def _create_optimised_av_segments(
     silent_short_shot = (
         not audio_segment_ids and visual_segment['duration_s'] <= 1
     )
-    continued_shot = set(audio_segment_ids
-                        ).intersection(current_audio_segment_ids)
+    # Only merge if the shot's audio is a subset of current audio
+    audio_set = set(audio_segment_ids)
+    continued_shot = (
+        audio_set.issubset(current_audio_segment_ids)
+        if current_audio_segment_ids else False
+    )
 
     if (
         continued_shot or not current_visual_segments or (

@@ -1,4 +1,4 @@
-# Copyright 2024 Google LLC.
+# Copyright 2025 Google LLC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -120,9 +120,11 @@ SEGMENT_ANNOTATIONS_PATTERN = '(.*Description:\n?)?(.*)\n*Keywords:\n?(.*)'
 SEGMENT_ANNOTATIONS_PROMPT = (
     """Describe this video in as much detail as possible. Include 5 keywords.
 
-Output EXACTLY as follows:
-Description: the description.
-Keywords: the keywords, comma-separated.
+Output EXACTLY in this JSON format (no other text):
+{
+  "description": "your detailed description here",
+  "keywords": "keyword1, keyword2, keyword3, keyword4, keyword5"
+}
 
 """
 )

@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, inject, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, inject, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -83,6 +83,79 @@ export type FramingDialogData = {
   weightSteps: number[];
 };
 
+interface VideoFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  time: number;
+}
+
+interface VideoObject {
+  name: string;
+  start: number;
+  end: number;
+  frames: VideoFrame[];
+}
+
+interface NormalizedBoundingBox {
+  left?: number;
+  top?: number;
+  right?: number;
+  bottom?: number;
+}
+
+interface FrameAnnotation {
+  normalized_bounding_box: NormalizedBoundingBox;
+  time_offset: string;
+}
+
+interface SegmentAnnotation {
+  start_time_offset: string;
+  end_time_offset: string;
+}
+
+interface EntityAnnotation {
+  description: string;
+}
+
+interface ObjectAnnotation {
+  entity: EntityAnnotation;
+  segment: SegmentAnnotation;
+  frames: FrameAnnotation[];
+  confidence: number;
+}
+
+interface AnnotationResult {
+  object_annotations: ObjectAnnotation[];
+}
+
+interface VideoAnalysisJson {
+  annotation_results: AnnotationResult[];
+}
+
+interface RawVariant {
+  variant_id: number;
+  av_segments: Record<string, AvSegment>;
+  title: string;
+  description: string;
+  score: number;
+  score_reasoning: string;
+  render_settings: RenderSettings;
+  variants: Record<FormatType, string>;
+  images?: Record<FormatType, string[]>;
+  texts?: VariantTextAsset[];
+}
+
+const ASPECT_RATIOS = {
+  '1:1': 1,
+  '9:16': 9 / 16,
+  '16:9': 16 / 9,
+  '3:4': 3 / 4,
+  '4:3': 4 / 3,
+};
+const ASPECT_RATIO_TOLERANCE = 0.12;
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -127,16 +200,17 @@ export class AppComponent {
   generatingPreviews = false;
   selectedFile?: File;
   videoPath?: string;
-  analysisJson?: any;
-  activeVideoObjects?: any[];
-  videoObjects?: any[];
-  squareVideoObjects?: any[];
-  verticalVideoObjects?: any[];
-  combosJson?: any;
+  analysisJson?: VideoAnalysisJson;
+  activeVideoObjects?: VideoObject[];
+  videoObjects?: VideoObject[];
+  squareVideoObjects?: VideoObject[];
+  verticalVideoObjects?: VideoObject[];
+  previewAnalyses: Record<string, VideoObject[]> = {};
+  combosJson?: unknown;
   combos?: RenderedVariant[];
   originalCombos?: RenderedVariant[];
-  originalAvSegments?: any;
-  avSegments?: any;
+  originalAvSegments?: AvSegment[];
+  avSegments?: AvSegment[];
   variants?: GenerateVariantsResponse[];
   selectedVariant = 0;
   transcriptStatus: ProcessStatus = 'hourglass_top';
@@ -145,15 +219,30 @@ export class AppComponent {
   segmentsStatus: ProcessStatus = 'hourglass_top';
   canvas?: CanvasRenderingContext2D;
   frameInterval?: number;
+  transcript?: string;
   currentSegmentId?: number;
-  prompt = '';
+  prompt = 'Generate a shorter version of the video, keeping the core message the same.';
+  defaultPrompt = 'Generate a shorter version of the video, keeping the core message the same.';
+  selectedPromptOption = 'default';
+  predefinedPrompts = [
+    { value: 'default', label: 'Default', text: 'Generate a shorter version of the video, keeping the core message the same.' },
+    { value: 'highlight', label: 'Highlight Key Points', text: 'Create a video highlighting only the most important key points and messages.' },
+    { value: 'engaging', label: 'More Engaging', text: 'Make the video more engaging by focusing on the most dynamic and interesting segments.' },
+    { value: 'professional', label: 'Professional Summary', text: 'Create a professional summary that maintains formal tone and key information.' },
+    { value: 'social', label: 'Social Media', text: 'Optimize for social media by keeping the most attention-grabbing moments.' },
+    { value: 'crop-only', label: 'Crop Only (No Shortening)', text: 'Change aspect ratio without shortening the video - keeps the full duration.' },
+    { value: 'custom', label: 'Custom Prompt', text: '' }
+  ];
+  isCustomPrompt = false;
   selectedAbcdType: AbcdType = 'awareness';
   evalPrompt = CONFIG.vertexAi.abcdBusinessObjectives.awareness.promptPart;
   duration = 0;
   step = 0;
+  shortenVideo = true;
   audioSettings = 'segment';
   overlaySettings: OverlayType = 'variant_start';
   fadeOut = false;
+  useBlankingFill = false;
   demandGenAssets = true;
   analyseAudio = true;
   previousRuns: string[] | undefined;
@@ -161,6 +250,9 @@ export class AppComponent {
   encodedUserId: string | undefined;
   folder = '';
   folderGcsPath = '';
+  transcriptionText = '';
+  transcriptionLoading = false;
+  transcriptionLoaded = false;
   combosFolder = '';
   math = Math;
   json = JSON;
@@ -192,6 +284,8 @@ export class AppComponent {
   businessObjectives = Object.values(CONFIG.vertexAi.abcdBusinessObjectives);
   segmentMarkers: Record<string, SegmentMarker[]> = {};
   segmentSplitting = false;
+  matchedAspectRatio?: string;
+  aspectRatios = Object.keys(ASPECT_RATIOS);
 
   @ViewChild('VideoComboComponent') VideoComboComponent?: VideoComboComponent;
   @ViewChild('previewVideoElem')
@@ -221,7 +315,8 @@ export class AppComponent {
   constructor(
     private apiCallsService: ApiCallsService,
     private snackBar: MatSnackBar,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private cdRef: ChangeDetectorRef
   ) {
     this.getPreviousRuns();
     this.getWebAppUrl();
@@ -336,9 +431,9 @@ export class AppComponent {
     this.selectedFile = file;
   }
 
-  getCurrentCropAreaFrame(entities: any[]):
+  getCurrentCropAreaFrame(entities: VideoObject[]):
     | {
-        currentFrame: { x: number; width: number; height: number };
+        currentFrame: VideoFrame;
         idx: number;
       }
     | undefined {
@@ -351,12 +446,29 @@ export class AppComponent {
     return;
   }
 
-  drawFrame(entities?: any[]) {
+  drawFrame(entities?: VideoObject[]) {
     const context = this.canvas;
-    if (!context || !entities) {
+    if (!context) {
       return;
     }
     context.clearRect(0, 0, this.videoWidth, this.videoHeight);
+
+    if (this.useBlankingFill) {
+      context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      context.fillRect(0, 0, this.videoWidth, this.videoHeight);
+
+      context.font = '30px Roboto';
+      context.fillStyle = '#ffffff';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText('Blanking Fill Active', this.videoWidth / 2, this.videoHeight / 2);
+      return;
+    }
+
+    if (!entities) {
+      return;
+    }
+
     if (this.displayObjectTracking) {
       const timestamp = this.previewVideoElem.nativeElement.currentTime;
       entities.forEach(e => {
@@ -390,11 +502,11 @@ export class AppComponent {
     );
     if (
       !currentSegment ||
-      currentSegment.av_segment_id === this.currentSegmentId
+      Number(currentSegment.av_segment_id) === this.currentSegmentId
     ) {
       return;
     }
-    this.currentSegmentId = currentSegment.av_segment_id;
+    this.currentSegmentId = Number(currentSegment.av_segment_id);
   }
 
   drawEntity(
@@ -419,17 +531,21 @@ export class AppComponent {
     }
   }
 
-  parseAnalysis(objectsJson: any, filterCondition: (e: any) => boolean) {
+  parseAnalysis(objectsJson: VideoAnalysisJson, filterCondition: (e: ObjectAnnotation) => boolean) {
     const vw = this.videoWidth;
     const vh = this.videoHeight;
+    const toSeconds = (t: string) =>
+      TimeUtil.timestampToSeconds(
+        t as unknown as Parameters<typeof TimeUtil.timestampToSeconds>[0]
+      );
     return objectsJson.annotation_results[0].object_annotations
       .filter(filterCondition)
-      .map((e: any) => {
+      .map((e: ObjectAnnotation) => {
         return {
           name: e.entity.description,
-          start: TimeUtil.timestampToSeconds(e.segment.start_time_offset),
-          end: TimeUtil.timestampToSeconds(e.segment.end_time_offset),
-          frames: e.frames.map((f: any) => {
+          start: toSeconds(e.segment.start_time_offset),
+          end: toSeconds(e.segment.end_time_offset),
+          frames: e.frames.map((f: FrameAnnotation) => {
             return {
               x: vw * (f.normalized_bounding_box.left || 0),
               y: vh * (f.normalized_bounding_box.top || 0),
@@ -441,7 +557,7 @@ export class AppComponent {
                 vh *
                 ((f.normalized_bounding_box.bottom || 0) -
                   (f.normalized_bounding_box.top || 0)),
-              time: TimeUtil.timestampToSeconds(f.time_offset),
+              time: toSeconds(f.time_offset),
             };
           }),
         };
@@ -450,11 +566,13 @@ export class AppComponent {
 
   getAvSegments() {
     this.segmentsStatus = 'pending';
+    // Cap retries at 80 (480 seconds max wait = 8 minutes)
+    const maxSegmentRetries = Math.min(this.maxRetries, 80);
     this.apiCallsService
       .getFromGcs(
         `${this.folder}/${CONFIG.cloudStorage.files.data}`,
         CONFIG.retryDelay,
-        this.maxRetries
+        maxSegmentRetries
       )
       .subscribe({
         next: data => {
@@ -473,13 +591,93 @@ export class AppComponent {
             }) as AvSegment[]
           ).sort((a: AvSegment, b: AvSegment) => a.start_s - b.start_s);
           this.originalAvSegments = structuredClone(this.avSegments);
+
+          if (this.avSegments.length === 1) {
+            this.shortenVideo = false;
+            this.selectedPromptOption = 'crop-only';
+            this.onPromptSelectionChange();
+            console.warn('Only 1 segment - shortening disabled.');
+          }
+
           this.segmentsStatus = 'check_circle';
           this.loading = false;
           if (!this.nonLandscapeInputVideo) {
             this.generatePreviews();
           }
         },
-        error: err => this.failHandler(err, this.folder, true),
+        error: err => {
+          this.loading = false;
+          this.segmentsStatus = 'hourglass_top';
+          console.error('Failed to load segments data:', err);
+          alert(
+            'Failed to load video segments. The video may still be processing. ' +
+            'Please try again in a few moments.'
+          );
+          this.videoMagicPanel.close();
+          this.videoUploadPanel.open();
+        },
+      });
+
+    // Load transcription if available
+    this.loadTranscription();
+  }
+
+  loadTranscription() {
+    if (!this.analyseAudio || !this.folder) {
+      this.transcriptionLoaded = true;
+      return;
+    }
+
+    this.transcriptionLoading = true;
+    this.transcriptionLoaded = false;
+    const transcriptionUrl = `${this.folder}/${CONFIG.cloudStorage.files.subtitles}`;
+    console.log('Loading transcription from:', transcriptionUrl);
+    this.apiCallsService.getFromGcs(transcriptionUrl).subscribe({
+      next: (data: string) => {
+        console.log('VTT transcription loaded, length:', data.length);
+        this.transcriptionText = data;
+        this.transcriptionLoading = false;
+        this.transcriptionLoaded = true;
+      },
+      error: (err) => {
+        console.log('Error loading transcription:', err);
+        this.transcriptionText = '';
+        this.transcriptionLoading = false;
+        this.transcriptionLoaded = true;
+      }
+    });
+  }
+
+  applyTranscription() {
+    if (!this.transcriptionText) {
+      this.snackBar.open('Transcription is empty', 'Dismiss', {
+        duration: 2500,
+      });
+      return;
+    }
+
+    this.transcriptionLoading = true;
+    this.apiCallsService
+      .updateTranscription(this.folder, this.transcriptionText)
+      .subscribe({
+        next: (success: boolean) => {
+          this.transcriptionLoading = false;
+          if (success) {
+            this.snackBar.open('Transcription updated successfully! Reloading...', 'Dismiss', {
+              duration: 2500,
+            });
+            // Reload subtitles and segments to get updated transcription
+            this.getSubtitlesTrack();
+          } else {
+            this.snackBar.open('Failed to update transcription', 'Dismiss', {
+              duration: 2500,
+            });
+          }
+        },
+        error: (err: Error) => {
+          this.transcriptionLoading = false;
+          this.failHandler(err, this.folder, false);
+        }
       });
   }
 
@@ -491,11 +689,14 @@ export class AppComponent {
     this.videoMagicPanel.close();
     this.videoCombosPanel.open();
     this.combos = undefined;
+    // Rendering can take a long time (especially for blur effects)
+    // 80 retries * 6s = 480s = 8 minutes
+    const maxCombosRetries = Math.min(this.maxRetries, 80);
     this.apiCallsService
       .getFromGcs(
         `${folder}/${CONFIG.cloudStorage.files.combos}`,
         CONFIG.retryDelay,
-        this.maxRetries
+        maxCombosRetries
       )
       .subscribe({
         next: data => {
@@ -508,52 +709,109 @@ export class AppComponent {
           this.videoCombosPanel.open();
           this.storeCombosApproval(false);
         },
-        error: err => this.failHandler(err, folder, true),
+        error: err => {
+          this.loading = false;
+          this.combinationStatus = 'hourglass_top';
+          console.error('Failed to load rendered videos:', err);
+          alert(
+            'Rendering is taking longer than expected (>5 minutes).\n\n' +
+            'This can happen for complex videos with blur effects or format conversions. ' +
+            'The rendering may still be in progress.\n\n' +
+            'Please wait a minute and try clicking "Load saved video" again to check if rendering has completed.'
+          );
+          this.videoCombosPanel.close();
+          this.videoMagicPanel.open();
+        },
       });
   }
 
   getVideoAnalysis() {
     this.analysisStatus = 'pending';
+    // Cap retries at 80 (480 seconds max wait = 8 minutes)
+    const maxAnalysisRetries = Math.min(this.maxRetries, 80);
     this.apiCallsService
       .getFromGcs(
         `${this.folder}/${CONFIG.cloudStorage.files.analysis}`,
         CONFIG.retryDelay,
-        this.maxRetries
+        maxAnalysisRetries
       )
       .subscribe({
         next: data => {
-          this.analysisJson = JSON.parse(data);
+          this.analysisJson = JSON.parse(data) as VideoAnalysisJson;
           this.analysisStatus = 'check_circle';
           this.videoObjects = this.parseAnalysis(
             this.analysisJson,
-            (e: { confidence: number }) =>
+            (e: ObjectAnnotation) =>
               e.confidence > CONFIG.videoIntelligenceConfidenceThreshold
           );
           this.activeVideoObjects = this.videoObjects;
           this.getAvSegments();
         },
-        error: err => this.failHandler(err, this.folder, true),
+        error: err => {
+          this.loading = false;
+          this.analysisStatus = 'hourglass_top';
+          console.error('Failed to load video analysis:', err);
+          alert(
+            'Failed to load video analysis. The video may still be processing. ' +
+            'Please try again in a few moments.'
+          );
+          this.videoMagicPanel.close();
+          this.videoUploadPanel.open();
+        },
       });
   }
 
   getSubtitlesTrack() {
     this.transcriptStatus = 'pending';
+    // Cap retries at 80 (480 seconds max wait = 8 minutes)
+    const maxSubtitleRetries = Math.min(this.maxRetries, 80);
     this.apiCallsService
       .getFromGcs(
         `${this.folder}/${CONFIG.cloudStorage.files.subtitles}`,
         CONFIG.retryDelay,
-        this.maxRetries
+        maxSubtitleRetries
       )
       .subscribe({
         next: data => {
           const dataUrl = `data:text/vtt;base64,${StringUtil.encode(data)}`;
+          this.transcript = data;
           this.previewTrackElem.nativeElement.src = dataUrl;
           this.subtitlesTrack = this.previewTrackElem.nativeElement.src;
           this.transcriptStatus = 'check_circle';
           this.getVideoAnalysis();
         },
-        error: err => this.failHandler(err, this.folder, true),
+        error: err => {
+          this.loading = false;
+          this.transcriptStatus = 'hourglass_top';
+          console.error('Failed to load subtitles:', err);
+          alert(
+            'Failed to load video subtitles. This may happen if:\n' +
+            '- The video is still being processed\n' +
+            '- You selected a previously rendered video that was re-uploaded\n' +
+            '- The subtitle file does not exist\n\n' +
+            'Please try selecting the original uploaded video instead, ' +
+            'or re-upload and process the video.'
+          );
+          this.videoMagicPanel.close();
+          this.videoCombosPanel.close();
+          this.videoUploadPanel.open();
+        },
       });
+  }
+
+  downloadTranscript(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (this.transcript) {
+      const blob = new Blob([this.transcript], { type: 'text/vtt' });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'transcript.vtt';
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    }
   }
 
   loadPreviousRun(folder: string) {
@@ -573,8 +831,62 @@ export class AppComponent {
       .uploadVideo(this.selectedFile!, this.analyseAudio, this.encodedUserId!)
       .subscribe({
         next: response => {
+          const folder = response[0];
+          const videoPath = response[1];
+          const isConverting = response[2] === 'converting';
+
           this.fileChooserComponent.stopVideo();
-          this.processVideo(response[0], response[1], false);
+          this.processVideo(folder, videoPath, false);
+
+          if (isConverting) {
+            // For .mov files, wait for conversion and update both previews
+            console.log('Waiting for video conversion...');
+            this.fileChooserComponent.convertingVideo = true;
+            // Keep the message showing in file chooser
+            this.fileChooserComponent.isMovFile = true;
+
+            this.apiCallsService.waitForConvertedVideo(folder).subscribe({
+              next: convertedVideoUrl => {
+                console.log('Video converted, updating previews...');
+                // Update the file chooser preview with the converted MP4
+                this.fileChooserComponent.selectedFileUrl = convertedVideoUrl;
+                this.fileChooserComponent.isMovFile = false;
+                this.fileChooserComponent.convertingVideo = false;
+                this.fileChooserComponent.videoElem.nativeElement.load();
+
+                // Also update the main video editing preview if it's loaded
+                if (this.previewVideoElem && this.videoPath) {
+                  console.log('Updating main video preview with converted file...');
+                  this.videoPath = convertedVideoUrl;
+                  this.previewVideoElem.nativeElement.src = convertedVideoUrl;
+                  this.previewVideoElem.nativeElement.load();
+                }
+              },
+              error: conversionError => {
+                console.error('Failed to convert video:', conversionError);
+                this.fileChooserComponent.convertingVideo = false;
+
+                // Re-check the file extension to properly display the state
+                if (this.fileChooserComponent.selectedFile) {
+                  const fileExtension = this.fileChooserComponent.selectedFile.name.split('.').pop()?.toLowerCase();
+                  this.fileChooserComponent.isMovFile = fileExtension === 'mov';
+                }
+
+                this.loading = false;
+
+                // Show error to user
+                alert(
+                  'Video conversion failed. The .mov file could not be converted to MP4 format. ' +
+                  'Please try uploading the video again or use a different video format (e.g., MP4).'
+                );
+
+                // Reset to upload panel to allow user to try again
+                this.videoMagicPanel.close();
+                this.videoCombosPanel.close();
+                this.videoUploadPanel.open();
+              }
+            });
+          }
         },
         error: err => this.failHandler(err),
       });
@@ -594,6 +906,8 @@ export class AppComponent {
     this.squareVideoObjects = undefined;
     this.verticalVideoObjects = undefined;
     this.variants = undefined;
+    this.previewAnalyses = {};
+    this.transcript = undefined;
     this.transcriptStatus = 'hourglass_top';
     this.analysisStatus = 'hourglass_top';
     this.combinationStatus = 'hourglass_top';
@@ -610,9 +924,11 @@ export class AppComponent {
     this.subtitlesTrack = '';
     this.cropAreaRect = undefined;
     this.nonLandscapeInputVideo = false;
+    this.matchedAspectRatio = undefined;
     this.audioSettings = 'segment';
     this.overlaySettings = 'variant_start';
     this.fadeOut = false;
+    this.useBlankingFill = false;
     this.allSegmentsToggle = false;
     this.demandGenAssets = true;
     this.analyseAudio = true;
@@ -696,6 +1012,19 @@ export class AppComponent {
       this.calculateVideoDefaultDuration(
         this.previewVideoElem.nativeElement.duration
       );
+
+      // Identify aspect ratio
+      const vW = this.previewVideoElem.nativeElement.videoWidth;
+      const vH = this.previewVideoElem.nativeElement.videoHeight;
+      const ratio = vW / vH;
+      this.matchedAspectRatio = undefined;
+      for (const [key, val] of Object.entries(ASPECT_RATIOS)) {
+        if (Math.abs(ratio - val) / val <= ASPECT_RATIO_TOLERANCE) {
+          this.matchedAspectRatio = key;
+          break;
+        }
+      }
+
       // Increments by 1 for every additional video minute
       const minutesFactor =
         Math.floor((this.previewVideoElem.nativeElement.duration - 1) / 60) + 1;
@@ -720,6 +1049,8 @@ export class AppComponent {
         clearInterval(this.frameInterval);
         this.frameInterval = undefined;
       }
+      // Draw the current frame when paused to keep overlay visible
+      this.drawFrame(this.activeVideoObjects);
     };
     this.previewVideoElem.nativeElement.onended = () => {
       this.resetVariantPreview();
@@ -748,32 +1079,103 @@ export class AppComponent {
     this.duration = Math.min(30, halfDuration - (halfDuration % this.step));
   }
 
+  onPromptKeydown(event: KeyboardEvent) {
+    if (event.key === 'Tab' && !this.prompt) {
+      event.preventDefault();
+      this.prompt = this.defaultPrompt;
+    }
+  }
+
+  onPromptSelectionChange() {
+    const selected = this.predefinedPrompts.find(p => p.value === this.selectedPromptOption);
+    if (selected) {
+      this.isCustomPrompt = selected.value === 'custom';
+      // Set shortenVideo based on selection
+      this.shortenVideo = selected.value !== 'crop-only';
+      if (this.isCustomPrompt) {
+        this.prompt = '';
+      } else {
+        this.prompt = selected.text;
+      }
+    }
+  }
+
+  onShortenVideoChange(shorten: boolean) {
+    if (shorten && this.avSegments && this.avSegments.length === 1) {
+      this.shortenVideo = false;
+      this.snackBar.open(
+        'Cannot enable shortening with only 1 segment. ' +
+        'Use crop-only mode or split the segment first.',
+        'Dismiss',
+        { duration: 5000 }
+      );
+      return;
+    }
+
+    if (shorten) {
+      // When enabling shortening, switch to default prompt
+      this.selectedPromptOption = 'default';
+    } else {
+      // When disabling shortening, switch to crop-only prompt
+      this.selectedPromptOption = 'crop-only';
+    }
+    this.onPromptSelectionChange();
+  }
+
   generateVariants() {
+    console.log('Component: generateVariants() called');
     this.loading = true;
     this.generatingVariants = true;
+
+    // Set a timeout warning after 30 seconds
+    const timeoutWarning = setTimeout(() => {
+      console.warn('WARNING: Variant generation is taking longer than 30 seconds. This may indicate a timeout issue.');
+    }, 30000);
+
     this.apiCallsService
       .generateVariants(this.folder, {
-        prompt: this.prompt,
+        prompt: this.prompt || this.defaultPrompt,
         evalPrompt: this.evalPrompt,
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,
+        shortenVideo: this.shortenVideo,
       })
       .subscribe({
         next: variants => {
-          this.loading = false;
-          this.generatingVariants = false;
-          this.selectedVariant = 0;
-          this.variants = variants;
-          this.setSelectedSegments();
-          this.displayObjectTracking = false;
+          clearTimeout(timeoutWarning);
+          try {
+            console.log('Component: Received variants in subscribe handler');
+            console.log('Received variants:', variants);
+            console.log('Number of variants:', variants?.length);
+            this.loading = false;
+            this.generatingVariants = false;
+            this.selectedVariant = 0;
+            this.variants = variants;
+            console.log('Set this.variants to:', this.variants);
+            console.log('Component state - loading:', this.loading, 'generatingVariants:', this.generatingVariants);
+            this.setSelectedSegments();
+            this.displayObjectTracking = false;
+            console.log('Successfully processed variants');
+            // Force Angular change detection
+            this.cdRef.detectChanges();
+          } catch (error) {
+            console.error('Error processing variants:', error);
+            this.failHandler(error instanceof Error ? error : new Error(String(error)));
+          }
         },
-        error: err => this.failHandler(err),
+        error: err => {
+          clearTimeout(timeoutWarning);
+          console.error('Component: Error in subscribe handler:', err);
+          this.failHandler(err);
+        },
       });
+    console.log('Component: Subscribe call completed');
   }
 
   generatePreviews(loading = false) {
     this.loading = loading;
     this.generatingPreviews = true;
+    this.previewAnalyses = {};
     this.squareVideoObjects = this.verticalVideoObjects = undefined;
     this.apiCallsService
       .generatePreviews(this.folder, this.analysisJson, this.avSegments, {
@@ -801,18 +1203,28 @@ export class AppComponent {
           if (loading) {
             this.loading = false;
           }
-          const previewFilter = (e: { entity: { description: string } }) =>
+          const previewFilter = (e: ObjectAnnotation) =>
             e.entity.description === 'crop-area';
-          const squarePreviewAnalysis = JSON.parse(previews.square);
-          this.squareVideoObjects = this.parseAnalysis(
-            squarePreviewAnalysis,
-            previewFilter
-          );
-          const verticalPreviewAnalysis = JSON.parse(previews.vertical);
-          this.verticalVideoObjects = this.parseAnalysis(
-            verticalPreviewAnalysis,
-            previewFilter
-          );
+
+          const parse = (jsonStr: string) =>
+            this.parseAnalysis(JSON.parse(jsonStr) as VideoAnalysisJson, previewFilter);
+
+          // Handle all format keys
+          const squareData = previews['1:1'] || previews.square;
+          if (squareData) {
+            this.previewAnalyses['1:1'] = parse(squareData);
+            this.squareVideoObjects = this.previewAnalyses['1:1'];
+          }
+
+          const verticalData = previews['9:16'] || previews.vertical;
+          if (verticalData) {
+            this.previewAnalyses['9:16'] = parse(verticalData);
+            this.verticalVideoObjects = this.previewAnalyses['9:16'];
+          }
+
+          if (previews['16:9']) this.previewAnalyses['16:9'] = parse(previews['16:9']);
+          if (previews['3:4']) this.previewAnalyses['3:4'] = parse(previews['3:4']);
+          if (previews['4:3']) this.previewAnalyses['4:3'] = parse(previews['4:3']);
         },
         error: err => this.failHandler(err),
       });
@@ -848,10 +1260,14 @@ export class AppComponent {
       this.canvasDragElement?.nativeElement.appendChild(img);
       this.canvasDragElement?.nativeElement.setAttribute(
         'style',
-        `position: absolute; display: block; left: ${outputX}px; width: ${outputWidth}px; height: ${outputHeight}px`
+        `position: absolute; display: block; visibility: visible; left: ${outputX}px; width: ${outputWidth}px; height: ${outputHeight}px;`
       );
-      this.magicCanvas.nativeElement.style.visibility = 'hidden';
-      this.canvas!.clearRect(0, 0, this.videoWidth, this.videoHeight);
+      const videoContainer = this.magicCanvas.nativeElement.parentElement;
+      if (videoContainer) {
+        videoContainer.style.overflow = 'hidden';
+      }
+      this.displayObjectTracking = false;
+      this.canvas?.clearRect(0, 0, this.videoWidth, this.videoHeight);
       this.previewVideoElem.nativeElement.controls = false;
       this.cropAreaRect = img.getBoundingClientRect();
     } else {
@@ -869,8 +1285,15 @@ export class AppComponent {
         'style',
         'display: none'
       );
+      // Restore overflow to video container
+      const videoContainer = this.magicCanvas.nativeElement.parentElement;
+      if (videoContainer) {
+        videoContainer.style.overflow = '';
+      }
       this.magicCanvas.nativeElement.style.visibility = 'visible';
       this.previewVideoElem.nativeElement.controls = true;
+      this.displayObjectTracking = true;
+      this.drawFrame(this.activeVideoObjects);
     }
   }
 
@@ -908,25 +1331,55 @@ export class AppComponent {
   }
 
   loadPreview() {
-    this.activeVideoObjects = this.videoObjects;
     this.previewTrackElem.nativeElement.src = this.subtitlesTrack;
-    switch (this.previewToggleGroup.value) {
-      case 'square':
+    const value = this.previewToggleGroup.value;
+
+    if (value === 'toggle') {
+      this.displayObjectTracking = !this.displayObjectTracking;
+      // Redraw frame to show/hide overlay immediately
+      this.drawFrame(this.activeVideoObjects);
+    } else if (value === 'settings') {
+      this.openSmartFramingDialog();
+    } else {
+      // Handle aspect ratio selection
+      let key = value;
+      // Map legacy values to new keys if necessary
+      if (value === 'square') key = '1:1';
+      if (value === 'vertical') key = '9:16';
+
+      if (this.useBlankingFill) {
+        this.displayObjectTracking = false;
+        this.activeVideoObjects = undefined;
+        this.canvas?.clearRect(0, 0, this.videoWidth, this.videoHeight);
+        this.drawFrame();
+      } else if (this.previewAnalyses[key]) {
+        this.displayObjectTracking = true;
+        this.previewTrackElem.nativeElement.src = '';
+        this.activeVideoObjects = this.previewAnalyses[key];
+        this.drawFrame(this.activeVideoObjects);
+      } else if (value === 'square' && this.squareVideoObjects) {
         this.displayObjectTracking = true;
         this.previewTrackElem.nativeElement.src = '';
         this.activeVideoObjects = this.squareVideoObjects;
-        break;
-      case 'vertical':
+        // Draw frame immediately to show overlay without needing to play video
+        this.drawFrame(this.activeVideoObjects);
+      } else if (value === 'vertical' && this.verticalVideoObjects) {
         this.displayObjectTracking = true;
         this.previewTrackElem.nativeElement.src = '';
         this.activeVideoObjects = this.verticalVideoObjects;
-        break;
-      case 'toggle':
-        this.displayObjectTracking = !this.displayObjectTracking;
-        break;
-      case 'settings':
-        this.openSmartFramingDialog();
-        break;
+        // Draw frame immediately to show overlay without needing to play video
+        this.drawFrame(this.activeVideoObjects);
+      } else if (key === this.matchedAspectRatio) {
+        // Original video aspect ratio - no cropping needed, just hide overlay
+        this.displayObjectTracking = false;
+        this.activeVideoObjects = undefined;
+        this.canvas?.clearRect(0, 0, this.videoWidth, this.videoHeight);
+      } else {
+        // Format not supported with crop preview - hide overlay
+        this.displayObjectTracking = false;
+        this.activeVideoObjects = undefined;
+        this.canvas?.clearRect(0, 0, this.videoWidth, this.videoHeight);
+      }
     }
   }
 
@@ -981,9 +1434,9 @@ export class AppComponent {
       .filter((segment: AvSegment) => segment.played)
       .map((segment: AvSegment) => segment.av_segment_id);
 
-    const lastSelectedSegmentToBePlayed = this.avSegments.findLast(
-      (segment: AvSegment) => segment.selected
-    );
+    const lastSelectedSegmentToBePlayed = [...this.avSegments]
+      .reverse()
+      .find((segment: AvSegment) => segment.selected);
     const nextPlayableSegment = this.avSegments.find(
       (segment: AvSegment) => segment.selected && !segment.played
     );
@@ -998,6 +1451,7 @@ export class AppComponent {
       nextPlayableSegment.av_segment_id !== currentSegment.av_segment_id;
     const allSegmentsPlayed =
       JSON.stringify(allPlayed) === JSON.stringify(allSelected) &&
+      lastSelectedSegmentToBePlayed !== undefined &&
       timestamp >= lastSelectedSegmentToBePlayed.end_s;
     const currentSegmentAlreadyPlayed =
       currentSegment.played &&
@@ -1025,13 +1479,18 @@ export class AppComponent {
   }
 
   seekToSegment(av_segment_id: string) {
-    const segment = this.avSegments.find(
+    const segment = this.avSegments?.find(
       (segment: AvSegment) => segment.av_segment_id === av_segment_id
     );
-    this.previewVideoElem.nativeElement.currentTime = segment.start_s;
+    if (segment) {
+      this.previewVideoElem.nativeElement.currentTime = segment.start_s;
+    }
   }
 
   setSelectedSegments(segments?: string[]) {
+    if (!this.avSegments) {
+      return;
+    }
     for (const segment of this.avSegments) {
       segment.selected = false;
     }
@@ -1099,7 +1558,16 @@ export class AppComponent {
         segment_screenshot_uri: segment.segment_screenshot_uri,
       };
     });
-    const renderSettings: RenderSettings = {
+
+    // Validate that at least one segment is selected
+    if (selectedSegments.length === 0) {
+      this.snackBar.open('Please select at least one segment', 'Dismiss', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    const renderSettings = {
       generate_image_assets: this.demandGenAssets,
       generate_text_assets: this.demandGenAssets,
       formats: this.renderFormatsToggle.value as FormatType[],
@@ -1107,6 +1575,7 @@ export class AppComponent {
       use_continuous_audio: this.audioSettings === 'continuous',
       fade_out: this.fadeOut,
       overlay_type: this.overlaySettings,
+      use_blanking_fill: this.useBlankingFill,
     };
     const selectedScenes = selectedSegments.map(
       (segment: AvSegment) => segment.av_segment_id
@@ -1177,6 +1646,9 @@ export class AppComponent {
         ? 'continuous'
         : 'segment';
     this.fadeOut = variant.render_settings.fade_out;
+    this.useBlankingFill =
+      (variant.render_settings as RenderSettings & { use_blanking_fill?: boolean })
+        .use_blanking_fill ?? false;
     this.overlaySettings = variant.render_settings.overlay_type!;
     this.closeRenderQueueSidenav();
     setTimeout(() => {
@@ -1198,8 +1670,7 @@ export class AppComponent {
       .renderVariants(this.folder, {
         queue: this.renderQueue,
         queueName: this.renderQueueName,
-        squareCropAnalysis: this.squareVideoObjects,
-        verticalCropAnalysis: this.verticalVideoObjects,
+        previewAnalyses: this.previewAnalyses,
         sourceDimensions: {
           w: this.previewVideoElem.nativeElement.videoWidth,
           h: this.previewVideoElem.nativeElement.videoHeight,
@@ -1218,7 +1689,7 @@ export class AppComponent {
   }
 
   setCombos() {
-    this.combos = Object.values(this.combosJson).map((combo: any) => {
+    this.combos = Object.values(this.combosJson as Record<string, RawVariant>).map((combo: RawVariant) => {
       const segments = Object.values(combo.av_segments) as AvSegment[];
       const duration = TimeUtil.secondsToTimeString(
         segments.reduce(
@@ -1242,18 +1713,22 @@ export class AppComponent {
       };
       renderedVariant.variants = {};
       for (const format in combo.variants) {
-        renderedVariant.variants[format as FormatType] = {
-          entity: combo.variants[format],
-          approved: true,
-        };
+        if (Object.prototype.hasOwnProperty.call(combo.variants, format)) {
+          renderedVariant.variants[format as FormatType] = {
+            entity: combo.variants[format as FormatType],
+            approved: true,
+          };
+        }
       }
       if (combo.images) {
         renderedVariant.images = {};
         for (const format in combo.images) {
-          const images = combo.images[format].map((image: string) => {
-            return { entity: image, approved: true };
-          });
-          renderedVariant.images[format as FormatType] = images;
+          if (Object.prototype.hasOwnProperty.call(combo.images, format)) {
+            const images = combo.images[format as FormatType].map((image: string) => {
+              return { entity: image, approved: true };
+            });
+            renderedVariant.images[format as FormatType] = images;
+          }
         }
       }
       if (combo.texts) {
@@ -1315,13 +1790,13 @@ export class AppComponent {
   }
 
   calculateSelectedSegmentsDuration() {
-    return this.avSegments
-      ?.reduce(
-        (sum: number, segment: any) =>
-          segment.selected ? sum + segment.duration_s : sum,
+    return (
+      this.avSegments?.reduce(
+        (sum: number, segment: AvSegment) =>
+          segment.selected ? sum + (segment.end_s - segment.start_s) : sum,
         0
-      )
-      .toFixed(2);
+      ) ?? 0
+    ).toFixed(2);
   }
 
   setEvalPrompt() {
@@ -1354,11 +1829,9 @@ export class AppComponent {
   }
 
   splitSegment(segmentMarkers: SegmentMarker[]) {
-    console.log(segmentMarkers);
     this.loading = true;
     this.apiCallsService.splitSegment(this.folder, segmentMarkers).subscribe({
       next: result => {
-        console.log(result);
         this.getAvSegments();
       },
       error: err => this.failHandler(err),

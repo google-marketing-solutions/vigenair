@@ -21,6 +21,9 @@ Function, with `gcs_file_uploaded` as the main entry point.
 """
 
 import logging
+import os
+import pathlib
+import tempfile
 from typing import Any, Dict
 
 import combiner as CombinerService
@@ -29,6 +32,7 @@ import extractor as ExtractorService
 import functions_framework
 from google.api_core.client_info import ClientInfo
 from google.cloud import logging as cloudlogging
+import storage as StorageService
 import utils as Utils
 
 
@@ -50,7 +54,30 @@ def gcs_file_uploaded(cloud_event: Dict[str, Any]):
 
   logging.info('BEGIN - Processing uploaded file: %s...', filepath)
 
-  trigger_file = Utils.TriggerFile(filepath)
+  try:
+    trigger_file = Utils.TriggerFile(filepath)
+  except ValueError as e:
+    logging.error('Failed to parse file metadata: %s', e)
+    # Extract folder path from filepath to write error file
+    file_path = pathlib.Path(os.path.splitext(filepath)[0])
+    folder_path = str(file_path.parents[0])
+    error_message = f'Invalid video filename format: {str(e)}'
+    # Write error file to GCS
+    with tempfile.NamedTemporaryFile(
+        mode='w', delete=False, suffix='.txt'
+    ) as error_file:
+      error_file.write(error_message)
+      error_file_path = error_file.name
+    try:
+      StorageService.upload_gcs_file(
+          file_path=error_file_path,
+          destination_file_name=f'{folder_path}/error.txt',
+          bucket_name=bucket,
+          overwrite=True,
+      )
+    finally:
+      os.unlink(error_file_path)
+    return
 
   if trigger_file.is_extractor_initial_trigger():
     logging.info('TRIGGER - Extractor initial trigger')
