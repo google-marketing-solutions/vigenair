@@ -18,7 +18,7 @@ ffprobe==0.5
 functions-framework==3.7.0
 google-api-core==2.19.0
 google-auth==2.29.0
-google-cloud-aiplatform==1.92.0
+google-cloud-aiplatform==1.133.0
 google-cloud-logging==3.10.0
 google-cloud-storage==2.16.0
 google-cloud-videointelligence==2.13.3
