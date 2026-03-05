@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^17.1.1",
-    "@angular/cli": "^17.1.1",
+    "@angular/cli": "^21.2.0",
     "@angular/compiler-cli": "^17.1.0",
     "@types/google-apps-script": "^2.0.8",
     "@types/jasmine": "~5.1.0",
