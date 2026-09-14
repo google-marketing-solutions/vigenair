@@ -22,6 +22,8 @@ limitations under the License.
 
 **Disclaimer: This is not an official Google product.**
 
+> **Note:** This solution uses AI to edit or generate assets for your ads. Whether your content requires labeling depends on the nature of your assets, where your ads serve, and specific legal obligations that apply to you. In some circumstances Google may automatically apply a label. Please consult with your legal team to determine if/when a label is required for your ads. You can add labels in Google’s Ads products using the [AI label setting](https://support.google.com/google-ads/answer/17140115).
+
 [Overview](#overview) •
 [Get started](#get-started) •
 [What it solves](#why-use-vigenair) •
@@ -140,10 +142,11 @@ If you will also deploy Vigenair, you need to have the following additional role
 > * A Cloud Function (2nd gen) named `vigenair` that fulfills both the [Extractor and Combiner services](#solution-details). Refer to [deploy.sh](./service/deploy.sh) for specs.
 > * An Apps Script deployment for the frontend web app.
 
-### AI Provenance Configuration (Optional)
+### AI Provenance Configuration
 
-Rendered videos and generated image assets are signed with C2PA when the
-following Cloud Function environment variables are configured:
+C2PA signing is enabled by default (`CONFIG_C2PA_ENABLED: 'true'`). Rendered
+videos and generated image assets are signed with C2PA when the following Cloud
+Function environment variables are configured:
 
 ```yaml
 CONFIG_C2PA_ENABLED: 'true'
