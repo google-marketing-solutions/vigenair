@@ -47,11 +47,42 @@ interface VideoFrame {
   time: number;
 }
 
+declare const TadauLib: any;
+
 interface VideoObject {
   name: string;
   start: number;
   end: number;
   frames: VideoFrame[];
+}
+
+// Instantiate the Tadau client (ensure this is scoped so your functions can reach it)
+let tadauClient: any = null;
+try {
+  
+  // Try to find the module based on the official Tadau Apps Script documentation
+  const TadauModule = (typeof TadauLib !== 'undefined') ? (TadauLib.exports || TadauLib) : null;
+  
+  if (TadauModule && TadauModule.Tadau) {
+    tadauClient = new TadauModule.Tadau({
+      apiSecret: 'Jjm0Ewx8Q8OeIr_iugHIHw',
+      measurementId: 'G-V12PEB9KGS',
+      fixedDimensions: {
+        'solution_name': 'Vigenair',
+        'deploy_infra': 'Apps Script'
+      },
+      optIn: true 
+    });
+
+  } else {
+    // If it fails, log the exact keys available inside the library so we can see how it is structured
+    console.error("Tadau class missing. TadauLib contents:", JSON.stringify(Object.keys(typeof TadauLib !== 'undefined' ? TadauLib : {})));
+    if (TadauModule) {
+      console.error("TadauModule contents:", JSON.stringify(Object.keys(TadauModule)));
+    }
+  }
+} catch (e: any) {
+  console.error("Error during Tadau initialization: " + e.message);
 }
 
 function getEncodedUserId() {
@@ -93,6 +124,7 @@ function generateVariants(
   gcsFolder: string,
   settings: GenerationSettings
 ): GenerateVariantsResponse[] {
+  trackVigenairEvent('variant-generated', 'vigenair-generation');
   return GenerationHelper.generateVariants(gcsFolder, settings);
 }
 
@@ -131,7 +163,7 @@ function generatePreviews(
     { w: h * (9 / 16), h },
     settings.weights
   );
-
+  trackVigenairEvent('preview-generated', 'vigenair-preview');
   return {
     square: JSON.stringify(squarePreview), // Legacy support
     vertical: JSON.stringify(verticalPreview), // Legacy support
@@ -185,6 +217,8 @@ function renderVariants(gcsFolder: string, renderQueue: RenderQueue): string {
       );
     }
   }
+
+  trackVigenairEvent('variant-rendered', 'vigenair-render');
 
   const encodedRenderQueueJson = Utilities.base64Encode(
     JSON.stringify(renderQueue.queue),
@@ -418,4 +452,27 @@ function doGet(e: GoogleAppsScript.Events.DoGet) {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function include(filename: string) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+/**
+ * Generic telemetry tracking function to count uses
+ * @param action The specific action taken (e.g., 'variant-generated')
+ * @param context The context of the action (e.g., 'vigenair-generation')
+ */
+function trackVigenairEvent(action: string, context: string): void {
+  
+  if (tadauClient) {
+    try {
+      // Uses the built-in helper to simply count the execution
+      tadauClient.sendCustomEvent(
+        action,  // eventAction
+        true,    // eventIsImpactAction
+        context  // eventContext
+      );
+    } catch (e: any) {
+      console.error(`Error logging use for [${action}]: ` + e.message);
+    }
+  } else {
+    console.warn(`Skipped Tadau tracking for [${action}] because tadauClient is null.`);
+  }
 }
