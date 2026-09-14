@@ -31,6 +31,10 @@ locals {
       member = data.google_compute_default_service_account.compute_service_agent.member
     },
     {
+      role   = "roles/secretmanager.secretAccessor"
+      member = data.google_compute_default_service_account.compute_service_agent.member
+    },
+    {
       role   = "roles/aiplatform.user"
       member = data.google_compute_default_service_account.compute_service_agent.member
     },

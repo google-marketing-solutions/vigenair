@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-faster-whisper>=1.0.3
+c2pa-python==0.37.8
+faster-whisper==1.0.3
 ffmpeg==1.4
 ffprobe==0.5
 functions-framework>=3.7.0
@@ -20,11 +21,11 @@ google-api-core==2.19.0
 google-auth==2.29.0
 google-cloud-aiplatform==1.92.0
 google-cloud-logging==3.10.0
+google-cloud-secret-manager==2.20.2
 google-cloud-storage==2.16.0
 google-cloud-videointelligence==2.13.3
 iso-639==0.4.5
 numpy==1.26.4
-openai-whisper==20250625 # Updated version
 pandas==1.5.3
 protobuf==3.20.2
 spleeter==2.4.0

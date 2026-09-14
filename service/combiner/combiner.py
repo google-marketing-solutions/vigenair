@@ -33,6 +33,7 @@ from typing import Any, Dict, Optional, Sequence, Tuple, Union
 from urllib import parse
 
 import config as ConfigService
+import provenance as ProvenanceService
 import pandas as pd
 import storage as StorageService
 import utils as Utils
@@ -872,7 +873,6 @@ def _render_video_variant(
           f'{video_variant.variant_id} using ffmpeg'
       ),
   )
-
   rendered_paths = {}
 
   # Process ALL formats (including horizontal)
@@ -990,6 +990,16 @@ def _render_video_variant(
     )
     rendered_paths[original_format] = {'path': base_combo_name}
 
+  provenance_cache = {}
+  for rendered_path in rendered_paths.values():
+    asset_path = str(pathlib.Path(output_dir, rendered_path['path']))
+    if 'provenance' in rendered_path:
+      provenance_cache[asset_path] = rendered_path['provenance']
+    elif asset_path not in provenance_cache:
+      provenance_cache[asset_path] = (
+          ProvenanceService.apply_provenance(asset_path)
+      )
+
   StorageService.upload_gcs_dir(
       source_directory=output_dir,
       bucket_name=gcs_bucket_name,
@@ -1019,11 +1029,15 @@ def _render_video_variant(
       result['texts'] = text_assets
 
   for vf_member, rendered_path in rendered_paths.items():
+    asset_path = str(pathlib.Path(output_dir, rendered_path['path']))
     format_str = vf_member.aspect_ratio_str
-    result['variants'][format_str] = (
-        f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/'
-        f'{parse.quote(gcs_folder_path)}/{rendered_path["path"]}'
-    )
+    result['variants'][format_str] = {
+        'entity': (
+            f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/'
+            f'{parse.quote(gcs_folder_path)}/{rendered_path["path"]}'
+        ),
+        'provenance': provenance_cache[asset_path],
+    }
     if 'images' in rendered_path:
       if 'images' not in result:
         result['images'] = {}
@@ -1061,11 +1075,16 @@ def _get_variant_ffmpeg_commands(
       ffmpeg_filter = [continuous_audio_select_filter]
     elif music_overlay:
       ffmpeg_filter = [music_overlay_select_filter, '-ac', '2']
+  disclosure = ProvenanceService.get_disclosure()
   ffmpeg_cmds.extend([
       '-filter_complex',
   ] + ffmpeg_filter + [
       '-map',
       '[outv]',
+      '-metadata',
+      'encoded_by=ViGenAiR',
+      '-metadata',
+      f'comment={disclosure}',
   ])
   if has_audio:
     ffmpeg_cmds.extend([
@@ -1130,6 +1149,7 @@ def _render_format(
         format_type_str,
         video_filter
     )
+    disclosure = ProvenanceService.get_disclosure()
     Utils.execute_subprocess_commands(
         cmds=[
             'ffmpeg',
@@ -1138,6 +1158,10 @@ def _render_format(
             input_video_path,
             '-vf',
             video_filter,
+            '-metadata',
+            'encoded_by=ViGenAiR',
+            '-metadata',
+            f'comment={disclosure}',
             actual_output,
         ],
         description=(
@@ -1158,8 +1182,8 @@ def _render_format(
 
     # Ensure crop dimensions don't exceed input dimensions
     if crop_width > input_width:
-        crop_width = input_width
-        crop_height = int(input_width * target_h / target_w)
+      crop_width = input_width
+      crop_height = int(input_width * target_h / target_w)
 
     crop_filter = (
         f'crop={crop_width}:{crop_height}:'
@@ -1175,6 +1199,7 @@ def _render_format(
         crop_height
     )
 
+    disclosure = ProvenanceService.get_disclosure()
     Utils.execute_subprocess_commands(
         cmds=[
             'ffmpeg',
@@ -1183,6 +1208,10 @@ def _render_format(
             input_video_path,
             '-vf',
             crop_filter,
+            '-metadata',
+            'encoded_by=ViGenAiR',
+            '-metadata',
+            f'comment={disclosure}',
             actual_output,
         ],
         description=(
@@ -1201,6 +1230,7 @@ def _render_format(
 
   output = {
       'path': format_name,
+      'provenance': ProvenanceService.apply_provenance(output_video_path),
   }
   if generate_image_assets:
     StorageService.upload_gcs_dir(
@@ -1351,7 +1381,7 @@ def _generate_image_assets(
     output_path: str,
     variant_id: int,
     format_type: str,
-) -> Sequence[str]:
+) -> Sequence[dict[str, Any]]:
   """Generates image ad assets for a video variant in a specific format."""
   variant_folder = f'combo_{variant_id}'
   image_assets_path = pathlib.Path(
@@ -1379,15 +1409,22 @@ def _generate_image_assets(
         variant_id=variant_id,
         format_type=format_type,
     )
-    assets = [
-        f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/'
-        f'{parse.quote(gcs_folder_path)}/'
-        f'{variant_folder}/{ConfigService.OUTPUT_COMBINATION_ASSETS_DIR}/'
-        f'{format_type}/{image_asset}' for image_asset in sorted(
-            os.listdir(image_assets_path), key=lambda asset:
-            int(asset.split('/')[-1].replace('.png', '').replace('.jpg', ''))
-        ) if image_asset.endswith('.png') or image_asset.endswith('.jpg')
-    ]
+    assets = []
+    for image_asset in sorted(
+        os.listdir(image_assets_path), key=lambda asset:
+        int(asset.split('/')[-1].replace('.png', '').replace('.jpg', ''))
+    ):
+      if image_asset.endswith('.png') or image_asset.endswith('.jpg'):
+        image_path = str(image_assets_path / image_asset)
+        assets.append({
+            'entity': (
+                f'{ConfigService.GCS_BASE_URL}/{gcs_bucket_name}/'
+                f'{parse.quote(gcs_folder_path)}/{variant_folder}/'
+                f'{ConfigService.OUTPUT_COMBINATION_ASSETS_DIR}/'
+                f'{format_type}/{image_asset}'
+            ),
+            'provenance': ProvenanceService.apply_provenance(image_path),
+        })
 
     logging.info(
         'ASSETS - Generated %d image assets for variant %d in %s format',
@@ -1395,7 +1432,9 @@ def _generate_image_assets(
         variant_id,
         format_type,
     )
-  except Exception:  # pylint: disable=broad-exception-caught
+  except Exception as exc:  # pylint: disable=broad-exception-caught
+    if isinstance(exc, ProvenanceService.ProvenanceError):
+      raise
     logging.exception(
         'Encountered error during generation of image assets for variant %d '
         'in format %s! Continuing...', variant_id, format_type

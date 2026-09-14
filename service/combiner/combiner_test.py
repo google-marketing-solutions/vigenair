@@ -17,6 +17,7 @@
 import json
 import os
 import sys
+import tempfile
 import unittest
 from unittest import mock
 
@@ -28,9 +29,15 @@ sys.modules['vertexai'] = mock.MagicMock()
 sys.modules['vertexai.generative_models'] = mock.MagicMock()
 sys.modules['pandas'] = mock.MagicMock()
 
-# Add project root to sys.path
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+# Add service directory and project root to sys.path
+service_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if service_dir not in sys.path:
+  sys.path.insert(0, service_dir)
+project_root = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../')
+)
+if project_root not in sys.path:
+  sys.path.append(project_root)
 
 from service.combiner import combiner  # pylint: disable=g-import-not-at-top
 
@@ -69,7 +76,7 @@ class CombinerTest(unittest.TestCase):
     self.mock_config.GCS_BASE_URL = 'https://storage.googleapis.com'
 
   def _get_mock_variant_json_bytes(self):
-    """Returns a byte string representing a list containing one valid VideoVariant."""
+    """Returns bytes for a list containing one valid VideoVariant."""
     return json.dumps([{
         'variant_id': 1,
         'av_segments': [
@@ -337,6 +344,127 @@ class CombinerTest(unittest.TestCase):
     self.assertEqual(len(assets), 1)
     self.assertEqual(assets[0]['headline'], 'H1')
     self.assertEqual(assets[0]['description'], 'D1')
+
+  def test_render_format_crop_fallback_includes_provenance_metadata(self):
+    """Tests crop fallback in _render_format includes provenance metadata."""
+    with mock.patch(
+        'service.combiner.combiner._get_video_dimensions',
+        return_value=(1920, 1080),
+    ), mock.patch.object(
+        combiner.ProvenanceService,
+        'apply_provenance',
+        return_value={'status': 'signed'},
+    ):
+      output = combiner._render_format(
+          vision_model=mock.Mock(),
+          input_video_path='/tmp/in.mp4',
+          output_path='/tmp',
+          gcs_bucket_name='bucket',
+          gcs_folder_path='folder',
+          variant_id=1,
+          video_format=combiner.VideoFormat.VERTICAL,
+          generate_image_assets=False,
+          video_filter='',
+          ffmpeg_cmds=None,
+      )
+
+    self.assertEqual(output['provenance'], {'status': 'signed'})
+    self.mock_utils.execute_subprocess_commands.assert_called_once()
+    call_args = self.mock_utils.execute_subprocess_commands.call_args[1]['cmds']
+    self.assertIn('-metadata', call_args)
+    self.assertIn('encoded_by=ViGenAiR', call_args)
+    self.assertTrue(any(arg.startswith('comment=') for arg in call_args))
+
+  def test_render_format_applies_provenance_before_gcs_upload(self):
+    """Tests that _render_format applies provenance before uploading to GCS."""
+    call_order = []
+
+    def fake_apply_provenance(path):
+      call_order.append(('apply_provenance', path))
+      return {'status': 'signed'}
+
+    def fake_upload_gcs_dir(**kwargs):
+      call_order.append(('upload_gcs_dir', kwargs))
+
+    with mock.patch(
+        'service.combiner.combiner._get_video_dimensions',
+        return_value=(1920, 1080),
+    ), mock.patch.object(
+        combiner.ProvenanceService,
+        'apply_provenance',
+        side_effect=fake_apply_provenance,
+    ), mock.patch.object(
+        self.mock_storage,
+        'upload_gcs_dir',
+        side_effect=fake_upload_gcs_dir,
+    ), mock.patch(
+        'service.combiner.combiner._generate_image_assets',
+        return_value=[],
+    ):
+      output = combiner._render_format(
+          vision_model=mock.Mock(),
+          input_video_path='/tmp/in.mp4',
+          output_path='/tmp',
+          gcs_bucket_name='bucket',
+          gcs_folder_path='folder',
+          variant_id=1,
+          video_format=combiner.VideoFormat.VERTICAL,
+          generate_image_assets=True,
+          video_filter='',
+          ffmpeg_cmds=None,
+      )
+
+    self.assertEqual(output['provenance'], {'status': 'signed'})
+    self.assertEqual(call_order[0][0], 'apply_provenance')
+    self.assertEqual(call_order[1][0], 'upload_gcs_dir')
+
+  def test_generate_image_assets_reraises_when_provenance_error(self):
+    """Tests that ProvenanceError is re-raised during image asset generation."""
+    self.mock_config.OUTPUT_COMBINATION_ASSETS_DIR = 'assets'
+    with tempfile.TemporaryDirectory() as temp_dir:
+      variant_dir = os.path.join(temp_dir, 'combo_1', 'assets', 'vertical')
+      os.makedirs(variant_dir, exist_ok=True)
+      with open(os.path.join(variant_dir, '1.png'), 'w') as f:
+        f.write('dummy')
+
+      with mock.patch(
+          'service.combiner.combiner._extract_video_thumbnails'
+      ), mock.patch(
+          'service.combiner.combiner._identify_and_extract_key_frames'
+      ), mock.patch.object(
+          combiner.ProvenanceService,
+          'apply_provenance',
+          side_effect=combiner.ProvenanceService.ProvenanceError(
+              'C2PA failure'
+          ),
+      ):
+        with self.assertRaises(combiner.ProvenanceService.ProvenanceError):
+          combiner._generate_image_assets(
+              vision_model=mock.Mock(),
+              video_file_path='video.mp4',
+              gcs_bucket_name='bucket',
+              gcs_folder_path='folder',
+              output_path=temp_dir,
+              variant_id=1,
+              format_type='vertical',
+          )
+
+  def test_generate_image_assets_continues_when_non_provenance_error(self):
+    """Tests non-fatal error is caught/logged when not a ProvenanceError."""
+    with mock.patch(
+        'service.combiner.combiner._extract_video_thumbnails',
+        side_effect=RuntimeError('Non-fatal error'),
+    ):
+      assets = combiner._generate_image_assets(
+          vision_model=mock.Mock(),
+          video_file_path='video.mp4',
+          gcs_bucket_name='bucket',
+          gcs_folder_path='folder',
+          output_path='/tmp',
+          variant_id=1,
+          format_type='vertical',
+      )
+      self.assertEqual(assets, [])
 
 
 if __name__ == '__main__':

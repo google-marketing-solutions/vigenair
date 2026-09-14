@@ -140,6 +140,32 @@ If you will also deploy Vigenair, you need to have the following additional role
 > * A Cloud Function (2nd gen) named `vigenair` that fulfills both the [Extractor and Combiner services](#solution-details). Refer to [deploy.sh](./service/deploy.sh) for specs.
 > * An Apps Script deployment for the frontend web app.
 
+### AI Provenance Configuration (Optional)
+
+Rendered videos and generated image assets are signed with C2PA when the
+following Cloud Function environment variables are configured:
+
+```yaml
+CONFIG_C2PA_ENABLED: 'true'
+CONFIG_C2PA_REQUIRED: 'true'
+CONFIG_C2PA_CERTIFICATE: projects/<project>/secrets/<certificate>/versions/latest
+CONFIG_C2PA_PRIVATE_KEY: projects/<project>/secrets/<private-key>/versions/latest
+CONFIG_C2PA_TSA_URL: https://<approved-timestamp-authority>
+CONFIG_AI_DISCLOSURE: <approved compliance disclosure>
+```
+
+The `CONFIG_C2PA_CERTIFICATE` and `CONFIG_C2PA_PRIVATE_KEY` values must use an
+ECDSA P-256 key pair, which is required for the ES256 signing algorithm. Store
+the certificate chain and private key in Secret Manager. The deployment service
+account requires `roles/secretmanager.secretAccessor`. Do not place certificate
+or private-key contents in `.env.yaml` or source control.
+
+When `CONFIG_C2PA_REQUIRED` is `true`, rendering fails if signing is disabled
+or signing fails. Visible burn-in labels are not added because ViGenAiR edits
+existing source video rather than generating synthetic humans or deceptive
+content. This determination should be reconfirmed in case the code was modified
+to use GenAI for visual content, after all.
+
 ## Why use Vigenair?
 
 Current Video Ads creative solutions, both within YouTube / Google Ads as well as open source, primarily focus on 4 of the [5 keys to effective advertising](https://info.ncsolutions.com/hubfs/2023%20Five%20Keys%20to%20Advertising%20Effectiveness/NCS_Five_Keys_to_Advertising_Effectiveness_E-Book_08-23.pdf) - Brand, Targeting, Reach and Recency. Those 4 pillars contribute to *only ~50%* of the potential marketing ROI, with the 5th pillar - **Creative** - capturing a *whopping ~50%* all on its own.

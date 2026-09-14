@@ -38,6 +38,7 @@ gcloud services enable \
   logging.googleapis.com \
   pubsub.googleapis.com \
   run.googleapis.com \
+  secretmanager.googleapis.com \
   script.googleapis.com \
   serviceusage.googleapis.com \
   storage.googleapis.com \
@@ -58,6 +59,7 @@ COMPUTE_SA_ROLES=(
     "roles/run.invoker"
     "roles/cloudfunctions.invoker"
     "roles/storage.objectAdmin"
+    "roles/secretmanager.secretAccessor"
     "roles/aiplatform.user"
     "roles/logging.logWriter"
     "roles/artifactregistry.createOnPushWriter"

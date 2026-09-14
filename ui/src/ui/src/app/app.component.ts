@@ -59,6 +59,7 @@ import { TimeUtil } from '../../../time-util';
 import { ApiCallsService } from './api-calls/api-calls.service';
 import {
   AbcdType,
+  AssetProvenance,
   AvSegment,
   FormatType,
   GenerateVariantsResponse,
@@ -134,6 +135,11 @@ interface VideoAnalysisJson {
   annotation_results: AnnotationResult[];
 }
 
+interface RawAsset {
+  entity: string;
+  provenance?: AssetProvenance;
+}
+
 interface RawVariant {
   variant_id: number;
   av_segments: Record<string, AvSegment>;
@@ -142,8 +148,8 @@ interface RawVariant {
   score: number;
   score_reasoning: string;
   render_settings: RenderSettings;
-  variants: Record<FormatType, string>;
-  images?: Record<FormatType, string[]>;
+  variants: Record<FormatType, string | RawAsset>;
+  images?: Record<FormatType, (string | RawAsset)[]>;
   texts?: VariantTextAsset[];
 }
 
@@ -1714,9 +1720,11 @@ export class AppComponent {
       renderedVariant.variants = {};
       for (const format in combo.variants) {
         if (Object.prototype.hasOwnProperty.call(combo.variants, format)) {
+          const variant = combo.variants[format as FormatType];
           renderedVariant.variants[format as FormatType] = {
-            entity: combo.variants[format as FormatType],
+            entity: typeof variant === 'string' ? variant : variant.entity,
             approved: true,
+            provenance: typeof variant === 'string' ? undefined : variant.provenance,
           };
         }
       }
@@ -1724,8 +1732,12 @@ export class AppComponent {
         renderedVariant.images = {};
         for (const format in combo.images) {
           if (Object.prototype.hasOwnProperty.call(combo.images, format)) {
-            const images = combo.images[format as FormatType].map((image: string) => {
-              return { entity: image, approved: true };
+            const images = combo.images[format as FormatType].map((image) => {
+              return {
+                entity: typeof image === 'string' ? image : image.entity,
+                approved: true,
+                provenance: typeof image === 'string' ? undefined : image.provenance,
+              };
             });
             renderedVariant.images[format as FormatType] = images;
           }

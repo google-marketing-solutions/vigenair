@@ -92,8 +92,26 @@ video {
   width: 144px;
 }
 
+.assets-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
 .assets-header {
   font-size: 18px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.provenance-disclosure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 0.9em;
   margin-top: 8px;
   margin-bottom: 8px;
 }

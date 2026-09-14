@@ -122,6 +122,15 @@ export interface RenderQueueVariant {
 export interface EntityApproval {
   entity: string;
   approved: boolean;
+  provenance?: AssetProvenance;
+}
+
+export interface AssetProvenance {
+  type: 'c2pa' | 'none';
+  status: 'signed' | 'unsigned' | 'failed';
+  disclosure: string;
+  sha256?: string;
+  manifest?: string;
 }
 
 /** Map of format types to their approval status. */

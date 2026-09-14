@@ -34,7 +34,6 @@ import storage as StorageService
 import utils as Utils
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
-import whisper
 
 
 def combine_audio_files(output_path: str, audio_files: Sequence[str]):
@@ -78,6 +77,45 @@ def combine_analysis_chunks(
   return combined_df
 
 
+def _parse_vtt_timestamp(timestamp: str) -> datetime.timedelta:
+  """Parses both MM:SS.mmm and HH:MM:SS.mmm WebVTT timestamps.
+
+  Args:
+    timestamp: A WebVTT timestamp string, which may optionally include trailing
+      cue settings (e.g. '00:01:23.456 align:start').
+
+  Returns:
+    The parsed timestamp as a datetime.timedelta.
+
+  Raises:
+    ValueError: If the timestamp format is invalid.
+  """
+  cleaned_timestamp = (
+      timestamp.strip().split()[0] if timestamp.strip() else ''
+  )
+  parts = cleaned_timestamp.split(':')
+  if len(parts) not in (2, 3):
+    raise ValueError(f'Invalid WebVTT timestamp format: {timestamp}')
+
+  hours_int = int(parts[0]) if len(parts) == 3 else 0
+  minutes_int = int(parts[1]) if len(parts) == 3 else int(parts[0])
+  seconds_str = parts[2] if len(parts) == 3 else parts[1]
+
+  seconds_parts = seconds_str.replace(',', '.').split('.', 1)
+  seconds_int = int(seconds_parts[0])
+  milliseconds_str = seconds_parts[1] if len(seconds_parts) > 1 else ''
+  milliseconds_int = (
+      int(milliseconds_str.ljust(3, '0')[:3]) if milliseconds_str else 0
+  )
+
+  return datetime.timedelta(
+      hours=hours_int,
+      minutes=minutes_int,
+      seconds=seconds_int,
+      milliseconds=milliseconds_int,
+  )
+
+
 def combine_subtitle_files(
     audio_output_dir: str,
     subtitles_output_path: str,
@@ -105,16 +143,8 @@ def combine_subtitle_files(
       for line in lines:
         if '-->' in line:
           start, end = line.strip().split(' --> ')
-          start_time = last_timestamp + datetime.timedelta(
-              minutes=int(start[:2]),
-              seconds=int(start[3:5]),
-              milliseconds=int(start[6:]),
-          )
-          end_time = last_timestamp + datetime.timedelta(
-              minutes=int(end[:2]),
-              seconds=int(end[3:5]),
-              milliseconds=int(end[6:]),
-          )
+          start_time = last_timestamp + _parse_vtt_timestamp(start)
+          end_time = last_timestamp + _parse_vtt_timestamp(end)
 
           start = start_time.strftime('%H:%M:%S.%f')[:-3]
           end = end_time.strftime('%H:%M:%S.%f')[:-3]
@@ -123,12 +153,10 @@ def combine_subtitle_files(
         else:
           combined_content += line
 
-      _, end = lines[-3].strip().split(' --> ')
-      last_timestamp += datetime.timedelta(
-          minutes=int(end[:2]),
-          seconds=int(end[3:5]),
-          milliseconds=int(end[6:]),
-      )
+      timestamp_lines = [line for line in lines if '-->' in line]
+      if timestamp_lines:
+        _, end = timestamp_lines[-1].strip().split(' --> ')
+        last_timestamp += _parse_vtt_timestamp(end)
 
   with open(subtitles_output_path, 'w', encoding='utf-8') as f:
     f.write(combined_content)
@@ -388,11 +416,26 @@ def _transcribe_whisper(
     result_dict['words'] = words_dict
     results_dict.append(result_dict)
 
-  writer = whisper.utils.get_writer(
-      ConfigService.OUTPUT_SUBTITLES_TYPE,
-      f'{output_dir}/',
+  is_srt = ConfigService.OUTPUT_SUBTITLES_TYPE.lower() == 'srt'
+  subtitles_name = (
+      f'{pathlib.Path(audio_file_path).stem}.'
+      f'{ConfigService.OUTPUT_SUBTITLES_TYPE}'
   )
-  writer({'segments': results_dict}, audio_file_path, {'highlight_words': True})
+  subtitles_path = pathlib.Path(output_dir, subtitles_name)
+  with open(subtitles_path, 'w', encoding='utf8') as subtitles_file:
+    if not is_srt:
+      subtitles_file.write('WEBVTT\n\n')
+    for index, segment in enumerate(results_dict, start=1):
+      start_ts = _format_vtt_timestamp(segment['start'])
+      end_ts = _format_vtt_timestamp(segment['end'])
+      if is_srt:
+        start_ts = start_ts.replace('.', ',')
+        end_ts = end_ts.replace('.', ',')
+      subtitles_file.write(
+          f'{index}\n'
+          f'{start_ts} --> {end_ts}\n'
+          f'{segment["text"].strip()}\n\n'
+      )
   logging.info(
       'TRANSCRIPTION - transcript for %s written successfully!',
       audio_file_path,
@@ -418,3 +461,19 @@ def _transcribe_whisper(
       ],
   )
   return transcription_dataframe, video_language, language_probability
+
+
+def _format_vtt_timestamp(seconds: float) -> str:
+  """Formats seconds as a WebVTT timestamp (HH:MM:SS.mmm).
+
+  Args:
+    seconds: Elapsed time in seconds. Clamped to non-negative values.
+
+  Returns:
+    Formatted WebVTT timestamp string.
+  """
+  milliseconds = round(max(0.0, seconds) * 1000)
+  hours, milliseconds = divmod(milliseconds, 60 * 60 * 1000)
+  minutes, milliseconds = divmod(milliseconds, 60 * 1000)
+  whole_seconds, milliseconds = divmod(milliseconds, 1000)
+  return f'{hours:02d}:{minutes:02d}:{whole_seconds:02d}.{milliseconds:03d}'
