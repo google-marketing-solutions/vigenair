@@ -16,7 +16,7 @@ c2pa-python==0.37.8
 faster-whisper==1.0.3
 ffmpeg==1.4
 ffprobe==0.5
-functions-framework==3.7.0
+functions-framework>=3.7.0
 google-api-core==2.19.0
 google-auth==2.29.0
 google-cloud-aiplatform==1.92.0
