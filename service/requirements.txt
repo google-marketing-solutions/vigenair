@@ -29,5 +29,5 @@ numpy==1.26.4
 pandas==1.5.3
 protobuf==3.20.2
 spleeter==2.4.0
-torch==2.3.1
+torch==2.12.0
 Werkzeug==2.3.8
