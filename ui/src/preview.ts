@@ -465,7 +465,7 @@ export class PreviewHelper {
   ) {
     const lines = cropAnalysis[0].frames.map((frame, index) => {
       const time = frame.time;
-      const x = (frame.x * targetDimensions.w) / cropAnalysisScale;
+      const x = (frame.x * targetDimensions.h) / cropAnalysisScale;
       const y = 0;
       const w = targetDimensions.w;
       const h = targetDimensions.h;
