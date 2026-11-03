@@ -23,7 +23,7 @@ import {PROMPTS} from './prompts';
  */
 export const CONFIG = {
     cloudStorage: {
-        bucket: 'gtech-ads-sol-ase-xwf-vigenair',
+        bucket: '<gcs-bucket>',
         endpointBase: 'https://storage.googleapis.com/storage/v1',
         uploadEndpointBase: 'https://storage.googleapis.com/upload/storage/v1',
         authenticatedEndpointBase: 'https://storage.mtls.cloud.google.com',
@@ -45,8 +45,8 @@ export const CONFIG = {
     },
     vertexAi: {
         endpoint: 'aiplatform.googleapis.com',
-        projectId: 'gtech-ads-sol-ase-xwf',
-        location: 'us-central1',
+        projectId: '<gcp-project-id>',
+        location: '<vertexai-region>',
         quotaLimitDelay: 10 * 1000, // 10s,
         model: 'gemini-2.5-flash',
         modelParams: {
