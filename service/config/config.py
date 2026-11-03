@@ -25,8 +25,8 @@ from vertexai import generative_models
 
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID', 'my-gcp-project')
 GCP_LOCATION = os.environ.get('GCP_LOCATION', 'us-central1')
-CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-2.5-flash')
-CONFIG_VISION_MODEL = os.environ.get('CONFIG_VISION_MODEL', 'gemini-2.5-flash')
+CONFIG_TEXT_MODEL = os.environ.get('CONFIG_TEXT_MODEL', 'gemini-3.8-flash')
+CONFIG_VISION_MODEL = os.environ.get('CONFIG_VISION_MODEL', 'gemini-3.8-flash')
 CONFIG_TRANSCRIPTION_MODEL_WHISPER_GCS_BUCKET = os.environ.get(
     'CONFIG_TRANSCRIPTION_MODEL_WHISPER_GCS_BUCKET',
     'vigenair-faster-whisper'
@@ -35,7 +35,7 @@ CONFIG_TRANSCRIPTION_MODEL_WHISPER = os.environ.get(
     'CONFIG_TRANSCRIPTION_MODEL_WHISPER', 'small'
 )
 CONFIG_TRANSCRIPTION_MODEL_GEMINI = os.environ.get(
-    'CONFIG_TRANSCRIPTION_MODEL_GEMINI', 'gemini-2.5-flash'
+    'CONFIG_TRANSCRIPTION_MODEL_GEMINI', 'gemini-3.8-flash'
 )
 CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD = float(
     os.environ.get('CONFIG_ANNOTATIONS_CONFIDENCE_THRESHOLD', '0.7')
@@ -129,11 +129,11 @@ Output EXACTLY in this JSON format (no other text):
 """
 )
 SEGMENT_ANNOTATIONS_CONFIG = {
-    'max_output_tokens': 2048,
-    'temperature': 0.2,
-    'top_p': 1,
-    'thinking_config': {
-        'thinking_budget': 0,
+    'max_output_tokens': 2048, 
+    'temperature': 1.0,  # Updated from 0.2 for Gemini 3.8
+    'top_p': 1, 
+    'thinking_config': { 
+        'thinking_level': 'low'  # Replaced thinking_budget
     },
 }
 
