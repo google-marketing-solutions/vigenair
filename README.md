@@ -169,6 +169,22 @@ existing source video rather than generating synthetic humans or deceptive
 content. This determination should be reconfirmed in case the code was modified
 to use GenAI for visual content, after all.
 
+### Privacy & Usage Telemetry
+
+ViGenAiR includes optional, fail-open anonymous usage telemetry powered by the
+Google Analytics 4 (GA4) Measurement Protocol to help the maintainers understand
+aggregate adoption of core workflows. Telemetry is **disabled by default** and
+only runs when explicitly opted in.
+
+* **What is collected (only when you opt in and provide a Google Ads Customer ID):**
+  * Workflow action (`variant_generated` or `variant_rendered`) and application name (`VigenAir`).
+  * A random event UUID and an anonymous temporary session key (with ad personalization disabled).
+  * The optional, user-provided 10-digit Google Ads Customer ID (`XXX-XXX-XXXX`).
+* **What is NOT collected:** No email addresses, names, credentials, video content, prompts, transcripts, or personal information are collected or transmitted.
+* **Consent & opt-out controls:**
+  * Usage telemetry is off by default; leave **Share anonymous usage analytics** unchecked in the Video editing panel to keep telemetry disabled.
+  * To disable telemetry across an entire deployment regardless of UI selection, set the Apps Script property `TELEMETRY_OPT_IN` to `false` in **Project Settings -> Script Properties**.
+
 ## Why use Vigenair?
 
 Current Video Ads creative solutions, both within YouTube / Google Ads as well as open source, primarily focus on 4 of the [5 keys to effective advertising](https://info.ncsolutions.com/hubfs/2023%20Five%20Keys%20to%20Advertising%20Effectiveness/NCS_Five_Keys_to_Advertising_Effectiveness_E-Book_08-23.pdf) - Brand, Targeting, Reach and Recency. Those 4 pillars contribute to *only ~50%* of the potential marketing ROI, with the 5th pillar - **Creative** - capturing a *whopping ~50%* all on its own.

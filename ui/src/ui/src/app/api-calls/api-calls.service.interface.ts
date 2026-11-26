@@ -35,6 +35,12 @@ export type AbcdBusinessObjective = {
 /** Map of ABCD business objectives. */
 export type AbcdBusinessObjectives = Map<AbcdType, AbcdBusinessObjective>;
 
+/** Optional usage analytics settings for anonymous event reporting. */
+export interface TelemetryAttribution {
+  optIn?: boolean;
+  customerId?: string;
+}
+
 /** Settings for generating video variants. */
 export interface GenerationSettings {
   prompt: string;
@@ -42,6 +48,7 @@ export interface GenerationSettings {
   duration: number;
   demandGenAssets: boolean;
   shortenVideo: boolean;
+  telemetry?: TelemetryAttribution;
 }
 
 /** Represents an audio/video segment. */
@@ -102,6 +109,7 @@ export interface RenderQueue {
   queueName: string;
   previewAnalyses: Record<string, unknown>;
   sourceDimensions: { w: number; h: number };
+  telemetry?: TelemetryAttribution;
 }
 
 /** Represents a variant in the render queue. */
