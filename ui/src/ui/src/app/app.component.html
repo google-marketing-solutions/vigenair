@@ -446,6 +446,37 @@ limitations under the License.
         ></div>
       </div>
       <mat-divider></mat-divider>
+      <div class="flex-column width-full margin-top-16">
+        <div class="flex-center-items gap-16 flex-wrap">
+          <mat-checkbox
+            color="primary"
+            [(ngModel)]="telemetryOptIn"
+            [disabled]="loading"
+          >
+            Share anonymous usage analytics
+          </mat-checkbox>
+          @if (telemetryOptIn) {
+            <mat-form-field
+              appearance="outline"
+              class="width-300"
+              subscriptSizing="dynamic"
+            >
+              <mat-label>Google Ads Customer ID (optional)</mat-label>
+              <input
+                matInput
+                [(ngModel)]="telemetryCustomerId"
+                placeholder="123-456-7890"
+                [disabled]="loading"
+              />
+            </mat-form-field>
+          }
+        </div>
+        <span class="notice-text margin-bottom-8">
+          Optional: enter a 10-digit Google Ads Customer ID (XXX-XXX-XXXX) to
+          share anonymous usage events when generating or rendering variants. No
+          video content, prompts, or personal information is collected.
+        </span>
+      </div>
       <div class="row gap-16-margin-top-16">
         <div class="form-column-layout">
           <mat-form-field appearance="outline" subscriptSizing="dynamic">

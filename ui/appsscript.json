@@ -1,17 +1,11 @@
 {
   "timeZone": "Europe/Berlin",
-  "dependencies": {"libraries": [
-      {
-        "userSymbol": "TadauLib",
-        "libraryId": "1g-iLsgplKCPDMGJ7opNjG978hEwNYkE_z9wwzcO7TMqoSTkvuuvcvVmi",
-        "version": "0" 
-      }
-    ]},
+  "dependencies": {},
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
   "webapp": {
     "executeAs": "USER_ACCESSING",
-    "access": "DOMAIN"
+    "access": "MYSELF"
   },
   "oauthScopes": [
     "https://www.googleapis.com/auth/cloud-platform",

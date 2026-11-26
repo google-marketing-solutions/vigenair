@@ -254,6 +254,8 @@ export class AppComponent {
   previousRuns: string[] | undefined;
   previousRenders: PreviousRender[] | undefined;
   encodedUserId: string | undefined;
+  telemetryOptIn = false;
+  telemetryCustomerId = '';
   folder = '';
   folderGcsPath = '';
   transcriptionText = '';
@@ -1128,6 +1130,17 @@ export class AppComponent {
     this.onPromptSelectionChange();
   }
 
+  private getTelemetryAttribution() {
+    if (!this.telemetryOptIn) {
+      return { optIn: false };
+    }
+    const customerId = this.telemetryCustomerId.trim() || undefined;
+    if (!customerId) {
+      return undefined;
+    }
+    return { optIn: true, customerId };
+  }
+
   generateVariants() {
     console.log('Component: generateVariants() called');
     this.loading = true;
@@ -1145,6 +1158,7 @@ export class AppComponent {
         duration: this.duration,
         demandGenAssets: this.demandGenAssets,
         shortenVideo: this.shortenVideo,
+        telemetry: this.getTelemetryAttribution(),
       })
       .subscribe({
         next: variants => {
@@ -1681,6 +1695,7 @@ export class AppComponent {
           w: this.previewVideoElem.nativeElement.videoWidth,
           h: this.previewVideoElem.nativeElement.videoHeight,
         },
+        telemetry: this.getTelemetryAttribution(),
       })
       .subscribe({
         next: combosFolder => {
